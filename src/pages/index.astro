@@ -1,0 +1,358 @@
+---
+import Layout from '../layouts/Layout.astro';
+---
+
+<Layout
+	title="Raid Ledger"
+	description="建立掉寶、分潤與發錢紀錄的輕量表單工具。"
+	productName="Raid Ledger"
+>
+	<section class="hero">
+		<div class="hero-copy">
+			<p class="eyebrow">Guild events, payout logs, and lightweight ops</p>
+			<h1>為小隊長準備的極簡分帳表單。</h1>
+			<p class="intro">
+				把掉寶事件、分潤事件與已發錢紀錄整理在同一個地方。介面先保持像表單一樣直覺，
+				後面再慢慢長出儀表板、成員管理與組織設定。
+			</p>
+
+			<div class="cta-row">
+				<a class="primary-action" href="#preview">看版型預覽</a>
+				<a class="secondary-action" href="#naming">先討論產品命名</a>
+			</div>
+
+			<ul class="feature-notes">
+				<li>掉寶事件建立</li>
+				<li>分潤規則與紀錄</li>
+				<li>發錢後一鍵標記結帳</li>
+			</ul>
+		</div>
+
+		<div class="hero-panel" id="preview">
+			<div class="panel-header">
+				<div>
+					<p class="panel-kicker">Today’s queue</p>
+					<h2>建立新事件</h2>
+				</div>
+				<span class="panel-badge">Draft</span>
+			</div>
+
+			<div class="mock-card">
+				<label>
+					<span>事件名稱</span>
+					<div class="mock-input">週三副本掉寶統計</div>
+				</label>
+				<label>
+					<span>事件類型</span>
+					<div class="mock-segments">
+						<span class="is-active">掉寶</span>
+						<span>分潤</span>
+						<span>已發錢</span>
+					</div>
+				</label>
+				<label>
+					<span>備註</span>
+					<div class="mock-textarea">例：紀錄掉寶者、成交價、是否已入帳。</div>
+				</label>
+				<div class="mock-footer">
+					<span>Auto-save enabled</span>
+					<button type="button">建立事件</button>
+				</div>
+			</div>
+		</div>
+	</section>
+
+	<section class="sections">
+		<article class="info-card">
+			<p class="section-label">Visual direction</p>
+			<h3>先走「乾淨表單產品」風格</h3>
+			<p>
+				這版用偏霧白、淡藍、乾淨邊線的方向，保留 Google Form 那種容易理解的感覺，
+				但讓 header、按鈕與卡片更像正式產品，而不是純工具頁。
+			</p>
+		</article>
+
+		<article class="info-card" id="naming">
+			<p class="section-label">Product naming</p>
+			<h3>我先用 `Raid Ledger` 當暫名</h3>
+			<p>
+				它的好處是直覺、偏中性，也能同時涵蓋掉寶與分帳。如果你想更像公會工具，
+				下一輪我會優先推薦 `Guild Ledger`、`Loot Ledger`、`Squad Ledger` 三個方向。
+			</p>
+		</article>
+	</section>
+</Layout>
+
+<style>
+	.hero {
+		padding: 72px 0 40px;
+		display: grid;
+		grid-template-columns: minmax(0, 1.08fr) minmax(320px, 0.92fr);
+		gap: 28px;
+		align-items: center;
+	}
+
+	.hero-copy {
+		padding: 18px 10px 18px 4px;
+	}
+
+	.eyebrow,
+	.section-label,
+	.panel-kicker {
+		margin: 0 0 14px;
+		font-size: 0.8rem;
+		font-weight: 700;
+		letter-spacing: 0.14em;
+		text-transform: uppercase;
+		color: #6b83b8;
+	}
+
+	h1 {
+		margin: 0;
+		font-size: clamp(2.7rem, 5vw, 4.6rem);
+		line-height: 0.98;
+		letter-spacing: -0.04em;
+		max-width: 11ch;
+	}
+
+	.intro,
+	.info-card p {
+		margin: 20px 0 0;
+		font-size: 1.05rem;
+		line-height: 1.8;
+		color: #5d6c88;
+		max-width: 58ch;
+	}
+
+	.cta-row {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 14px;
+		margin-top: 28px;
+	}
+
+	.primary-action,
+	.secondary-action {
+		height: 48px;
+		padding: 0 20px;
+		border-radius: 16px;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		font-weight: 700;
+		transition:
+			transform 0.18s ease,
+			box-shadow 0.18s ease,
+			border-color 0.18s ease;
+	}
+
+	.primary-action {
+		background: #4a7cff;
+		color: #ffffff;
+		box-shadow: 0 14px 30px rgba(74, 124, 255, 0.24);
+	}
+
+	.secondary-action {
+		background: rgba(255, 255, 255, 0.8);
+		border: 1px solid rgba(74, 124, 255, 0.18);
+		color: #34508f;
+	}
+
+	.primary-action:hover,
+	.secondary-action:hover {
+		transform: translateY(-1px);
+	}
+
+	.feature-notes {
+		list-style: none;
+		padding: 0;
+		margin: 28px 0 0;
+		display: flex;
+		flex-wrap: wrap;
+		gap: 12px;
+	}
+
+	.feature-notes li {
+		padding: 10px 14px;
+		border-radius: 999px;
+		background: rgba(255, 255, 255, 0.72);
+		border: 1px solid rgba(80, 115, 185, 0.14);
+		color: #51627f;
+		font-size: 0.95rem;
+	}
+
+	.hero-panel,
+	.info-card {
+		background: rgba(255, 255, 255, 0.72);
+		backdrop-filter: blur(20px);
+		border: 1px solid rgba(255, 255, 255, 0.88);
+		box-shadow: 0 22px 50px rgba(45, 74, 130, 0.08);
+	}
+
+	.hero-panel {
+		padding: 22px;
+		border-radius: 30px;
+	}
+
+	.panel-header,
+	.mock-footer {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 16px;
+	}
+
+	.panel-header h2,
+	.info-card h3 {
+		margin: 0;
+		font-size: 1.45rem;
+		letter-spacing: -0.03em;
+	}
+
+	.panel-badge {
+		padding: 8px 12px;
+		border-radius: 999px;
+		background: #e9f7f1;
+		color: #2c8f73;
+		font-size: 0.84rem;
+		font-weight: 700;
+	}
+
+	.mock-card {
+		margin-top: 18px;
+		padding: 18px;
+		border-radius: 24px;
+		background: #ffffff;
+		border: 1px solid rgba(89, 119, 178, 0.12);
+	}
+
+	.mock-card label {
+		display: block;
+		margin-top: 16px;
+	}
+
+	.mock-card label:first-child {
+		margin-top: 0;
+	}
+
+	.mock-card label span {
+		display: block;
+		margin-bottom: 10px;
+		font-size: 0.92rem;
+		font-weight: 700;
+		color: #52627f;
+	}
+
+	.mock-input,
+	.mock-textarea,
+	.mock-segments {
+		border-radius: 16px;
+		border: 1px solid rgba(84, 116, 180, 0.16);
+		background: #f8faff;
+	}
+
+	.mock-input,
+	.mock-textarea {
+		padding: 14px 16px;
+		color: #7b89a4;
+	}
+
+	.mock-segments {
+		padding: 6px;
+		display: grid;
+		grid-template-columns: repeat(3, 1fr);
+		gap: 6px;
+	}
+
+	.mock-segments span {
+		margin: 0;
+		padding: 12px 10px;
+		text-align: center;
+		border-radius: 12px;
+		font-size: 0.92rem;
+		font-weight: 700;
+		color: #60708f;
+	}
+
+	.mock-segments .is-active {
+		background: #e4edff;
+		color: #2954c8;
+	}
+
+	.mock-textarea {
+		min-height: 88px;
+	}
+
+	.mock-footer {
+		margin-top: 18px;
+		padding-top: 16px;
+		border-top: 1px solid rgba(84, 116, 180, 0.12);
+		color: #7a89a3;
+		font-size: 0.92rem;
+	}
+
+	.mock-footer button {
+		height: 42px;
+		padding: 0 16px;
+		border: 0;
+		border-radius: 14px;
+		background: #1f2b45;
+		color: #ffffff;
+		font: inherit;
+		font-weight: 700;
+	}
+
+	.sections {
+		display: grid;
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+		gap: 22px;
+		padding-bottom: 56px;
+	}
+
+	.info-card {
+		padding: 28px;
+		border-radius: 26px;
+	}
+
+	@media (max-width: 920px) {
+		.hero,
+		.sections {
+			grid-template-columns: 1fr;
+		}
+
+		.hero {
+			padding-top: 42px;
+		}
+
+		h1 {
+			max-width: none;
+		}
+	}
+
+	@media (max-width: 640px) {
+		.hero {
+			padding-top: 28px;
+			gap: 20px;
+		}
+
+		h1 {
+			font-size: 2.5rem;
+		}
+
+		.hero-panel,
+		.info-card,
+		.mock-card {
+			border-radius: 22px;
+		}
+
+		.panel-header,
+		.mock-footer {
+			flex-direction: column;
+			align-items: flex-start;
+		}
+
+		.mock-segments {
+			grid-template-columns: 1fr;
+		}
+	}
+</style>
