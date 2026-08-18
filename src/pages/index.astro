@@ -1,85 +1,50 @@
 ---
-import Layout from '../layouts/Layout.astro';
-import '../styles/home.css';
+import { langKeys } from '../libs/i18n/context/langKeys';
+
+const fallbackLang = 'en';
+const fallbackURL = `/${fallbackLang}/`;
 ---
 
-<Layout
-	title="Raid Ledger"
-	description="建立掉寶、分潤與發錢紀錄的輕量表單工具。"
-	productName="Raid Ledger"
->
-	<section class="hero">
-		<div class="hero-copy">
-			<p class="eyebrow">Guild events, payout logs, and lightweight ops</p>
-			<h1>為小隊長準備的極簡分帳表單。</h1>
-			<p class="intro">
-				把掉寶事件、分潤事件與已發錢紀錄整理在同一個地方。介面先保持像表單一樣直覺，
-				後面再慢慢長出儀表板、成員管理與組織設定。
-			</p>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<title>Redirecting...</title>
+		<meta name="robots" content="noindex" />
+		<link rel="alternate" hreflang="en" href="/en/" />
+		<link rel="alternate" hreflang="ja" href="/ja/" />
+		<link rel="alternate" hreflang="zh-Hant" href="/zh-tw/" />
+		<link rel="alternate" hreflang="x-default" href={fallbackURL} />
+		<meta http-equiv="refresh" content={`0; url=${fallbackURL}`} />
+		<script is:inline>
+			(() => {
+				const browserLocales = Array.isArray(navigator.languages) && navigator.languages.length > 0
+					? navigator.languages
+					: [navigator.language];
 
-			<div class="cta-row">
-				<a class="primary-action" href="#preview">看版型預覽</a>
-				<a class="secondary-action" href="#naming">先討論產品命名</a>
-			</div>
+				const resolveLang = (locale) => {
+					if (!locale) return null;
+					const normalized = locale.toLowerCase();
+					if (normalized === 'zh-tw' || normalized === 'zh-hant' || normalized.startsWith('zh-tw') || normalized.startsWith('zh-hant')) {
+						return 'zh-tw';
+					}
+					if (normalized === 'ja' || normalized.startsWith('ja-')) {
+						return 'ja';
+					}
+					if (normalized === 'en' || normalized.startsWith('en-')) {
+						return 'en';
+					}
+					return null;
+				};
 
-			<ul class="feature-notes">
-				<li>掉寶事件建立</li>
-				<li>分潤規則與紀錄</li>
-				<li>發錢後一鍵標記結帳</li>
-			</ul>
-		</div>
-
-		<div class="hero-panel" id="preview">
-			<div class="panel-header">
-				<div>
-					<p class="panel-kicker">Today’s queue</p>
-					<h2>建立新事件</h2>
-				</div>
-				<span class="panel-badge">Draft</span>
-			</div>
-
-			<div class="mock-card">
-				<label>
-					<span>事件名稱</span>
-					<div class="mock-input">週三副本掉寶統計</div>
-				</label>
-				<label>
-					<span>事件類型</span>
-					<div class="mock-segments">
-						<span class="is-active">掉寶</span>
-						<span>分潤</span>
-						<span>已發錢</span>
-					</div>
-				</label>
-				<label>
-					<span>備註</span>
-					<div class="mock-textarea">例：紀錄掉寶者、成交價、是否已入帳。</div>
-				</label>
-				<div class="mock-footer">
-					<span>Auto-save enabled</span>
-					<button type="button">建立事件</button>
-				</div>
-			</div>
-		</div>
-	</section>
-
-	<section class="sections">
-		<article class="info-card">
-			<p class="section-label">Visual direction</p>
-			<h3>先走「乾淨表單產品」風格</h3>
-			<p>
-				這版用偏霧白、淡藍、乾淨邊線的方向，保留 Google Form 那種容易理解的感覺，
-				但讓 header、按鈕與卡片更像正式產品，而不是純工具頁。
-			</p>
-		</article>
-
-		<article class="info-card" id="naming">
-			<p class="section-label">Product naming</p>
-			<h3>我先用 `Raid Ledger` 當暫名</h3>
-			<p>
-				它的好處是直覺、偏中性，也能同時涵蓋掉寶與分帳。如果你想更像公會工具，
-				下一輪我會優先推薦 `Guild Ledger`、`Loot Ledger`、`Squad Ledger` 三個方向。
-			</p>
-		</article>
-	</section>
-</Layout>
+				const matched = browserLocales
+					.map(resolveLang)
+					.find((lang) => lang && ['zh-tw', 'ja', 'en'].includes(lang));
+				window.location.replace(`/${matched || 'en'}/`);
+			})();
+		</script>
+	</head>
+	<body>
+		<p>If you're not redirected automatically, <a href={fallbackURL}>click here</a>.</p>
+	</body>
+</html>

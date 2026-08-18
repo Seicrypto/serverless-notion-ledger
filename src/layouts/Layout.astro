@@ -1,24 +1,48 @@
 ---
+import LangSwitcher from '../components/LangSwitcher.astro';
 import ThemeToggle from '../components/ThemeToggle.astro';
 import '../styles/global.css';
 import '../styles/theme.css';
 import '../styles/components.css';
+import type { LangKey } from '../libs/i18n/context/langKeys';
 
 interface Props {
 	title?: string;
 	description?: string;
 	productName?: string;
+	lang?: LangKey;
+	currentPath?: string;
+	labels?: {
+		switchLanguage: string;
+		changeTheme: string;
+		login: string;
+		home: string;
+		themeLight: string;
+		themeDark: string;
+		themeSystem: string;
+	};
 }
 
 const {
 	title = 'Raid Ledger',
 	description = 'Lightweight event forms and payout tracking for guild leaders.',
 	productName = 'Raid Ledger',
+	lang = 'zh-tw',
+	currentPath = '/zh-tw/',
+	labels = {
+		switchLanguage: 'Switch language',
+		changeTheme: 'Change color theme',
+		login: 'Login',
+		home: 'Home',
+		themeLight: 'Light',
+		themeDark: 'Dark',
+		themeSystem: 'System',
+	},
 } = Astro.props;
 ---
 
 <!doctype html>
-<html lang="zh-Hant">
+<html lang={lang}>
 	<head>
 		<meta charset="utf-8" />
 		<meta name="viewport" content="width=device-width" />
@@ -27,6 +51,7 @@ const {
 		<meta name="generator" content={Astro.generator} />
 		<meta name="description" content={description} />
 		<title>{title}</title>
+		<slot name="head" />
 		<script is:inline>
 			(() => {
 				const stored = window.localStorage.getItem('theme-mode');
@@ -48,18 +73,19 @@ const {
 		<div class="page-shell">
 			<header class="site-header">
 				<div class="header-side"></div>
-				<a class="brand-link" href="/" aria-label={`${productName} home`}>
+				<a class="brand-link" href={`/${lang}/`} aria-label={`${productName} ${labels.home}`}>
 					<span class="brand-badge">RL</span>
 					<span>{productName}</span>
 				</a>
 				<div class="header-actions">
-					<button class="language-switch" type="button" aria-label="Switch language">
-						<span>中文</span>
-						<span class="divider">/</span>
-						<span>EN</span>
-					</button>
-					<ThemeToggle />
-					<a class="login-link" href="/login">登入</a>
+					<LangSwitcher currentLang={lang} currentPath={currentPath} label={labels.switchLanguage} />
+					<ThemeToggle
+						label={labels.changeTheme}
+						lightLabel={labels.themeLight}
+						darkLabel={labels.themeDark}
+						systemLabel={labels.themeSystem}
+					/>
+					<a class="login-link" href={`/${lang}/login`}>{labels.login}</a>
 				</div>
 			</header>
 			<main>

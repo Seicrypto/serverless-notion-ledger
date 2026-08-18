@@ -1,0 +1,113 @@
+---
+import type { LangKey } from '../libs/i18n/context/langKeys';
+import { langDisplayMap } from '../libs/i18n/langDisplayNames';
+
+interface Props {
+	currentLang: LangKey;
+	currentPath: string;
+	label: string;
+}
+
+const { currentLang, currentPath, label } = Astro.props;
+const options = Object.entries(langDisplayMap) as [LangKey, string][];
+---
+
+<div class="lang-switcher" data-lang-switcher data-current-path={currentPath}>
+	<button
+		class="language-switch"
+		type="button"
+		aria-label={label}
+		aria-haspopup="menu"
+		aria-expanded="false"
+		data-lang-trigger
+	>
+		<img src="/assets/icons/lang-globe.svg" alt="" width="18" height="18" />
+		<span>{langDisplayMap[currentLang]}</span>
+	</button>
+
+	<div class="lang-menu" role="menu" hidden data-lang-menu>
+		{options.map(([lang, text]) => (
+			<button
+				class="lang-option"
+				type="button"
+				role="menuitemradio"
+				data-lang-option={lang}
+				aria-checked={lang === currentLang ? 'true' : 'false'}
+				data-active={lang === currentLang ? true : undefined}
+			>
+				{text}
+			</button>
+		))}
+	</div>
+</div>
+
+<script is:inline>
+	const initLangSwitcher = () => {
+		const buildPath = (currentPath, lang) => {
+			const segments = currentPath.split('/');
+			if (segments.length > 1) {
+				segments[1] = lang;
+			}
+
+			const nextPath = segments.join('/');
+			return nextPath.endsWith('/') ? nextPath : `${nextPath}/`;
+		};
+
+		const closeLangMenus = () => {
+			document.querySelectorAll('[data-lang-menu]').forEach((menu) => {
+				if (menu instanceof HTMLElement) {
+					menu.hidden = true;
+				}
+			});
+
+			document.querySelectorAll('[data-lang-trigger]').forEach((trigger) => {
+				if (trigger instanceof HTMLButtonElement) {
+					trigger.setAttribute('aria-expanded', 'false');
+				}
+			});
+		};
+
+		document.querySelectorAll('[data-lang-switcher]').forEach((switcher) => {
+			const trigger = switcher.querySelector('[data-lang-trigger]');
+			const menu = switcher.querySelector('[data-lang-menu]');
+			const currentPath = switcher.getAttribute('data-current-path') || '/zh-tw/';
+
+			if (!(trigger instanceof HTMLButtonElement) || !(menu instanceof HTMLElement)) {
+				return;
+			}
+
+			trigger.addEventListener('click', () => {
+				const willOpen = menu.hidden;
+				closeLangMenus();
+				menu.hidden = !willOpen;
+				trigger.setAttribute('aria-expanded', String(willOpen));
+			});
+
+			switcher.querySelectorAll('[data-lang-option]').forEach((option) => {
+				option.addEventListener('click', () => {
+					const lang = option.getAttribute('data-lang-option');
+					if (lang) {
+						window.location.href = buildPath(currentPath, lang);
+					}
+				});
+			});
+		});
+
+		document.addEventListener('click', (event) => {
+			const target = event.target;
+			if (!(target instanceof Element)) {
+				return;
+			}
+
+			if (!target.closest('[data-lang-switcher]')) {
+				closeLangMenus();
+			}
+		});
+	};
+
+	if (document.readyState === 'loading') {
+		document.addEventListener('DOMContentLoaded', initLangSwitcher, { once: true });
+	} else {
+		initLangSwitcher();
+	}
+</script>

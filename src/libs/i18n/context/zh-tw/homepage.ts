@@ -1,0 +1,32 @@
+export const homepage = {
+	eyebrow: '公會事件、分帳紀錄與輕量管理',
+	hero_title: '為小隊長準備的極簡分帳表單。',
+	hero_intro:
+		'把掉寶事件、分潤事件與已發錢紀錄整理在同一個地方。介面先保持像表單一樣直覺，後面再慢慢長出儀表板、成員管理與組織設定。',
+	cta_preview: '看版型預覽',
+	cta_naming: '先討論產品命名',
+	feature_drop: '掉寶事件建立',
+	feature_split: '分潤規則與紀錄',
+	feature_settlement: '發錢後一鍵標記結帳',
+	panel_kicker: "Today's queue",
+	panel_title: '建立新事件',
+	panel_status: 'Draft',
+	field_event_name: '事件名稱',
+	field_event_name_value: '週三副本掉寶統計',
+	field_event_type: '事件類型',
+	field_type_drop: '掉寶',
+	field_type_split: '分潤',
+	field_type_paid: '已發錢',
+	field_note: '備註',
+	field_note_value: '例：紀錄掉寶者、成交價、是否已入帳。',
+	panel_auto_save: 'Auto-save enabled',
+	panel_submit: '建立事件',
+	section_visual_label: 'Visual direction',
+	section_visual_title: '先走「乾淨表單產品」風格',
+	section_visual_body:
+		'這版用偏霧白、淡藍、乾淨邊線的方向，保留 Google Form 那種容易理解的感覺，但讓 header、按鈕與卡片更像正式產品，而不是純工具頁。',
+	section_naming_label: 'Product naming',
+	section_naming_title: '我先用 `Raid Ledger` 當暫名',
+	section_naming_body:
+		'它的好處是直覺、偏中性，也能同時涵蓋掉寶與分帳。如果你想更像公會工具，下一輪我會優先推薦 `Guild Ledger`、`Loot Ledger`、`Squad Ledger` 三個方向。',
+};

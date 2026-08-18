@@ -1,0 +1,99 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import '../../styles/home.css';
+import { getI18n, getLangFromUrl } from '../../libs/i18n';
+export { getStaticPaths } from '../../libs/static/staticPaths';
+
+const lang = getLangFromUrl(Astro.url);
+const t = getI18n(lang);
+---
+
+<Layout
+	title={t.common.product_name}
+	description={t.common.product_description}
+	productName={t.common.product_name}
+	lang={lang}
+	currentPath={Astro.url.pathname}
+	labels={{
+		switchLanguage: t.common.switch_language,
+		changeTheme: t.common.change_theme,
+		login: t.common.login,
+		home: t.common.nav_home,
+		themeLight: t.common.mode_light,
+		themeDark: t.common.mode_dark,
+		themeSystem: t.common.mode_system,
+	}}
+>
+	<Fragment slot="head">
+		<link rel="alternate" hreflang="en" href="/en/" />
+		<link rel="alternate" hreflang="ja" href="/ja/" />
+		<link rel="alternate" hreflang="zh-Hant" href="/zh-tw/" />
+		<link rel="alternate" hreflang="x-default" href="/en/" />
+	</Fragment>
+
+	<section class="hero">
+		<div class="hero-copy">
+			<p class="eyebrow">{t.homepage.eyebrow}</p>
+			<h1>{t.homepage.hero_title}</h1>
+			<p class="intro">{t.homepage.hero_intro}</p>
+
+			<div class="cta-row">
+				<a class="primary-action" href="#preview">{t.homepage.cta_preview}</a>
+				<a class="secondary-action" href="#naming">{t.homepage.cta_naming}</a>
+			</div>
+
+			<ul class="feature-notes">
+				<li>{t.homepage.feature_drop}</li>
+				<li>{t.homepage.feature_split}</li>
+				<li>{t.homepage.feature_settlement}</li>
+			</ul>
+		</div>
+
+		<div class="hero-panel" id="preview">
+			<div class="panel-header">
+				<div>
+					<p class="panel-kicker">{t.homepage.panel_kicker}</p>
+					<h2>{t.homepage.panel_title}</h2>
+				</div>
+				<span class="panel-badge">{t.homepage.panel_status}</span>
+			</div>
+
+			<div class="mock-card">
+				<label>
+					<span>{t.homepage.field_event_name}</span>
+					<div class="mock-input">{t.homepage.field_event_name_value}</div>
+				</label>
+				<label>
+					<span>{t.homepage.field_event_type}</span>
+					<div class="mock-segments">
+						<span class="is-active">{t.homepage.field_type_drop}</span>
+						<span>{t.homepage.field_type_split}</span>
+						<span>{t.homepage.field_type_paid}</span>
+					</div>
+				</label>
+				<label>
+					<span>{t.homepage.field_note}</span>
+					<div class="mock-textarea">{t.homepage.field_note_value}</div>
+				</label>
+				<div class="mock-footer">
+					<span>{t.homepage.panel_auto_save}</span>
+					<button type="button">{t.homepage.panel_submit}</button>
+				</div>
+			</div>
+		</div>
+	</section>
+
+	<section class="sections">
+		<article class="info-card">
+			<p class="section-label">{t.homepage.section_visual_label}</p>
+			<h3>{t.homepage.section_visual_title}</h3>
+			<p>{t.homepage.section_visual_body}</p>
+		</article>
+
+		<article class="info-card" id="naming">
+			<p class="section-label">{t.homepage.section_naming_label}</p>
+			<h3>{t.homepage.section_naming_title}</h3>
+			<p>{t.homepage.section_naming_body}</p>
+		</article>
+	</section>
+</Layout>

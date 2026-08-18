@@ -1,0 +1,32 @@
+export const homepage = {
+	eyebrow: 'Guild events, payout logs, and lightweight ops',
+	hero_title: 'A clean payout form for squad leaders.',
+	hero_intro:
+		'Keep loot drop events, split payout records, and completed settlements in one place. The interface stays form-first now, then grows into dashboards, member management, and organization settings over time.',
+	cta_preview: 'Preview the layout',
+	cta_naming: 'Discuss the product name',
+	feature_drop: 'Create loot events',
+	feature_split: 'Track split payout rules',
+	feature_settlement: 'Mark paid settlements in one click',
+	panel_kicker: "Today's queue",
+	panel_title: 'Create a new event',
+	panel_status: 'Draft',
+	field_event_name: 'Event name',
+	field_event_name_value: 'Wednesday raid loot summary',
+	field_event_type: 'Event type',
+	field_type_drop: 'Loot',
+	field_type_split: 'Split',
+	field_type_paid: 'Paid',
+	field_note: 'Notes',
+	field_note_value: 'Example: record buyer, final price, and whether the payout has already been sent.',
+	panel_auto_save: 'Auto-save enabled',
+	panel_submit: 'Create event',
+	section_visual_label: 'Visual direction',
+	section_visual_title: 'A clean form-product look first',
+	section_visual_body:
+		'This version uses misty white surfaces, soft blue accents, and clean borders so it feels as easy to understand as Google Forms, while still looking like a real product instead of a raw utility page.',
+	section_naming_label: 'Product naming',
+	section_naming_title: 'Using `Raid Ledger` as a working name',
+	section_naming_body:
+		'It is direct, neutral, and broad enough to cover both loot records and payout tracking. If you want something that feels more guild-oriented, the next round can explore `Guild Ledger`, `Loot Ledger`, or `Squad Ledger`.',
+};

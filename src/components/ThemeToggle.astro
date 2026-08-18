@@ -1,4 +1,18 @@
 ---
+interface Props {
+	label?: string;
+	lightLabel?: string;
+	darkLabel?: string;
+	systemLabel?: string;
+}
+
+const {
+	label = 'Change color theme',
+	lightLabel = 'Light',
+	darkLabel = 'Dark',
+	systemLabel = 'System',
+} = Astro.props;
+
 const iconMap = {
 	light: '/assets/icons/theme-light.svg',
 	dark: '/assets/icons/theme-dark.svg',
@@ -10,7 +24,7 @@ const iconMap = {
 	<button
 		class="icon-button"
 		type="button"
-		aria-label="Change color theme"
+		aria-label={label}
 		aria-haspopup="menu"
 		aria-expanded="false"
 		data-theme-trigger
@@ -27,15 +41,15 @@ const iconMap = {
 	<div class="theme-menu" role="menu" hidden data-theme-menu>
 		<button class="theme-option" type="button" role="menuitemradio" data-theme-option="light">
 			<img src={iconMap.light} alt="" width="18" height="18" />
-			<span>Light</span>
+			<span>{lightLabel}</span>
 		</button>
 		<button class="theme-option" type="button" role="menuitemradio" data-theme-option="dark">
 			<img src={iconMap.dark} alt="" width="18" height="18" />
-			<span>Dark</span>
+			<span>{darkLabel}</span>
 		</button>
 		<button class="theme-option" type="button" role="menuitemradio" data-theme-option="system">
 			<img src={iconMap.system} alt="" width="18" height="18" />
-			<span>System</span>
+			<span>{systemLabel}</span>
 		</button>
 	</div>
 </div>

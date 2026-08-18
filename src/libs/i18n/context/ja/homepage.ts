@@ -1,0 +1,32 @@
+export const homepage = {
+	eyebrow: 'ギルドイベント、分配ログ、軽量運用',
+	hero_title: '小隊長のためのシンプルな分配フォーム。',
+	hero_intro:
+		'ドロップイベント、分配記録、支払い完了の管理をひとつにまとめます。今はフォーム中心の分かりやすい体験を保ちつつ、後からダッシュボード、メンバー管理、組織設定へ拡張できる構成です。',
+	cta_preview: 'レイアウトを見る',
+	cta_naming: '製品名を考える',
+	feature_drop: 'ドロップイベント作成',
+	feature_split: '分配ルールと記録',
+	feature_settlement: '支払い済みをワンクリックで記録',
+	panel_kicker: "Today's queue",
+	panel_title: '新しいイベントを作成',
+	panel_status: 'Draft',
+	field_event_name: 'イベント名',
+	field_event_name_value: '水曜レイドのドロップ集計',
+	field_event_type: 'イベント種別',
+	field_type_drop: 'ドロップ',
+	field_type_split: '分配',
+	field_type_paid: '支払い済み',
+	field_note: 'メモ',
+	field_note_value: '例: 落札者、最終金額、送金済みかどうかを記録します。',
+	panel_auto_save: 'Auto-save enabled',
+	panel_submit: 'イベントを作成',
+	section_visual_label: 'Visual direction',
+	section_visual_title: 'まずはクリーンなフォーム製品の見た目で',
+	section_visual_body:
+		'この版では、Google Forms のように理解しやすい印象を残しつつ、やわらかな面と整った境界線で、単なる内部ツールではなく製品らしい見た目に寄せています。',
+	section_naming_label: 'Product naming',
+	section_naming_title: '`Raid Ledger` を仮の製品名として使用',
+	section_naming_body:
+		'直感的で中立的な名前であり、ドロップ管理と分配記録の両方を自然に含められます。もっとギルド向けの雰囲気にしたい場合は、次に `Guild Ledger`、`Loot Ledger`、`Squad Ledger` を検討できます。',
+};
