@@ -1,0 +1,164 @@
+---
+const iconMap = {
+	light: '/assets/icons/theme-light.svg',
+	dark: '/assets/icons/theme-dark.svg',
+	system: '/assets/icons/theme-system.svg',
+} as const;
+---
+
+<div class="theme-switcher" data-theme-switcher>
+	<button
+		class="icon-button"
+		type="button"
+		aria-label="Change color theme"
+		aria-haspopup="menu"
+		aria-expanded="false"
+		data-theme-trigger
+	>
+		<img
+			src={iconMap.system}
+			alt=""
+			width="18"
+			height="18"
+			data-theme-current-icon
+		/>
+	</button>
+
+	<div class="theme-menu" role="menu" hidden data-theme-menu>
+		<button class="theme-option" type="button" role="menuitemradio" data-theme-option="light">
+			<img src={iconMap.light} alt="" width="18" height="18" />
+			<span>Light</span>
+		</button>
+		<button class="theme-option" type="button" role="menuitemradio" data-theme-option="dark">
+			<img src={iconMap.dark} alt="" width="18" height="18" />
+			<span>Dark</span>
+		</button>
+		<button class="theme-option" type="button" role="menuitemradio" data-theme-option="system">
+			<img src={iconMap.system} alt="" width="18" height="18" />
+			<span>System</span>
+		</button>
+	</div>
+</div>
+
+<script is:inline>
+	const themeIconMap = {
+		light: '/assets/icons/theme-light.svg',
+		dark: '/assets/icons/theme-dark.svg',
+		system: '/assets/icons/theme-system.svg',
+	};
+
+	const getStoredThemeMode = () => {
+		const stored = window.localStorage.getItem('theme-mode');
+		return stored === 'light' || stored === 'dark' || stored === 'system' ? stored : 'system';
+	};
+
+	const getResolvedTheme = (mode) => {
+		if (mode === 'system') {
+			return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+		}
+
+		return mode;
+	};
+
+	const applyThemeMode = (mode) => {
+		const resolvedTheme = getResolvedTheme(mode);
+		const html = document.documentElement;
+		html.dataset.themeMode = mode;
+		html.dataset.theme = resolvedTheme;
+		window.localStorage.setItem('theme-mode', mode);
+		window.dispatchEvent(new CustomEvent('theme-mode-change', { detail: { mode, resolvedTheme } }));
+	};
+
+	const syncThemeSwitcher = () => {
+		document.querySelectorAll('[data-theme-switcher]').forEach((switcher) => {
+			const trigger = switcher.querySelector('[data-theme-trigger]');
+			const menu = switcher.querySelector('[data-theme-menu]');
+			const currentIcon = switcher.querySelector('[data-theme-current-icon]');
+			const currentMode = document.documentElement.dataset.themeMode || 'system';
+			const resolvedTheme = document.documentElement.dataset.theme || 'light';
+			const triggerIcon = currentMode === 'system' ? themeIconMap[resolvedTheme] : themeIconMap[currentMode];
+
+			if (currentIcon instanceof HTMLImageElement) {
+				currentIcon.src = triggerIcon;
+			}
+
+			switcher.querySelectorAll('[data-theme-option]').forEach((button) => {
+				const isActive = button.getAttribute('data-theme-option') === currentMode;
+				button.setAttribute('aria-checked', String(isActive));
+				button.toggleAttribute('data-active', isActive);
+			});
+
+			if (trigger instanceof HTMLButtonElement && menu instanceof HTMLElement) {
+				trigger.setAttribute('aria-expanded', String(!menu.hidden));
+			}
+		});
+	};
+
+	const closeThemeMenus = () => {
+		document.querySelectorAll('[data-theme-menu]').forEach((menu) => {
+			if (menu instanceof HTMLElement) {
+				menu.hidden = true;
+			}
+		});
+		syncThemeSwitcher();
+	};
+
+	const initThemeSwitcher = () => {
+		const media = window.matchMedia('(prefers-color-scheme: dark)');
+		const initialMode = getStoredThemeMode();
+		applyThemeMode(initialMode);
+		syncThemeSwitcher();
+
+		media.addEventListener('change', () => {
+			if ((document.documentElement.dataset.themeMode || 'system') === 'system') {
+				applyThemeMode('system');
+				syncThemeSwitcher();
+			}
+		});
+
+		document.querySelectorAll('[data-theme-switcher]').forEach((switcher) => {
+			const trigger = switcher.querySelector('[data-theme-trigger]');
+			const menu = switcher.querySelector('[data-theme-menu]');
+
+			if (!(trigger instanceof HTMLButtonElement) || !(menu instanceof HTMLElement)) {
+				return;
+			}
+
+			trigger.addEventListener('click', () => {
+				const willOpen = menu.hidden;
+				closeThemeMenus();
+				menu.hidden = !willOpen;
+				syncThemeSwitcher();
+			});
+
+			switcher.querySelectorAll('[data-theme-option]').forEach((option) => {
+				option.addEventListener('click', () => {
+					const mode = option.getAttribute('data-theme-option');
+					if (mode === 'light' || mode === 'dark' || mode === 'system') {
+						applyThemeMode(mode);
+						closeThemeMenus();
+					}
+				});
+			});
+		});
+
+		document.addEventListener('click', (event) => {
+			const target = event.target;
+			if (!(target instanceof Element)) {
+				return;
+			}
+
+			if (!target.closest('[data-theme-switcher]')) {
+				closeThemeMenus();
+			}
+		});
+
+		window.addEventListener('theme-mode-change', syncThemeSwitcher);
+	};
+
+	if (document.readyState === 'loading') {
+		document.addEventListener('DOMContentLoaded', initThemeSwitcher, { once: true });
+	} else {
+		initThemeSwitcher();
+	}
+</script>
