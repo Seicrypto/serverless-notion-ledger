@@ -1,0 +1,42 @@
+---
+interface NavItem {
+	label: string;
+	href: string;
+}
+
+interface Props {
+	title: string;
+	items: NavItem[];
+	closeLabel: string;
+	statusLabel: string;
+	statusValue: string;
+}
+
+const { title, items, closeLabel, statusLabel, statusValue } = Astro.props;
+---
+
+<div class="sidebar-shell" data-sidebar-shell>
+	<button class="sidebar-overlay" type="button" aria-label={closeLabel} hidden data-sidebar-overlay></button>
+	<aside class="sidebar-panel" aria-hidden="true" data-sidebar-panel>
+		<div class="sidebar-header">
+			<p class="sidebar-kicker">{title}</p>
+			<button class="sidebar-close" type="button" aria-label={closeLabel} data-sidebar-close>
+				<span></span>
+				<span></span>
+			</button>
+		</div>
+
+		<nav class="sidebar-nav" aria-label={title}>
+			{items.map((item) => (
+				<a class="sidebar-link" href={item.href} data-sidebar-link>
+					{item.label}
+				</a>
+			))}
+		</nav>
+
+		<div class="sidebar-status">
+			<p class="sidebar-status-label">{statusLabel}</p>
+			<p class="sidebar-status-value">{statusValue}</p>
+		</div>
+	</aside>
+</div>

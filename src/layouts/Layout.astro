@@ -1,4 +1,5 @@
 ---
+import SidebarNav from '../components/SidebarNav.astro';
 import LangSwitcher from '../components/LangSwitcher.astro';
 import ThemeToggle from '../components/ThemeToggle.astro';
 import '../styles/global.css';
@@ -17,6 +18,15 @@ interface Props {
 		changeTheme: string;
 		login: string;
 		home: string;
+		openNavigation: string;
+		closeNavigation: string;
+		navigation: string;
+		navOverview: string;
+		navEvents: string;
+		navPayouts: string;
+		navDashboard: string;
+		userStatus: string;
+		guest: string;
 		themeLight: string;
 		themeDark: string;
 		themeSystem: string;
@@ -34,11 +44,27 @@ const {
 		changeTheme: 'Change color theme',
 		login: 'Login',
 		home: 'Home',
+		openNavigation: 'Open navigation',
+		closeNavigation: 'Close navigation',
+		navigation: 'Navigation',
+		navOverview: 'Overview',
+		navEvents: 'Event forms',
+		navPayouts: 'Payouts',
+		navDashboard: 'Dashboard',
+		userStatus: 'User status',
+		guest: 'Guest',
 		themeLight: 'Light',
 		themeDark: 'Dark',
 		themeSystem: 'System',
 	},
 } = Astro.props;
+
+const navItems = [
+	{ label: labels.navOverview, href: `/${lang}/` },
+	{ label: labels.navEvents, href: `/${lang}/#preview` },
+	{ label: labels.navPayouts, href: `/${lang}/#preview` },
+	{ label: labels.navDashboard, href: `/${lang}/#naming` },
+];
 ---
 
 <!doctype html>
@@ -71,11 +97,31 @@ const {
 	</head>
 	<body>
 		<div class="page-shell">
+			<SidebarNav
+				title={labels.navigation}
+				items={navItems}
+				closeLabel={labels.closeNavigation}
+				statusLabel={labels.userStatus}
+				statusValue={labels.guest}
+			/>
 			<header class="site-header">
-				<div class="header-side"></div>
+				<div class="header-side">
+					<button
+						class="menu-toggle"
+						type="button"
+						aria-label={labels.openNavigation}
+						aria-expanded="false"
+						aria-controls="app-sidebar"
+						data-sidebar-trigger
+					>
+						<span></span>
+						<span></span>
+						<span></span>
+					</button>
+				</div>
 				<a class="brand-link" href={`/${lang}/`} aria-label={`${productName} ${labels.home}`}>
 					<span class="brand-badge">RL</span>
-					<span>{productName}</span>
+					<span class="brand-text">{productName}</span>
 				</a>
 				<div class="header-actions">
 					<LangSwitcher currentLang={lang} currentPath={currentPath} label={labels.switchLanguage} />
@@ -92,5 +138,55 @@ const {
 				<slot />
 			</main>
 		</div>
+		<script is:inline>
+			(() => {
+				const initSidebarNavigation = () => {
+					const html = document.documentElement;
+					const panel = document.querySelector('[data-sidebar-panel]');
+					const overlay = document.querySelector('[data-sidebar-overlay]');
+					const trigger = document.querySelector('[data-sidebar-trigger]');
+					const closeButton = document.querySelector('[data-sidebar-close]');
+					const links = document.querySelectorAll('[data-sidebar-link]');
+
+					if (!(panel instanceof HTMLElement) || !(overlay instanceof HTMLElement) || !(trigger instanceof HTMLButtonElement)) {
+						return;
+					}
+
+					const setOpen = (open) => {
+						html.toggleAttribute('data-sidebar-open', open);
+						panel.setAttribute('aria-hidden', String(!open));
+						overlay.hidden = !open;
+						trigger.setAttribute('aria-expanded', String(open));
+					};
+
+					trigger.addEventListener('click', () => {
+						const nextOpen = !html.hasAttribute('data-sidebar-open');
+						setOpen(nextOpen);
+					});
+
+					if (closeButton instanceof HTMLButtonElement) {
+						closeButton.addEventListener('click', () => setOpen(false));
+					}
+
+					overlay.addEventListener('click', () => setOpen(false));
+
+					links.forEach((link) => {
+						link.addEventListener('click', () => setOpen(false));
+					});
+
+					window.addEventListener('keydown', (event) => {
+						if (event.key === 'Escape') {
+							setOpen(false);
+						}
+					});
+				};
+
+				if (document.readyState === 'loading') {
+					document.addEventListener('DOMContentLoaded', initSidebarNavigation, { once: true });
+				} else {
+					initSidebarNavigation();
+				}
+			})();
+		</script>
 	</body>
 </html>

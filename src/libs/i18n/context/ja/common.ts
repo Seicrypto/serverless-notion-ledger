@@ -8,4 +8,13 @@ export const common = {
 	mode_light: 'Light',
 	mode_dark: 'Dark',
 	mode_system: 'System',
+	open_navigation: 'ナビゲーションを開く',
+	close_navigation: 'ナビゲーションを閉じる',
+	navigation: 'Navigation',
+	nav_overview: '概要',
+	nav_events: 'イベントフォーム',
+	nav_payouts: '分配と精算',
+	nav_dashboard: 'ダッシュボード',
+	user_status: 'ユーザー状態',
+	guest: 'Guest',
 };

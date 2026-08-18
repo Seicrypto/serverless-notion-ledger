@@ -8,4 +8,13 @@ export const common = {
 	mode_light: 'Light',
 	mode_dark: 'Dark',
 	mode_system: 'System',
+	open_navigation: '開啟導覽',
+	close_navigation: '關閉導覽',
+	navigation: 'Navigation',
+	nav_overview: '首頁總覽',
+	nav_events: '事件表單',
+	nav_payouts: '分潤與結帳',
+	nav_dashboard: '儀表板',
+	user_status: '使用者狀態',
+	guest: 'Guest',
 };

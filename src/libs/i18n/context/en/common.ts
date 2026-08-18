@@ -8,4 +8,13 @@ export const common = {
 	mode_light: 'Light',
 	mode_dark: 'Dark',
 	mode_system: 'System',
+	open_navigation: 'Open navigation',
+	close_navigation: 'Close navigation',
+	navigation: 'Navigation',
+	nav_overview: 'Overview',
+	nav_events: 'Event forms',
+	nav_payouts: 'Payouts',
+	nav_dashboard: 'Dashboard',
+	user_status: 'User status',
+	guest: 'Guest',
 };
