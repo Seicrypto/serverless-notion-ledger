@@ -22,9 +22,12 @@ interface Props {
 		closeNavigation: string;
 		navigation: string;
 		navOverview: string;
-		navEvents: string;
+		navMy: string;
+		navOrgs: string;
+		navDrops: string;
 		navPayouts: string;
-		navDashboard: string;
+		navMembers: string;
+		navItems: string;
 		userStatus: string;
 		guest: string;
 		themeLight: string;
@@ -48,9 +51,12 @@ const {
 		closeNavigation: 'Close navigation',
 		navigation: 'Navigation',
 		navOverview: 'Overview',
-		navEvents: 'Event forms',
+		navMy: 'My pages',
+		navOrgs: 'Organizations',
+		navDrops: 'Drops',
 		navPayouts: 'Payouts',
-		navDashboard: 'Dashboard',
+		navMembers: 'Members',
+		navItems: 'Items',
 		userStatus: 'User status',
 		guest: 'Guest',
 		themeLight: 'Light',
@@ -61,9 +67,12 @@ const {
 
 const navItems = [
 	{ label: labels.navOverview, href: `/${lang}/` },
-	{ label: labels.navEvents, href: `/${lang}/#preview` },
-	{ label: labels.navPayouts, href: `/${lang}/#preview` },
-	{ label: labels.navDashboard, href: `/${lang}/#naming` },
+	{ label: labels.navMy, href: `/${lang}/me` },
+	{ label: labels.navOrgs, href: `/${lang}/orgs` },
+	{ label: labels.navDrops, href: `/${lang}/drops` },
+	{ label: labels.navPayouts, href: `/${lang}/payouts` },
+	{ label: labels.navMembers, href: `/${lang}/members` },
+	{ label: labels.navItems, href: `/${lang}/items` },
 ];
 ---
 

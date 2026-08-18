@@ -1,0 +1,17 @@
+---
+interface Props {
+	label: string;
+	missing: string;
+	prefix: string;
+	orgSlug?: string | null;
+}
+
+const { label, missing, prefix, orgSlug } = Astro.props;
+---
+
+<section class="query-notice">
+	<p class="query-notice-label">{label}</p>
+	<p class="query-notice-value">
+		{orgSlug ? `${prefix} ${orgSlug}` : missing}
+	</p>
+</section>

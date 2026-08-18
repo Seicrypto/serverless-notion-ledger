@@ -43,14 +43,16 @@ const options = Object.entries(langDisplayMap) as [LangKey, string][];
 
 <script is:inline>
 	const initLangSwitcher = () => {
-		const buildPath = (currentPath, lang) => {
-			const segments = currentPath.split('/');
-			if (segments.length > 1) {
-				segments[1] = lang;
-			}
+	const buildPath = (currentPath, lang) => {
+		const url = new URL(currentPath, window.location.origin);
+		const segments = url.pathname.split('/');
+		if (segments.length > 1) {
+			segments[1] = lang;
+		}
 
-			const nextPath = segments.join('/');
-			return nextPath.endsWith('/') ? nextPath : `${nextPath}/`;
+		const nextPath = segments.join('/');
+		url.pathname = nextPath.endsWith('/') ? nextPath : `${nextPath}/`;
+		return `${url.pathname}${url.search}${url.hash}`;
 		};
 
 		const closeLangMenus = () => {

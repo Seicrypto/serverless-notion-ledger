@@ -1,0 +1,45 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import AppPage from '../../components/AppPage.astro';
+import QueryOrgNotice from '../../components/QueryOrgNotice.astro';
+import '../../styles/app-pages.css';
+import '../../styles/query-notice.css';
+import { getI18n, getLangFromUrl } from '../../libs/i18n';
+import { buildLayoutLabels } from '../../libs/i18n/layoutLabels';
+export { getStaticPaths } from '../../libs/static/staticPaths';
+
+const lang = getLangFromUrl(Astro.url);
+const t = getI18n(lang);
+const orgSlug = Astro.url.searchParams.get('org');
+---
+
+<Layout
+	title={`${t.app.drops_title} | ${t.common.product_name}`}
+	description={t.app.drops_intro}
+	productName={t.common.product_name}
+	lang={lang}
+	currentPath={`${Astro.url.pathname}${Astro.url.search}`}
+	labels={buildLayoutLabels(t)}
+>
+	<AppPage
+		eyebrow={t.common.nav_drops}
+		title={t.app.drops_title}
+		intro={t.app.drops_intro}
+		statusLabel={t.common.user_status}
+		statusValue={t.app.drops_status}
+		primaryLink={{ label: t.app.action_pick_org, href: `/${lang}/orgs` }}
+		secondaryLink={{ label: t.app.action_view_me, href: `/${lang}/me/drops` }}
+		cards={[
+			{ label: t.app.card_scope_label, title: t.app.card_scope_title, body: t.app.card_scope_body },
+			{ label: t.app.card_data_label, title: t.app.card_data_title, body: t.app.card_data_body },
+			{ label: t.app.card_next_label, title: t.app.card_next_title, body: t.app.card_next_body },
+		]}
+	/>
+
+	<QueryOrgNotice
+		label={t.app.query_org_label}
+		missing={t.app.query_org_missing}
+		prefix={t.app.query_org_prefix}
+		orgSlug={orgSlug}
+	/>
+</Layout>

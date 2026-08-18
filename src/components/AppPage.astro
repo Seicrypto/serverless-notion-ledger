@@ -1,0 +1,72 @@
+---
+interface LinkItem {
+	label: string;
+	href: string;
+}
+
+interface InfoCard {
+	label: string;
+	title: string;
+	body: string;
+}
+
+interface Props {
+	eyebrow: string;
+	title: string;
+	intro: string;
+	statusLabel: string;
+	statusValue: string;
+	primaryLink?: LinkItem;
+	secondaryLink?: LinkItem;
+	cards: InfoCard[];
+}
+
+const {
+	eyebrow,
+	title,
+	intro,
+	statusLabel,
+	statusValue,
+	primaryLink,
+	secondaryLink,
+	cards,
+} = Astro.props;
+---
+
+<section class="app-hero">
+	<div class="app-hero-copy">
+		<p class="app-eyebrow">{eyebrow}</p>
+		<h1>{title}</h1>
+		<p class="app-intro">{intro}</p>
+
+		{(primaryLink || secondaryLink) && (
+			<div class="app-actions">
+				{primaryLink && (
+					<a class="app-action-primary" href={primaryLink.href}>
+						{primaryLink.label}
+					</a>
+				)}
+				{secondaryLink && (
+					<a class="app-action-secondary" href={secondaryLink.href}>
+						{secondaryLink.label}
+					</a>
+				)}
+			</div>
+		)}
+	</div>
+
+	<div class="app-status-card">
+		<p class="app-status-label">{statusLabel}</p>
+		<p class="app-status-value">{statusValue}</p>
+	</div>
+</section>
+
+<section class="app-card-grid">
+	{cards.map((card) => (
+		<article class="app-info-card">
+			<p class="app-card-label">{card.label}</p>
+			<h2>{card.title}</h2>
+			<p>{card.body}</p>
+		</article>
+	))}
+</section>
