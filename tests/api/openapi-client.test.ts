@@ -8,22 +8,21 @@ test('OpenApiClient binds the global fetch implementation before invoking it', a
 	const originalResponse = globalThis.Response;
 
 	const observedThisValues: unknown[] = [];
+	const observedUrls: string[] = [];
 
 	try {
-		const expectedContext = {
-			name: 'fetch-context',
-			async fetch() {
-				observedThisValues.push(this);
-				return new originalResponse(JSON.stringify({ status: 'ok' }), {
-					status: 200,
-					headers: {
-						'content-type': 'application/json',
-					},
-				});
-			},
-		};
+		async function fetchStub(this: typeof globalThis, input: RequestInfo | URL) {
+			observedThisValues.push(this);
+			observedUrls.push(String(input));
+			return new originalResponse(JSON.stringify({ status: 'ok' }), {
+				status: 200,
+				headers: {
+					'content-type': 'application/json',
+				},
+			});
+		}
 
-		globalThis.fetch = expectedContext.fetch as typeof fetch;
+		globalThis.fetch = fetchStub as typeof fetch;
 
 		const client = new OpenApiClient({
 			baseUrl: 'https://example.com',
@@ -32,7 +31,8 @@ test('OpenApiClient binds the global fetch implementation before invoking it', a
 		const response = await client.getHealthz();
 
 		assert.deepEqual(response, { status: 'ok' });
-		assert.equal(observedThisValues[0], expectedContext);
+		assert.equal(observedUrls[0], 'https://example.com/healthz');
+		assert.equal(observedThisValues[0], globalThis);
 	} finally {
 		globalThis.fetch = originalFetch;
 	}
