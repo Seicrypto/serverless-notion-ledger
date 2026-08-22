@@ -118,11 +118,7 @@ export class OpenApiClient {
 
 	constructor(config: ClientConfig) {
 		this.baseUrl = config.baseUrl;
-		const configuredFetcher = config.fetch ?? globalThis.fetch;
-		this.fetcher =
-			configuredFetcher === globalThis.fetch
-				? globalThis.fetch.bind(globalThis)
-				: configuredFetcher;
+		this.fetcher = config.fetch ?? globalThis.fetch.bind(globalThis);
 		this.getHeaders = config.getHeaders;
 	}
 
