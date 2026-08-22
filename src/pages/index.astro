@@ -1,0 +1,50 @@
+---
+import { langKeys } from '../libs/i18n/context/langKeys';
+
+const fallbackLang = 'en';
+const fallbackURL = `/${fallbackLang}/`;
+---
+
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<title>Redirecting...</title>
+		<meta name="robots" content="noindex" />
+		<link rel="alternate" hreflang="en" href="/en/" />
+		<link rel="alternate" hreflang="ja" href="/ja/" />
+		<link rel="alternate" hreflang="zh-Hant" href="/zh-tw/" />
+		<link rel="alternate" hreflang="x-default" href={fallbackURL} />
+		<meta http-equiv="refresh" content={`0; url=${fallbackURL}`} />
+		<script is:inline>
+			(() => {
+				const browserLocales = Array.isArray(navigator.languages) && navigator.languages.length > 0
+					? navigator.languages
+					: [navigator.language];
+
+				const resolveLang = (locale) => {
+					if (!locale) return null;
+					const normalized = locale.toLowerCase();
+					if (normalized === 'zh-tw' || normalized === 'zh-hant' || normalized.startsWith('zh-tw') || normalized.startsWith('zh-hant')) {
+						return 'zh-tw';
+					}
+					if (normalized === 'ja' || normalized.startsWith('ja-')) {
+						return 'ja';
+					}
+					if (normalized === 'en' || normalized.startsWith('en-')) {
+						return 'en';
+					}
+					return null;
+				};
+
+				const matched = browserLocales
+					.map(resolveLang)
+					.find((lang) => lang && ['zh-tw', 'ja', 'en'].includes(lang));
+				window.location.replace(`/${matched || 'en'}/`);
+			})();
+		</script>
+	</head>
+	<body>
+		<p>If you're not redirected automatically, <a href={fallbackURL}>click here</a>.</p>
+	</body>
+</html>

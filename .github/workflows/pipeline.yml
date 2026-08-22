@@ -1,0 +1,52 @@
+name: Pipeline
+
+on:
+  workflow_call:
+  pull_request:
+  push:
+    branches:
+      - dev
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  tests:
+    name: Run Tests
+    uses: ./.github/workflows/tests.yml
+    secrets: inherit
+
+  verify-api-artifact:
+    name: Verify API Artifact
+    uses: ./.github/workflows/verify-api-artifact.yml
+    secrets: inherit
+
+  summarize:
+    name: Summarize Checks
+    runs-on: ubuntu-latest
+    if: always()
+    needs:
+      - tests
+      - verify-api-artifact
+
+    steps:
+      - name: Summarize workflow results
+        run: |
+          failures=""
+
+          if [ "${{ needs.tests.result }}" != "success" ]; then
+            failures="${failures}\n- tests.yml failed"
+          fi
+
+          if [ "${{ needs.verify-api-artifact.result }}" != "success" ]; then
+            failures="${failures}\n- verify-api-artifact.yml failed"
+          fi
+
+          if [ -n "$failures" ]; then
+            printf 'One or more pre-deploy checks failed:%b\n' "$failures" | tee -a "$GITHUB_STEP_SUMMARY"
+            exit 1
+          fi
+
+          echo "All pre-deploy checks passed." | tee -a "$GITHUB_STEP_SUMMARY"

@@ -1,0 +1,28 @@
+.query-notice {
+	width: min(var(--content-width), 100%);
+	margin: 20px auto 0;
+	padding: 18px 22px;
+	border-radius: var(--radius-md);
+	border: 1px solid color-mix(in srgb, var(--accent) 16%, var(--line));
+	background: color-mix(in srgb, var(--surface-soft) 82%, white);
+	box-shadow: var(--shadow);
+}
+
+.query-notice-label,
+.query-notice-value {
+	margin: 0;
+}
+
+.query-notice-label {
+	font-size: 0.8rem;
+	font-weight: 700;
+	letter-spacing: 0.12em;
+	text-transform: uppercase;
+	color: color-mix(in srgb, var(--accent) 68%, var(--text-soft));
+}
+
+.query-notice-value {
+	margin-top: 10px;
+	line-height: 1.7;
+	color: var(--text-soft);
+}

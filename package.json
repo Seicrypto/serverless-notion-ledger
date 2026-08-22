@@ -1,0 +1,23 @@
+{
+  "name": "notion-ledger",
+  "type": "module",
+  "version": "0.0.1",
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "astro": "astro",
+    "test": "npm run test:all",
+    "test:all": "npm run test:api",
+    "generate:openapi": "node ./scripts/generate-openapi.mjs",
+    "sync:openapi": "node ./scripts/sync-openapi.mjs",
+    "verify:openapi": "node ./scripts/verify-openapi.mjs",
+    "test:api": "node --test --experimental-strip-types ./tests/api/**/*.test.ts"
+  },
+  "dependencies": {
+    "astro": "^7.2.2"
+  }
+}

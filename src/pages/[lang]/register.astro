@@ -1,0 +1,143 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import '../../styles/auth.css';
+import { getI18n, getLangFromUrl } from '../../libs/i18n';
+import { buildLayoutLabels } from '../../libs/i18n/layoutLabels';
+export { getStaticPaths } from '../../libs/static/staticPaths';
+
+const lang = getLangFromUrl(Astro.url);
+const t = getI18n(lang);
+---
+
+<Layout
+	title={`${t.app.register_title} | ${t.common.product_name}`}
+	description={t.app.register_intro}
+	productName={t.common.product_name}
+	lang={lang}
+	currentPath={`${Astro.url.pathname}${Astro.url.search}`}
+	labels={buildLayoutLabels(t)}
+>
+	<section
+		class="auth-shell"
+		data-register-page
+		data-success-message={t.app.auth_register_success}
+		data-error-message={t.app.auth_error_fallback}
+		data-pending-message={t.app.auth_pending}
+	>
+		<article class="auth-panel">
+			<p class="auth-kicker">{t.common.register}</p>
+			<h1>{t.app.register_title}</h1>
+			<p class="auth-intro">{t.app.register_intro}</p>
+
+			<form class="auth-form" data-register-form>
+				<label class="auth-field">
+					<span class="auth-field-label">{t.app.auth_display_name_label}</span>
+					<input class="auth-input" type="text" name="displayName" maxlength="50" />
+				</label>
+				<label class="auth-field">
+					<span class="auth-field-label">{t.app.auth_email_label}</span>
+					<input class="auth-input" type="email" name="email" autocomplete="email" required />
+				</label>
+				<label class="auth-field">
+					<span class="auth-field-label">{t.app.auth_password_label}</span>
+					<input
+						class="auth-input"
+						type="password"
+						name="password"
+						autocomplete="new-password"
+						minlength="8"
+						required
+					/>
+				</label>
+				<div class="auth-actions">
+					<button class="auth-submit" type="submit" data-submit-button>
+						{t.app.auth_submit_register}
+					</button>
+					<a class="auth-link-button" href={`/${lang}/login`}>{t.common.login}</a>
+				</div>
+			</form>
+
+			<div class="auth-status" data-state="idle" data-auth-status>
+				<p class="auth-status-label">{t.app.auth_status_label}</p>
+				<p class="auth-status-text" data-auth-status-text></p>
+			</div>
+		</article>
+
+		<aside class="auth-side-card">
+			<p class="auth-side-kicker">{t.app.auth_register_note_title}</p>
+			<h2>{t.app.auth_register_hint}</h2>
+			<p>{t.app.auth_register_note_body}</p>
+			<ul class="auth-side-list">
+				<li>{t.app.auth_register_note_item_one}</li>
+				<li>{t.app.auth_register_note_item_two}</li>
+				<li>{t.app.auth_register_note_item_three}</li>
+			</ul>
+		</aside>
+	</section>
+
+	<script>
+		import { getApiAdapter } from '../../libs/api/adapters/api.adapter.ts';
+		import { getErrorMessage } from '../../libs/api/auth/session.ts';
+
+		const initRegisterPage = () => {
+			const page = document.querySelector('[data-register-page]');
+			const form = document.querySelector('[data-register-form]');
+			const submitButton = document.querySelector('[data-submit-button]');
+			const status = document.querySelector('[data-auth-status]');
+			const statusText = document.querySelector('[data-auth-status-text]');
+
+			if (
+				!(page instanceof HTMLElement) ||
+				!(form instanceof HTMLFormElement) ||
+				!(submitButton instanceof HTMLButtonElement) ||
+				!(status instanceof HTMLElement) ||
+				!(statusText instanceof HTMLElement)
+			) {
+				return;
+			}
+
+			const pendingMessage = page.dataset.pendingMessage || 'Submitting request';
+			const successMessage = page.dataset.successMessage || 'Registration submitted.';
+			const errorMessage = page.dataset.errorMessage || 'Request failed.';
+			const idleLabel = submitButton.textContent || 'Submit registration';
+
+			const setStatus = (state, message) => {
+				status.dataset.state = state;
+				statusText.textContent = message;
+			};
+
+			const setPending = (pending) => {
+				submitButton.disabled = pending;
+				submitButton.textContent = pending ? pendingMessage : idleLabel;
+			};
+
+			form.addEventListener('submit', async (event) => {
+				event.preventDefault();
+				const formData = new FormData(form);
+
+				setPending(true);
+				setStatus('pending', pendingMessage);
+
+				try {
+					const response = await getApiAdapter().register({
+						displayName: String(formData.get('displayName') || '').trim() || undefined,
+						email: String(formData.get('email') || ''),
+						password: String(formData.get('password') || ''),
+					});
+					form.reset();
+					setStatus('success', response.message || successMessage);
+				} catch (error) {
+					setStatus('error', getErrorMessage(error, errorMessage));
+				} finally {
+					setPending(false);
+				}
+			});
+		};
+
+		if (document.readyState === 'loading') {
+			document.addEventListener('DOMContentLoaded', initRegisterPage, { once: true });
+		} else {
+			initRegisterPage();
+		}
+	</script>
+</Layout>

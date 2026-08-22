@@ -1,0 +1,177 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import '../../styles/auth.css';
+import { getI18n, getLangFromUrl } from '../../libs/i18n';
+import { buildLayoutLabels } from '../../libs/i18n/layoutLabels';
+export { getStaticPaths } from '../../libs/static/staticPaths';
+
+const lang = getLangFromUrl(Astro.url);
+const t = getI18n(lang);
+---
+
+<Layout
+	title={`${t.app.login_title} | ${t.common.product_name}`}
+	description={t.app.login_intro}
+	productName={t.common.product_name}
+	lang={lang}
+	currentPath={`${Astro.url.pathname}${Astro.url.search}`}
+	labels={buildLayoutLabels(t)}
+>
+	<section
+		class="auth-shell"
+		data-login-page
+		data-guest-label={t.common.guest}
+		data-success-message={t.app.auth_login_success}
+		data-error-message={t.app.auth_error_fallback}
+		data-pending-message={t.app.auth_pending}
+		data-redirect-url={`/${lang}/me`}
+		data-register-url={`/${lang}/register`}
+	>
+		<article class="auth-panel">
+			<p class="auth-kicker">{t.common.login}</p>
+			<h1>{t.app.login_title}</h1>
+			<p class="auth-intro">{t.app.login_intro}</p>
+
+			<form class="auth-form" data-login-form>
+				<label class="auth-field">
+					<span class="auth-field-label">{t.app.auth_email_label}</span>
+					<input class="auth-input" type="email" name="email" autocomplete="email" required />
+				</label>
+				<label class="auth-field">
+					<span class="auth-field-label">{t.app.auth_password_label}</span>
+					<input
+						class="auth-input"
+						type="password"
+						name="password"
+						autocomplete="current-password"
+						minlength="8"
+						required
+					/>
+				</label>
+				<div class="auth-actions">
+					<button class="auth-submit" type="submit" data-submit-button>
+						{t.app.auth_submit_login}
+					</button>
+					<button class="auth-secondary-button" type="button" data-open-register-modal>
+						{t.app.auth_open_register}
+					</button>
+				</div>
+			</form>
+
+			<div class="auth-status" data-state="idle" data-auth-status>
+				<p class="auth-status-label">{t.app.auth_status_label}</p>
+				<p class="auth-status-text" data-auth-status-text></p>
+			</div>
+		</article>
+
+		<aside class="auth-side-card">
+			<p class="auth-side-kicker">{t.app.auth_register_note_title}</p>
+			<h2>{t.app.auth_register_hint}</h2>
+			<p>{t.app.auth_register_note_body}</p>
+			<ul class="auth-side-list">
+				<li>{t.app.auth_register_note_item_one}</li>
+				<li>{t.app.auth_register_note_item_two}</li>
+				<li>{t.app.auth_register_note_item_three}</li>
+			</ul>
+		</aside>
+	</section>
+
+	<dialog class="auth-dialog" data-register-dialog>
+		<div class="auth-modal-card">
+			<p class="auth-side-kicker">{t.common.register}</p>
+			<h2>{t.app.auth_confirm_register_title}</h2>
+			<p class="auth-inline-note">{t.app.auth_confirm_register_body}</p>
+			<div class="auth-modal-actions">
+				<button class="auth-secondary-button" type="button" data-close-register-dialog>
+					{t.app.auth_confirm_register_cancel}
+				</button>
+				<a class="auth-submit" href={`/${lang}/register`} data-confirm-register-link>
+					{t.app.auth_confirm_register_accept}
+				</a>
+			</div>
+		</div>
+	</dialog>
+
+	<script>
+		import { getApiAdapter } from '../../libs/api/adapters/api.adapter.ts';
+		import { getErrorMessage, refreshAuthSession } from '../../libs/api/auth/session.ts';
+
+		const initLoginPage = () => {
+			const page = document.querySelector('[data-login-page]');
+			const form = document.querySelector('[data-login-form]');
+			const submitButton = document.querySelector('[data-submit-button]');
+			const status = document.querySelector('[data-auth-status]');
+			const statusText = document.querySelector('[data-auth-status-text]');
+			const dialog = document.querySelector('[data-register-dialog]');
+			const openModalButton = document.querySelector('[data-open-register-modal]');
+			const closeModalButton = document.querySelector('[data-close-register-dialog]');
+
+			if (
+				!(page instanceof HTMLElement) ||
+				!(form instanceof HTMLFormElement) ||
+				!(submitButton instanceof HTMLButtonElement) ||
+				!(status instanceof HTMLElement) ||
+				!(statusText instanceof HTMLElement) ||
+				!(dialog instanceof HTMLDialogElement) ||
+				!(openModalButton instanceof HTMLButtonElement) ||
+				!(closeModalButton instanceof HTMLButtonElement)
+			) {
+				return;
+			}
+
+			const guestLabel = page.dataset.guestLabel || 'Guest';
+			const pendingMessage = page.dataset.pendingMessage || 'Submitting request';
+			const successMessage = page.dataset.successMessage || 'Login succeeded.';
+			const errorMessage = page.dataset.errorMessage || 'Request failed.';
+			const redirectUrl = page.dataset.redirectUrl || '/';
+			const idleLabel = submitButton.textContent || 'Login';
+
+			const setStatus = (state, message) => {
+				status.dataset.state = state;
+				statusText.textContent = message;
+			};
+
+			const setPending = (pending) => {
+				submitButton.disabled = pending;
+				submitButton.textContent = pending ? pendingMessage : idleLabel;
+			};
+
+			openModalButton.addEventListener('click', () => dialog.showModal());
+			closeModalButton.addEventListener('click', () => dialog.close());
+			dialog.addEventListener('click', (event) => {
+				const target = event.target;
+				if (target === dialog) {
+					dialog.close();
+				}
+			});
+
+			form.addEventListener('submit', async (event) => {
+				event.preventDefault();
+				const formData = new FormData(form);
+
+				setPending(true);
+				setStatus('pending', pendingMessage);
+
+				try {
+					await getApiAdapter().login({
+						email: String(formData.get('email') || ''),
+						password: String(formData.get('password') || ''),
+					});
+					await refreshAuthSession(guestLabel);
+					setStatus('success', successMessage);
+					window.location.href = redirectUrl;
+				} catch (error) {
+					setStatus('error', getErrorMessage(error, errorMessage));
+				} finally {
+					setPending(false);
+				}
+			});
+		};
+
+		if (document.readyState === 'loading') {
+			document.addEventListener('DOMContentLoaded', initLoginPage, { once: true });
+		} else {
+			initLoginPage();
+		}
+	</script>
+</Layout>
