@@ -35,11 +35,11 @@ Set these in `Settings -> Secrets and variables -> Actions -> Variables`:
 - `PUBLIC_API_BASE_URL`
   Public base URL for the API used during the frontend build.
 - `API_REPO`
-  Full repository name of the API project, for example `your-org/your-api-repo`.
+  Full repository name of the API project, for example `Seicrypto/serverless-notion-ledger-api`.
 - `API_WORKFLOW`
-  Workflow filename in the API repository that uploads the OpenAPI artifact, for example `upload-openapi-artifact.yml`.
+  Top-level workflow filename in the API repository whose run actually owns the uploaded artifact. If the upload job is invoked by a reusable workflow, this should point to the caller workflow such as `pipeline.yml`, not the nested reusable workflow filename.
 - `API_ARTIFACT_NAME`
-  Artifact name published by the API repository workflow.
+  Artifact name published by the API repository workflow, for example `openapi-json`.
 - `API_ARTIFACT_FILE`
   File name inside the downloaded artifact bundle, usually `openapi.json`.
 

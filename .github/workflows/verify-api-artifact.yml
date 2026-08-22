@@ -10,9 +10,9 @@ permissions:
 env:
   NODE_VERSION: '22.12.0'
   OPENAPI_LOCAL_PATH: src/libs/api/openapi/openapi.json
-  API_REPO: ${{ vars.API_REPO || 'your-org/your-api-repo' }}
-  API_WORKFLOW: ${{ vars.API_WORKFLOW || 'upload-openapi-artifact.yml' }}
-  API_ARTIFACT_NAME: ${{ vars.API_ARTIFACT_NAME || 'openapi-artifact' }}
+  API_REPO: ${{ vars.API_REPO || 'Seicrypto/serverless-notion-ledger-api' }}
+  API_WORKFLOW: ${{ vars.API_WORKFLOW || 'pipeline.yml' }}
+  API_ARTIFACT_NAME: ${{ vars.API_ARTIFACT_NAME || 'openapi-json' }}
   API_ARTIFACT_FILE: ${{ vars.API_ARTIFACT_FILE || 'openapi.json' }}
 
 jobs:
