@@ -2,11 +2,6 @@ name: Verify API Artifact
 
 on:
   workflow_call:
-  pull_request:
-  push:
-    branches:
-      - dev
-      - main
   workflow_dispatch:
 
 permissions:

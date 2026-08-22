@@ -17,13 +17,11 @@ jobs:
     name: Run Tests
     uses: ./.github/workflows/tests.yml
     secrets: inherit
-    continue-on-error: true
 
   verify-api-artifact:
     name: Verify API Artifact
     uses: ./.github/workflows/verify-api-artifact.yml
     secrets: inherit
-    continue-on-error: true
 
   summarize:
     name: Summarize Checks

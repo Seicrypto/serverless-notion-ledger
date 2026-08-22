@@ -7,11 +7,11 @@ This project includes GitHub Actions workflows for test execution, OpenAPI artif
 ### Workflows
 
 - `.github/workflows/tests.yml`
-  Runs the current test suite with `npm test`.
+  Reusable/manual workflow that runs the current test suite with `npm test`.
 - `.github/workflows/verify-api-artifact.yml`
-  Downloads the latest `openapi.json` artifact from the API repository, regenerates local OpenAPI artifacts, and runs API adapter verification tests.
+  Reusable/manual workflow that downloads the latest `openapi.json` artifact from the API repository, regenerates local OpenAPI artifacts, and runs API adapter verification tests.
 - `.github/workflows/pipeline.yml`
-  Runs both `tests.yml` and `verify-api-artifact.yml`, then summarizes all failures together before failing the pipeline.
+  Main CI workflow for pushes and pull requests. It runs both `tests.yml` and `verify-api-artifact.yml`, then summarizes all failures together before failing the pipeline.
 - `.github/workflows/deploy.yml`
   Manual deployment workflow for Cloudflare Pages. It runs the full pipeline first, then builds and deploys `dist/`.
 
