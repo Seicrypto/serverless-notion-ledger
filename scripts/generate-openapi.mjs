@@ -318,7 +318,7 @@ export class OpenApiClient {
 
 \tconstructor(config: ClientConfig) {
 \t\tthis.baseUrl = config.baseUrl;
-\t\tthis.fetcher = config.fetch ?? fetch;
+\t\tthis.fetcher = config.fetch ?? globalThis.fetch.bind(globalThis);
 \t\tthis.getHeaders = config.getHeaders;
 \t}
 

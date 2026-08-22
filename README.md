@@ -30,8 +30,6 @@ Set these in `Settings -> Secrets and variables -> Actions -> Secrets`:
 
 Set these in `Settings -> Secrets and variables -> Actions -> Variables`:
 
-- `CLOUDFLARE_PAGES_PROJECT_NAME`
-  Cloudflare Pages project name used by `deploy.yml`.
 - `PUBLIC_API_BASE_URL`
   Public base URL for the API used during the frontend build.
 - `API_REPO`
@@ -48,12 +46,12 @@ Set these in `Settings -> Secrets and variables -> Actions -> Variables`:
 The manual deploy workflow uses the official Wrangler GitHub Action and runs:
 
 ```bash
-pages deploy dist --project-name=$CLOUDFLARE_PAGES_PROJECT_NAME
+pages deploy dist --project-name=raid-ledger
 ```
 
 Before using `deploy.yml`, make sure:
 
-1. The Cloudflare Pages project already exists.
+1. The Cloudflare Pages project `raid-ledger` already exists.
 2. `npm run build` succeeds locally or in CI.
 3. `PUBLIC_API_BASE_URL` points to the correct environment API.
 
