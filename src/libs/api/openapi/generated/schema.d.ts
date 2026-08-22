@@ -17,6 +17,8 @@ export type LoginRequest = { "email": string; "password": string; };
 
 export type LogoutResponse = { "message": string; };
 
+export type AuthMeResponse = { "user": { "displayName": string | unknown; "email": string; "emailVerifiedAt": string | unknown; "id": number; "isStaff": boolean; "staffRole": "admin" | "staff" | null; "status": "pending_verification" | "pending_approval" | "active" | "disabled"; }; };
+
 export type VerifyEmailResponse = { "email": string; "message": string; "status": "pending_approval" | "active"; "userId": number; };
 
 export type ForgotPasswordResponse = { "message": string; };

@@ -5,6 +5,7 @@ export interface ApiClientLike {
 	getHealthz: OpenApiClient['getHealthz'];
 	postAuthRegister: OpenApiClient['postAuthRegister'];
 	postAuthLogin: OpenApiClient['postAuthLogin'];
+	getAuthMe: OpenApiClient['getAuthMe'];
 	postAuthLogout: OpenApiClient['postAuthLogout'];
 	getAuthVerifyEmail: OpenApiClient['getAuthVerifyEmail'];
 	postAuthForgotPassword: OpenApiClient['postAuthForgotPassword'];

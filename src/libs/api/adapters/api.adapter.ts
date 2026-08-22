@@ -31,6 +31,10 @@ export class ApiAdapter {
 		return this.client.postAuthLogin({ body: payload });
 	}
 
+	getCurrentUser() {
+		return this.client.getAuthMe();
+	}
+
 	logout() {
 		return this.client.postAuthLogout();
 	}

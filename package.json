@@ -10,6 +10,8 @@
     "build": "astro build",
     "preview": "astro preview",
     "astro": "astro",
+    "test": "npm run test:all",
+    "test:all": "npm run test:api",
     "generate:openapi": "node ./scripts/generate-openapi.mjs",
     "sync:openapi": "node ./scripts/sync-openapi.mjs",
     "verify:openapi": "node ./scripts/verify-openapi.mjs",

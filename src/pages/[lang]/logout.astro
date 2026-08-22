@@ -1,7 +1,6 @@
 ---
 import Layout from '../../layouts/Layout.astro';
-import AppPage from '../../components/AppPage.astro';
-import '../../styles/app-pages.css';
+import '../../styles/auth.css';
 import { getI18n, getLangFromUrl } from '../../libs/i18n';
 import { buildLayoutLabels } from '../../libs/i18n/layoutLabels';
 export { getStaticPaths } from '../../libs/static/staticPaths';
@@ -18,18 +17,103 @@ const t = getI18n(lang);
 	currentPath={`${Astro.url.pathname}${Astro.url.search}`}
 	labels={buildLayoutLabels(t)}
 >
-	<AppPage
-		eyebrow={t.common.logout}
-		title={t.app.logout_title}
-		intro={t.app.logout_intro}
-		statusLabel={t.common.user_status}
-		statusValue={t.app.logout_status}
-		primaryLink={{ label: t.app.action_login, href: `/${lang}/login` }}
-		secondaryLink={{ label: t.app.action_back_home, href: `/${lang}/` }}
-		cards={[
-			{ label: t.app.card_scope_label, title: t.app.card_scope_title, body: t.app.card_scope_body },
-			{ label: t.app.card_data_label, title: t.app.card_data_title, body: t.app.card_data_body },
-			{ label: t.app.card_next_label, title: t.app.card_next_title, body: t.app.card_next_body },
-		]}
-	/>
+	<section
+		class="auth-shell"
+		data-logout-page
+		data-guest-label={t.common.guest}
+		data-success-message={t.app.auth_logout_success}
+		data-error-message={t.app.auth_error_fallback}
+		data-pending-message={t.app.auth_pending}
+	>
+		<article class="auth-panel">
+			<p class="auth-kicker">{t.common.logout}</p>
+			<h1>{t.app.logout_title}</h1>
+			<p class="auth-intro">{t.app.logout_intro}</p>
+			<div class="auth-actions">
+				<button class="auth-submit" type="button" data-logout-button>
+					{t.common.logout}
+				</button>
+				<a class="auth-link-button" href={`/${lang}/login`}>{t.common.login}</a>
+			</div>
+
+			<div class="auth-status" data-state="pending" data-auth-status>
+				<p class="auth-status-label">{t.app.auth_status_label}</p>
+				<p class="auth-status-text" data-auth-status-text>{t.app.auth_pending}</p>
+			</div>
+		</article>
+
+		<aside class="auth-side-card">
+			<p class="auth-side-kicker">{t.common.profile}</p>
+			<h2>{t.app.auth_go_profile}</h2>
+			<p>{t.app.auth_logout_success}</p>
+			<div class="auth-actions">
+				<a class="auth-link-button" href={`/${lang}/me`}>{t.app.auth_go_profile}</a>
+				<a class="auth-link-button" href={`/${lang}/`}>{t.app.action_back_home}</a>
+			</div>
+		</aside>
+	</section>
+
+	<script>
+		import { getApiAdapter } from '../../libs/api/adapters/api.adapter.ts';
+		import { getErrorMessage, markGuestSession } from '../../libs/api/auth/session.ts';
+
+		const initLogoutPage = () => {
+			const page = document.querySelector('[data-logout-page]');
+			const button = document.querySelector('[data-logout-button]');
+			const status = document.querySelector('[data-auth-status]');
+			const statusText = document.querySelector('[data-auth-status-text]');
+
+			if (
+				!(page instanceof HTMLElement) ||
+				!(button instanceof HTMLButtonElement) ||
+				!(status instanceof HTMLElement) ||
+				!(statusText instanceof HTMLElement)
+			) {
+				return;
+			}
+
+			const guestLabel = page.dataset.guestLabel || 'Guest';
+			const pendingMessage = page.dataset.pendingMessage || 'Submitting request';
+			const successMessage = page.dataset.successMessage || 'Logged out.';
+			const errorMessage = page.dataset.errorMessage || 'Request failed.';
+			const idleLabel = button.textContent || 'Logout';
+
+			const setPending = (pending) => {
+				button.disabled = pending;
+				button.textContent = pending ? pendingMessage : idleLabel;
+			};
+
+			const setStatus = (state, message) => {
+				status.dataset.state = state;
+				statusText.textContent = message;
+			};
+
+			const runLogout = async () => {
+				setPending(true);
+				setStatus('pending', pendingMessage);
+				try {
+					await getApiAdapter().logout();
+					markGuestSession(guestLabel);
+					setStatus('success', successMessage);
+				} catch (error) {
+					markGuestSession(guestLabel);
+					setStatus('error', getErrorMessage(error, errorMessage));
+				} finally {
+					setPending(false);
+				}
+			};
+
+			button.addEventListener('click', () => {
+				void runLogout();
+			});
+
+			void runLogout();
+		};
+
+		if (document.readyState === 'loading') {
+			document.addEventListener('DOMContentLoaded', initLogoutPage, { once: true });
+		} else {
+			initLogoutPage();
+		}
+	</script>
 </Layout>

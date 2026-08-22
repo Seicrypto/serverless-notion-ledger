@@ -17,6 +17,10 @@ interface Props {
 		switchLanguage: string;
 		changeTheme: string;
 		login: string;
+		register: string;
+		logout: string;
+		profile: string;
+		loading: string;
 		home: string;
 		openNavigation: string;
 		closeNavigation: string;
@@ -46,6 +50,10 @@ const {
 		switchLanguage: 'Switch language',
 		changeTheme: 'Change color theme',
 		login: 'Login',
+		register: 'Register',
+		logout: 'Logout',
+		profile: 'Profile',
+		loading: 'Loading',
 		home: 'Home',
 		openNavigation: 'Open navigation',
 		closeNavigation: 'Close navigation',
@@ -112,6 +120,7 @@ const navItems = [
 				closeLabel={labels.closeNavigation}
 				statusLabel={labels.userStatus}
 				statusValue={labels.guest}
+				statusHref={`/${lang}/login`}
 			/>
 			<header class="site-header">
 				<div class="header-side">
@@ -140,7 +149,37 @@ const navItems = [
 						darkLabel={labels.themeDark}
 						systemLabel={labels.themeSystem}
 					/>
-					<a class="login-link" href={`/${lang}/login`}>{labels.login}</a>
+					<div
+						class="auth-controls"
+						data-auth-shell
+						data-login-href={`/${lang}/login`}
+						data-profile-href={`/${lang}/me`}
+						data-logout-href={`/${lang}/logout`}
+						data-guest-label={labels.guest}
+						data-loading-label={labels.loading}
+					>
+						<a class="login-link" href={`/${lang}/login`} data-auth-login-link>{labels.login}</a>
+						<div class="user-menu" hidden data-auth-menu-shell>
+							<button
+								class="user-menu-trigger"
+								type="button"
+								aria-expanded="false"
+								aria-haspopup="menu"
+								aria-label={labels.profile}
+								data-auth-menu-trigger
+							>
+								<span class="user-menu-name" data-auth-user-name>{labels.loading}</span>
+							</button>
+							<div class="user-menu-dropdown" role="menu" hidden data-auth-menu>
+								<a class="user-menu-link" href={`/${lang}/me`} role="menuitem" data-auth-profile-link>
+									{labels.profile}
+								</a>
+								<a class="user-menu-link" href={`/${lang}/logout`} role="menuitem" data-auth-logout-link>
+									{labels.logout}
+								</a>
+							</div>
+						</div>
+					</div>
 				</div>
 			</header>
 			<main>
@@ -196,6 +235,98 @@ const navItems = [
 					initSidebarNavigation();
 				}
 			})();
+		</script>
+		<script>
+			import {
+				ensureAuthSession,
+				isAuthenticatedSession,
+				subscribeAuthSession,
+			} from '../libs/api/auth/session.ts';
+
+			const initAuthChrome = async () => {
+				const authShell = document.querySelector('[data-auth-shell]');
+				const loginLink = document.querySelector('[data-auth-login-link]');
+				const menuShell = document.querySelector('[data-auth-menu-shell]');
+				const menuTrigger = document.querySelector('[data-auth-menu-trigger]');
+				const menu = document.querySelector('[data-auth-menu]');
+				const userName = document.querySelector('[data-auth-user-name]');
+				const sidebarStatusValue = document.querySelector('[data-sidebar-status-value]');
+				const sidebarStatusLink = document.querySelector('[data-sidebar-status-link]');
+
+				if (
+					!(authShell instanceof HTMLElement) ||
+					!(loginLink instanceof HTMLAnchorElement) ||
+					!(menuShell instanceof HTMLElement) ||
+					!(menuTrigger instanceof HTMLButtonElement) ||
+					!(menu instanceof HTMLElement) ||
+					!(userName instanceof HTMLElement) ||
+					!(sidebarStatusLink instanceof HTMLAnchorElement)
+				) {
+					return;
+				}
+
+				const guestLabel = authShell.dataset.guestLabel || 'Guest';
+				const loadingLabel = authShell.dataset.loadingLabel || 'Loading';
+				const loginHref = authShell.dataset.loginHref || '/';
+				const profileHref = authShell.dataset.profileHref || '/';
+				const closeMenu = () => {
+					menu.hidden = true;
+					menuTrigger.setAttribute('aria-expanded', 'false');
+				};
+
+				const render = (session) => {
+					const displayName = isAuthenticatedSession(session)
+						? session.user.displayName || session.user.email
+						: guestLabel;
+
+					userName.textContent = displayName;
+					if (sidebarStatusValue instanceof HTMLElement) {
+						sidebarStatusValue.textContent = displayName;
+					}
+
+					if (isAuthenticatedSession(session)) {
+						loginLink.hidden = true;
+						menuShell.hidden = false;
+						sidebarStatusLink.href = profileHref;
+					} else {
+						loginLink.hidden = false;
+						menuShell.hidden = true;
+						sidebarStatusLink.href = loginHref;
+						closeMenu();
+					}
+				};
+
+				userName.textContent = loadingLabel;
+				menuTrigger.addEventListener('click', () => {
+					const willOpen = menu.hidden;
+					closeMenu();
+					menu.hidden = !willOpen;
+					menuTrigger.setAttribute('aria-expanded', String(willOpen));
+				});
+
+				document.addEventListener('click', (event) => {
+					const target = event.target;
+					if (!(target instanceof Element) || target.closest('[data-auth-shell]')) {
+						return;
+					}
+					closeMenu();
+				});
+
+				window.addEventListener('keydown', (event) => {
+					if (event.key === 'Escape') {
+						closeMenu();
+					}
+				});
+
+				subscribeAuthSession(render);
+				render(await ensureAuthSession(guestLabel));
+			};
+
+			if (document.readyState === 'loading') {
+				document.addEventListener('DOMContentLoaded', initAuthChrome, { once: true });
+			} else {
+				initAuthChrome();
+			}
 		</script>
 	</body>
 </html>

@@ -9,6 +9,7 @@ import type {
 	LoginResponse,
 	LoginRequest,
 	LogoutResponse,
+	AuthMeResponse,
 	VerifyEmailResponse,
 	ForgotPasswordResponse,
 	ForgotPasswordRequest,
@@ -25,6 +26,7 @@ export const operationPaths = {
 	postAuthRegister: "/auth/register",
 	postAuthLogin: "/auth/login",
 	postAuthLogout: "/auth/logout",
+	getAuthMe: "/auth/me",
 	getAuthVerifyEmail: "/auth/verify-email",
 	postAuthForgotPassword: "/auth/forgot-password",
 	postAuthResetPassword: "/auth/reset-password",
@@ -44,6 +46,7 @@ export type ApiOperations = {
 	postAuthRegister: { body: RegisterRequest; response: RegisterResponse; };
 	postAuthLogin: { body: LoginRequest; response: LoginResponse; };
 	postAuthLogout: { response: LogoutResponse; };
+	getAuthMe: { response: AuthMeResponse; };
 	getAuthVerifyEmail: { query: { "key": string; "token": string; }; response: VerifyEmailResponse; };
 	postAuthForgotPassword: { body: ForgotPasswordRequest; response: ForgotPasswordResponse; };
 	postAuthResetPassword: { body: ResetPasswordRequest; response: ResetPasswordResponse; };
@@ -211,6 +214,22 @@ export class OpenApiClient {
 		return this.request<ApiOperations['postAuthLogout']['response']>({
 			method: "POST",
 			path: operationPaths.postAuthLogout,
+			pathParams: options.pathParams,
+			query: options.query,
+			headers: {
+				...options.headers,
+			},
+			body: undefined,
+		});
+	}
+
+	/**
+	 * GET /auth/me
+	 */
+	async getAuthMe(options: RequestOptions<ApiOperations['getAuthMe']> = {}): Promise<ApiOperations['getAuthMe']['response']> {
+		return this.request<ApiOperations['getAuthMe']['response']>({
+			method: "GET",
+			path: operationPaths.getAuthMe,
 			pathParams: options.pathParams,
 			query: options.query,
 			headers: {
