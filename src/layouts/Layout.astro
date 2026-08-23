@@ -144,6 +144,7 @@ const navItems = [
 					<div
 						class="auth-controls"
 						data-auth-shell
+						data-authenticated="false"
 						data-login-href={`/${lang}/login`}
 						data-profile-href={`/${lang}/me`}
 						data-logout-href={`/${lang}/logout`}
@@ -280,6 +281,7 @@ const navItems = [
 					}
 
 					if (isAuthenticatedSession(session)) {
+						authShell.dataset.authenticated = 'true';
 						loginLink.hidden = true;
 						loginLink.setAttribute('aria-hidden', 'true');
 						menuShell.hidden = false;
@@ -289,6 +291,7 @@ const navItems = [
 							sidebarStaffLink.href = officialHref;
 						}
 					} else {
+						authShell.dataset.authenticated = 'false';
 						loginLink.hidden = false;
 						loginLink.removeAttribute('aria-hidden');
 						menuShell.hidden = true;
