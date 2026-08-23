@@ -8,12 +8,15 @@ interface Props {
 	title: string;
 	items: NavItem[];
 	closeLabel: string;
+	officialLabel?: string;
+	officialHref?: string;
 	statusLabel: string;
 	statusValue: string;
 	statusHref: string;
 }
 
-const { title, items, closeLabel, statusLabel, statusValue, statusHref } = Astro.props;
+const { title, items, closeLabel, officialLabel, officialHref, statusLabel, statusValue, statusHref } =
+	Astro.props;
 ---
 
 <div class="sidebar-shell" data-sidebar-shell>
@@ -34,6 +37,12 @@ const { title, items, closeLabel, statusLabel, statusValue, statusHref } = Astro
 				</a>
 			))}
 		</nav>
+
+		{officialLabel && officialHref && (
+			<a class="sidebar-link sidebar-link-staff" href={officialHref} hidden data-sidebar-staff-link>
+				{officialLabel}
+			</a>
+		)}
 
 		<a class="sidebar-status" href={statusHref} data-sidebar-status-link>
 			<p class="sidebar-status-label">{statusLabel}</p>

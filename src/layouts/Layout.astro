@@ -28,10 +28,7 @@ interface Props {
 		navOverview: string;
 		navMy: string;
 		navOrgs: string;
-		navDrops: string;
-		navPayouts: string;
-		navMembers: string;
-		navItems: string;
+		officialDashboard: string;
 		userStatus: string;
 		guest: string;
 		themeLight: string;
@@ -61,10 +58,7 @@ const {
 		navOverview: 'Overview',
 		navMy: 'My pages',
 		navOrgs: 'Organizations',
-		navDrops: 'Drops',
-		navPayouts: 'Payouts',
-		navMembers: 'Members',
-		navItems: 'Items',
+		officialDashboard: 'Official dashboard',
 		userStatus: 'User status',
 		guest: 'Guest',
 		themeLight: 'Light',
@@ -77,10 +71,6 @@ const navItems = [
 	{ label: labels.navOverview, href: `/${lang}/` },
 	{ label: labels.navMy, href: `/${lang}/me` },
 	{ label: labels.navOrgs, href: `/${lang}/orgs` },
-	{ label: labels.navDrops, href: `/${lang}/drops` },
-	{ label: labels.navPayouts, href: `/${lang}/payouts` },
-	{ label: labels.navMembers, href: `/${lang}/members` },
-	{ label: labels.navItems, href: `/${lang}/items` },
 ];
 ---
 
@@ -118,6 +108,8 @@ const navItems = [
 				title={labels.navigation}
 				items={navItems}
 				closeLabel={labels.closeNavigation}
+				officialLabel={labels.officialDashboard}
+				officialHref={`/${lang}/official`}
 				statusLabel={labels.userStatus}
 				statusValue={labels.guest}
 				statusHref={`/${lang}/login`}
@@ -155,6 +147,7 @@ const navItems = [
 						data-login-href={`/${lang}/login`}
 						data-profile-href={`/${lang}/me`}
 						data-logout-href={`/${lang}/logout`}
+						data-official-href={`/${lang}/official`}
 						data-guest-label={labels.guest}
 						data-loading-label={labels.loading}
 					>
@@ -252,6 +245,7 @@ const navItems = [
 				const userName = document.querySelector('[data-auth-user-name]');
 				const sidebarStatusValue = document.querySelector('[data-sidebar-status-value]');
 				const sidebarStatusLink = document.querySelector('[data-sidebar-status-link]');
+				const sidebarStaffLink = document.querySelector('[data-sidebar-staff-link]');
 
 				if (
 					!(authShell instanceof HTMLElement) ||
@@ -269,6 +263,7 @@ const navItems = [
 				const loadingLabel = authShell.dataset.loadingLabel || 'Loading';
 				const loginHref = authShell.dataset.loginHref || '/';
 				const profileHref = authShell.dataset.profileHref || '/';
+				const officialHref = authShell.dataset.officialHref || '/';
 				const closeMenu = () => {
 					menu.hidden = true;
 					menuTrigger.setAttribute('aria-expanded', 'false');
@@ -286,12 +281,21 @@ const navItems = [
 
 					if (isAuthenticatedSession(session)) {
 						loginLink.hidden = true;
+						loginLink.setAttribute('aria-hidden', 'true');
 						menuShell.hidden = false;
 						sidebarStatusLink.href = profileHref;
+						if (sidebarStaffLink instanceof HTMLAnchorElement) {
+							sidebarStaffLink.hidden = !session.user.isStaff;
+							sidebarStaffLink.href = officialHref;
+						}
 					} else {
 						loginLink.hidden = false;
+						loginLink.removeAttribute('aria-hidden');
 						menuShell.hidden = true;
 						sidebarStatusLink.href = loginHref;
+						if (sidebarStaffLink instanceof HTMLAnchorElement) {
+							sidebarStaffLink.hidden = true;
+						}
 						closeMenu();
 					}
 				};
