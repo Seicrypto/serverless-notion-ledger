@@ -38,15 +38,17 @@ const { title, items, closeLabel, officialLabel, officialHref, statusLabel, stat
 			))}
 		</nav>
 
-		{officialLabel && officialHref && (
-			<a class="sidebar-link sidebar-link-staff" href={officialHref} hidden data-sidebar-staff-link>
-				{officialLabel}
-			</a>
-		)}
+		<div class="sidebar-footer">
+			{officialLabel && officialHref && (
+				<a class="sidebar-link sidebar-link-staff" href={officialHref} hidden data-sidebar-staff-link>
+					{officialLabel}
+				</a>
+			)}
 
-		<a class="sidebar-status" href={statusHref} data-sidebar-status-link>
-			<p class="sidebar-status-label">{statusLabel}</p>
-			<p class="sidebar-status-value" data-sidebar-status-value>{statusValue}</p>
-		</a>
+			<a class="sidebar-status" href={statusHref} data-sidebar-status-link>
+				<p class="sidebar-status-label">{statusLabel}</p>
+				<p class="sidebar-status-value" data-sidebar-status-value>{statusValue}</p>
+			</a>
+		</div>
 	</aside>
 </div>

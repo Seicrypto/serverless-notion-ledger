@@ -1,3 +1,7 @@
+[hidden] {
+	display: none !important;
+}
+
 .site-header {
 	width: min(var(--content-width), 100%);
 	margin: 0 auto;
@@ -36,6 +40,14 @@
 .auth-controls,
 .user-menu {
 	position: relative;
+}
+
+.auth-controls[data-authenticated='true'] .login-link {
+	display: none;
+}
+
+.auth-controls[data-authenticated='false'] .user-menu {
+	display: none;
 }
 
 .brand-link {
@@ -308,12 +320,19 @@
 	gap: 10px;
 }
 
-.sidebar-link-staff {
+.sidebar-footer {
 	margin-top: auto;
+	display: grid;
+	gap: 10px;
+}
+
+.sidebar-link-staff {
+	border-color: color-mix(in srgb, #f2c94c 38%, var(--line));
+	background: color-mix(in srgb, #ffe27a 30%, var(--surface-soft));
+	color: color-mix(in srgb, #6a4d00 84%, var(--text-main));
 }
 
 .sidebar-status {
-	margin-top: auto;
 	padding: 16px;
 	border-radius: 20px;
 	border: 1px solid color-mix(in srgb, var(--accent) 10%, var(--line));
@@ -358,6 +377,22 @@
 	transform: translateX(2px);
 	background: color-mix(in srgb, var(--accent) 10%, var(--surface-soft));
 	border-color: color-mix(in srgb, var(--accent) 22%, var(--line));
+}
+
+.sidebar-link-staff:hover {
+	background: color-mix(in srgb, #ffe27a 42%, var(--surface-soft));
+	border-color: color-mix(in srgb, #f2c94c 55%, var(--line));
+}
+
+:root[data-theme='dark'] .sidebar-link-staff {
+	border-color: color-mix(in srgb, #c6a231 44%, var(--line));
+	background: color-mix(in srgb, #8b6b16 26%, var(--surface-soft));
+	color: #f7df96;
+}
+
+:root[data-theme='dark'] .sidebar-link-staff:hover {
+	background: color-mix(in srgb, #8b6b16 38%, var(--surface-soft));
+	border-color: color-mix(in srgb, #d7b64f 62%, var(--line));
 }
 
 .lang-switcher {
