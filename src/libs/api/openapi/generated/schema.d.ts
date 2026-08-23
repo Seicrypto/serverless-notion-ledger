@@ -5,9 +5,9 @@ export type HealthResponse = { "appEnv": string; "ok": boolean; "service": strin
 
 export type RegisterResponse = { "email": string; "message": string; "requiresEmailVerification": boolean; "status": "pending_verification" | "pending_approval" | "active" | "disabled"; "userId": number; };
 
-export type ErrorResponse = { "error": string; };
+export type ErrorResponse = { "code": string; "error": string; "requestId": string; };
 
-export type ValidationErrorResponse = { "error": string; "issues": Array<string>; };
+export type ValidationErrorResponse = { "code": string; "error": string; "issues": Array<string>; "requestId": string; };
 
 export type RegisterRequest = { "displayName"?: string; "email": string; "password": string; };
 

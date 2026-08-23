@@ -19,9 +19,7 @@ export const common = {
 	close_navigation: '關閉導覽',
 	navigation: 'Navigation',
 	nav_overview: '首頁總覽',
-	nav_payouts: '分潤與結帳',
-	nav_members: '成員清單',
-	nav_items: '物品清單',
+	official_dashboard: '官方後台',
 	user_status: '使用者狀態',
 	guest: 'Guest',
 };

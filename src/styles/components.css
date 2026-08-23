@@ -308,6 +308,10 @@
 	gap: 10px;
 }
 
+.sidebar-link-staff {
+	margin-top: auto;
+}
+
 .sidebar-status {
 	margin-top: auto;
 	padding: 16px;

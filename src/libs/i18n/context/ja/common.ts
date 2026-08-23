@@ -19,9 +19,7 @@ export const common = {
 	close_navigation: 'ナビゲーションを閉じる',
 	navigation: 'Navigation',
 	nav_overview: '概要',
-	nav_payouts: '分配と精算',
-	nav_members: 'メンバー一覧',
-	nav_items: 'アイテム一覧',
+	official_dashboard: '公式ダッシュボード',
 	user_status: 'ユーザー状態',
 	guest: 'Guest',
 };

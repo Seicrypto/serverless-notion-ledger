@@ -19,9 +19,7 @@ export const common = {
 	close_navigation: 'Close navigation',
 	navigation: 'Navigation',
 	nav_overview: 'Overview',
-	nav_payouts: 'Payouts',
-	nav_members: 'Members',
-	nav_items: 'Items',
+	official_dashboard: 'Official dashboard',
 	user_status: 'User status',
 	guest: 'Guest',
 };
