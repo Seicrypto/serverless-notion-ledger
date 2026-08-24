@@ -21,6 +21,7 @@ function createMockClient() {
 		postAuthRegister: (payload) => response('postAuthRegister', payload),
 		postAuthLogin: (payload) => response('postAuthLogin', payload),
 		getAuthMe: () => response('getAuthMe'),
+		patchAuthMe: (payload) => response('patchAuthMe', payload),
 		postAuthLogout: () => response('postAuthLogout'),
 		getAuthVerifyEmail: (payload) => response('getAuthVerifyEmail', payload),
 		postAuthResendVerificationEmail: (payload) => response('postAuthResendVerificationEmail', payload),
@@ -60,6 +61,7 @@ test('ApiAdapter maps auth operations to generated client methods', async () => 
 
 	await adapter.login({ email: 'demo@example.com', password: 'password123' });
 	await adapter.getCurrentUser();
+	await adapter.updateDisplayName({ displayName: 'Demo User' });
 	await adapter.logout();
 	await adapter.verifyEmail({ key: 'verify-key', token: 'verify-token' });
 	await adapter.resendVerificationEmail({ email: 'demo@example.com' });
@@ -70,6 +72,7 @@ test('ApiAdapter maps auth operations to generated client methods', async () => 
 			payload: { body: { email: 'demo@example.com', password: 'password123' } },
 		},
 		{ method: 'getAuthMe', payload: undefined },
+		{ method: 'patchAuthMe', payload: { body: { displayName: 'Demo User' } } },
 		{ method: 'postAuthLogout', payload: undefined },
 		{
 			method: 'getAuthVerifyEmail',

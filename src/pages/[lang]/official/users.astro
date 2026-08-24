@@ -1,0 +1,54 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+import PendingUsersApproval from '../../../components/features/official/PendingUsersApproval.svelte';
+import '../../../styles/app-pages.css';
+import { getI18n, getLangFromUrl } from '../../../libs/i18n';
+import { buildLayoutLabels } from '../../../libs/i18n/layoutLabels';
+export { getStaticPaths } from '../../../libs/static/staticPaths';
+
+const lang = getLangFromUrl(Astro.url);
+const t = getI18n(lang);
+---
+
+<Layout
+	title={`${t.app.official_users_title} | ${t.common.product_name}`}
+	description={t.app.official_users_intro}
+	productName={t.common.product_name}
+	lang={lang}
+	currentPath={`${Astro.url.pathname}${Astro.url.search}`}
+	labels={buildLayoutLabels(t)}
+>
+	<Fragment slot="head">
+		<meta name="robots" content="noindex, nofollow, noarchive" />
+	</Fragment>
+
+	<PendingUsersApproval
+		client:load
+		lang={lang}
+		labels={{
+			eyebrow: t.app.official_overview_users_label,
+			title: t.app.official_users_title,
+			intro: t.app.official_users_intro,
+			mockNotice: t.app.official_users_mock_notice,
+			nameLabel: t.app.official_users_name_label,
+			emailLabel: t.app.official_users_email_label,
+			approveLabel: t.app.official_users_approve_label,
+			backLabel: t.app.official_users_back_label,
+			loadingLabel: t.app.official_gate_loading_label,
+			loginRequiredTitle: t.app.official_gate_login_required_title,
+			loginRequiredBody: t.app.official_gate_login_required_body,
+			staffOnlyTitle: t.app.official_gate_denied_title,
+			staffOnlyBody: t.app.official_gate_denied_body,
+			loginLabel: t.app.action_login,
+			homeLabel: t.app.action_back_home,
+			pendingTitle: t.app.official_users_pending_title,
+			pendingBody: t.app.official_users_pending_body,
+			successTitle: t.app.official_users_success_title,
+			successBody: t.app.official_users_success_body,
+			errorTitle: t.app.official_users_error_title,
+			errorBody: t.app.official_users_error_body,
+			confirmLabel: t.app.me_profile_confirm_label,
+			emptyTitle: t.app.official_users_empty_title,
+		}}
+	/>
+</Layout>

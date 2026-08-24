@@ -6,6 +6,7 @@ export interface ApiClientLike {
 	postAuthRegister: OpenApiClient['postAuthRegister'];
 	postAuthLogin: OpenApiClient['postAuthLogin'];
 	getAuthMe: OpenApiClient['getAuthMe'];
+	patchAuthMe: OpenApiClient['patchAuthMe'];
 	postAuthLogout: OpenApiClient['postAuthLogout'];
 	getAuthVerifyEmail: OpenApiClient['getAuthVerifyEmail'];
 	postAuthResendVerificationEmail: OpenApiClient['postAuthResendVerificationEmail'];

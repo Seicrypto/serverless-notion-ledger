@@ -130,12 +130,14 @@
 		await loadOrganizations(offset + pageSize);
 	};
 
-	onMount(async () => {
-		if (!selectedGameSlug && gameOptions[0]) {
-			selectedGameSlug = gameOptions[0].value;
-		}
+	onMount(() => {
+		void (async () => {
+			if (!selectedGameSlug && gameOptions[0]) {
+				selectedGameSlug = gameOptions[0].value;
+			}
 
-		await loadOrganizations(offset);
+			await loadOrganizations(offset);
+		})();
 	});
 </script>
 
