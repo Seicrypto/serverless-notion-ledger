@@ -25,12 +25,17 @@ import type {
 	GameListResponse,
 	Game,
 	OrganizationListResponse,
+	OrganizationCard,
+	OrganizationCardDisplay,
+	OrganizationCardGame,
+	OrganizationCardMembership,
+	OrganizationCardStats,
+	OffsetPagination,
+	MyOrganizationsResponse,
+	OrganizationDetailResponse,
 	OrganizationSearchItem,
 	OrganizationGameSummary,
 	Organization,
-	MyOrganizationsResponse,
-	MyOrganization,
-	OrganizationDetailResponse,
 	OrganizationCharactersResponse,
 	OrganizationCharacter,
 	OrganizationMembersResponse,
@@ -101,9 +106,9 @@ export type ApiOperations = {
 	postAdminUsersByIdDisable: { pathParams: { "id": number; }; response: ManagedUserResponse; };
 	postAdminUsersByIdEnable: { pathParams: { "id": number; }; response: ManagedUserResponse; };
 	getOrganizationsGames: { query: { "includeInactive"?: "true" | "false"; }; response: GameListResponse; };
-	getOrganizations: { query: { "gameId"?: number; "gameSlug"?: string; "limit"?: number; "q"?: string; }; response: OrganizationListResponse; };
+	getOrganizations: { query: { "gameId"?: number; "gameSlug"?: string; "limit"?: number; "offset"?: number | unknown; "q"?: string; }; response: OrganizationListResponse; };
 	postOrganizations: { body: CreateOrganizationRequest; response: CreateOrganizationResponse; };
-	getOrganizationsMe: { response: MyOrganizationsResponse; };
+	getOrganizationsMe: { query: { "limit"?: number; "offset"?: number | unknown; }; response: MyOrganizationsResponse; };
 	getOrganizationsById: { pathParams: { "id": number; }; response: OrganizationDetailResponse; };
 	deleteOrganizationsById: { pathParams: { "id": number; }; response: DeleteOrganizationResponse; };
 	patchOrganizationsById: { pathParams: { "id": number; }; body: UpdateOrganizationRequest; response: UpdateOrganizationResponse; };

@@ -30,10 +30,10 @@ function createMockClient() {
 		postAdminUsersByIdApprove: (payload) => response('postAdminUsersByIdApprove', payload),
 		postAdminUsersByIdDisable: (payload) => response('postAdminUsersByIdDisable', payload),
 		postAdminUsersByIdEnable: (payload) => response('postAdminUsersByIdEnable', payload),
-		getOrganizationsGames: () => response('getOrganizationsGames'),
-		getOrganizations: () => response('getOrganizations'),
+		getOrganizationsGames: (payload) => response('getOrganizationsGames', payload),
+		getOrganizations: (payload) => response('getOrganizations', payload),
 		postOrganizations: (payload) => response('postOrganizations', payload),
-		getOrganizationsMe: () => response('getOrganizationsMe'),
+		getOrganizationsMe: (payload) => response('getOrganizationsMe', payload),
 		getOrganizationsById: (payload) => response('getOrganizationsById', payload),
 		deleteOrganizationsById: (payload) => response('deleteOrganizationsById', payload),
 		patchOrganizationsById: (payload) => response('patchOrganizationsById', payload),
@@ -101,14 +101,14 @@ test('ApiAdapter maps organization operations to generated client methods', asyn
 	const { client, calls } = createMockClient();
 	const adapter = new ApiAdapter(client);
 
-	await adapter.listOrganizationGames();
-	await adapter.listOrganizations();
+	await adapter.listOrganizationGames({ includeInactive: true });
+	await adapter.listOrganizations({ limit: 20, offset: 40, q: 'moon', gameSlug: 'wow' });
 	await adapter.createOrganization({
 		name: 'Demo Guild',
 		slug: 'demo-guild',
 		initialCharacter: { gameId: 100, name: 'Tank Main' },
 	});
-	await adapter.listMyOrganizations();
+	await adapter.listMyOrganizations({ limit: 10, offset: 10 });
 	await adapter.getOrganization(10);
 	await adapter.updateOrganization(10, { name: 'Renamed Guild' });
 	await adapter.listOrganizationCharacters(10);
@@ -120,8 +120,14 @@ test('ApiAdapter maps organization operations to generated client methods', asyn
 	await adapter.deleteOrganization(10);
 
 	assert.deepEqual(calls, [
-		{ method: 'getOrganizationsGames', payload: undefined },
-		{ method: 'getOrganizations', payload: undefined },
+		{
+			method: 'getOrganizationsGames',
+			payload: { query: { includeInactive: 'true' } },
+		},
+		{
+			method: 'getOrganizations',
+			payload: { query: { limit: 20, offset: 40, q: 'moon', gameSlug: 'wow' } },
+		},
 		{
 			method: 'postOrganizations',
 			payload: {
@@ -132,7 +138,10 @@ test('ApiAdapter maps organization operations to generated client methods', asyn
 				},
 			},
 		},
-		{ method: 'getOrganizationsMe', payload: undefined },
+		{
+			method: 'getOrganizationsMe',
+			payload: { query: { limit: 10, offset: 10 } },
+		},
 		{ method: 'getOrganizationsById', payload: { pathParams: { id: 10 } } },
 		{
 			method: 'patchOrganizationsById',

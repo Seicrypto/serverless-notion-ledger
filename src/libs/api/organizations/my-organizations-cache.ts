@@ -1,7 +1,7 @@
 import { getApiAdapter } from '../adapters/api.adapter.ts';
 import type { MyOrganizationsResponse } from '../openapi/generated/schema';
 import type { OrganizationCardCacheSnapshot } from './organization-card.ts';
-import { mapMyOrganizationToOrganizationCardResponse } from './organization-card.ts';
+import { mapApiOrganizationCardToOrganizationCardResponse } from './organization-card.ts';
 
 const MY_ORGANIZATIONS_CACHE_KEY = 'raid-ledger.my-organizations';
 const MY_ORGANIZATIONS_CACHE_EVENT = 'raid-ledger:my-organizations-changed';
@@ -16,7 +16,7 @@ export function createMyOrganizationsCacheSnapshot(response: MyOrganizationsResp
 	const expiresAt = new Date(Date.now() + MY_ORGANIZATIONS_CACHE_TTL_MS).toISOString();
 
 	return {
-		organizations: response.organizations.map(mapMyOrganizationToOrganizationCardResponse),
+		organizations: response.organizations.map(mapApiOrganizationCardToOrganizationCardResponse),
 		fetchedAt,
 		expiresAt,
 	};

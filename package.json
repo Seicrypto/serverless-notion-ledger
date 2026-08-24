@@ -5,12 +5,16 @@
   "engines": {
     "node": ">=22.12.0"
   },
+  "volta": {
+    "node": "22.23.2"
+  },
   "scripts": {
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
     "astro": "astro",
     "test": "npm run test:all",
+    "test:codex": "env -u npm_config_prefix -u NPM_CONFIG_PREFIX -u PREFIX bash ./scripts/run-with-project-node.sh npm run test:all",
     "test:all": "npm run test:api",
     "generate:openapi": "node ./scripts/generate-openapi.mjs",
     "sync:openapi": "node ./scripts/sync-openapi.mjs",

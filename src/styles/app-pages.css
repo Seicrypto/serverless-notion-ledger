@@ -106,6 +106,59 @@
 	gap: 20px;
 }
 
+.directory-hero {
+	width: min(var(--content-width), 100%);
+	margin: 28px auto 0;
+	padding: 28px 32px;
+	border: 1px solid color-mix(in srgb, var(--line) 92%, white);
+	border-radius: var(--radius-lg);
+	background: var(--surface);
+	box-shadow: var(--shadow);
+	backdrop-filter: blur(16px);
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) auto;
+	gap: 20px;
+	align-items: center;
+}
+
+.directory-hero-copy h1 {
+	margin: 12px 0 0;
+	font-size: clamp(2rem, 4vw, 3rem);
+	letter-spacing: -0.03em;
+}
+
+.directory-hero-intro {
+	margin: 16px 0 0;
+	line-height: 1.7;
+	color: var(--text-soft);
+}
+
+.directory-hero-side {
+	display: flex;
+	justify-content: flex-end;
+}
+
+.directory-create-button {
+	min-height: 52px;
+	padding: 0 22px;
+	border-radius: 999px;
+	background: var(--text-main);
+	color: var(--surface-strong);
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	font-weight: 700;
+	white-space: nowrap;
+	transition:
+		transform 0.18s ease,
+		background 0.18s ease;
+}
+
+.directory-create-button:hover {
+	transform: translateY(-1px);
+	background: color-mix(in srgb, var(--text-main) 88%, black);
+}
+
 .app-section {
 	width: min(var(--content-width), 100%);
 	margin: 28px auto 0;
@@ -162,6 +215,10 @@
 		grid-template-columns: 1fr;
 	}
 
+	.directory-hero {
+		grid-template-columns: 1fr;
+	}
+
 	.app-card-grid {
 		grid-template-columns: 1fr;
 	}
@@ -182,8 +239,20 @@
 		padding: 22px;
 	}
 
+	.directory-hero {
+		padding: 22px;
+	}
+
 	.app-hero-copy h1 {
 		font-size: 2rem;
+	}
+
+	.directory-hero-side {
+		justify-content: stretch;
+	}
+
+	.directory-create-button {
+		width: 100%;
 	}
 
 	.app-section-head {

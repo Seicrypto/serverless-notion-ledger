@@ -1,4 +1,4 @@
-import type { MyOrganization, OrganizationGameSummary } from '../openapi/generated/schema';
+import type { OrganizationCard } from '../openapi/generated/schema';
 
 export interface OrganizationCardGame {
 	name: string;
@@ -54,11 +54,11 @@ function toNullableString(value: unknown) {
 	return typeof value === 'string' ? value : null;
 }
 
-function mapOrganizationGameSummary(game: OrganizationGameSummary): OrganizationCardGame {
+function mapOrganizationCardGame(game: OrganizationCard['games'][number]): OrganizationCardGame {
 	return {
-		name: typeof game.displayName === 'string' && game.displayName.trim() ? game.displayName : game.gameName,
-		iconUrl: null,
-		primary: game.isPrimary,
+		name: game.name,
+		iconUrl: toNullableString(game.iconUrl),
+		primary: game.primary,
 	};
 }
 
@@ -76,8 +76,8 @@ export function createOrganizationCardResponse(
 	};
 }
 
-export function mapMyOrganizationToOrganizationCardResponse(
-	organization: MyOrganization,
+export function mapApiOrganizationCardToOrganizationCardResponse(
+	organization: OrganizationCard,
 ): OrganizationCardResponse {
 	return createOrganizationCardResponse({
 		id: organization.id,
@@ -85,15 +85,18 @@ export function mapMyOrganizationToOrganizationCardResponse(
 		slug: organization.slug,
 		description: toNullableString(organization.description),
 		iconUrl: toNullableString(organization.iconUrl),
-		membership: {
-			role: organization.membership.role,
-			status: organization.membership.status,
-		},
+		membership: organization.membership
+			? {
+					role: organization.membership.role,
+					status: organization.membership.status,
+				}
+			: null,
 		stats: {
-			memberCount: organization.activeMemberCount,
-			characterCount: organization.activeCharacterCount,
+			memberCount: organization.stats.memberCount,
+			characterCount: organization.stats.characterCount,
 		},
-		games: organization.games.map(mapOrganizationGameSummary),
-		tags: [],
+		games: organization.games.map(mapOrganizationCardGame),
+		tags: organization.tags,
+		display: organization.display,
 	});
 }

@@ -1,0 +1,35 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+import AppPage from '../../../components/page/AppPage.astro';
+import '../../../styles/app-pages.css';
+import { getI18n, getLangFromUrl } from '../../../libs/i18n';
+import { buildLayoutLabels } from '../../../libs/i18n/layoutLabels';
+export { getStaticPaths } from '../../../libs/static/staticPaths';
+
+const lang = getLangFromUrl(Astro.url);
+const t = getI18n(lang);
+---
+
+<Layout
+	title={`${t.app.orgs_new_title} | ${t.common.product_name}`}
+	description={t.app.orgs_new_intro}
+	productName={t.common.product_name}
+	lang={lang}
+	currentPath={`${Astro.url.pathname}${Astro.url.search}`}
+	labels={buildLayoutLabels(t)}
+>
+	<AppPage
+		eyebrow={t.common.nav_orgs}
+		title={t.app.orgs_new_title}
+		intro={t.app.orgs_new_intro}
+		statusLabel={t.common.user_status}
+		statusValue={t.app.orgs_new_status}
+		primaryLink={{ label: t.app.action_view_my_orgs, href: `/${lang}/me/orgs` }}
+		secondaryLink={{ label: t.app.action_view_orgs, href: `/${lang}/orgs` }}
+		cards={[
+			{ label: t.app.card_scope_label, title: t.app.card_scope_title, body: t.app.card_scope_body },
+			{ label: t.app.card_data_label, title: t.app.card_data_title, body: t.app.card_data_body },
+			{ label: t.app.card_next_label, title: t.app.card_next_title, body: t.app.card_next_body },
+		]}
+	/>
+</Layout>

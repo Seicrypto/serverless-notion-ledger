@@ -17,6 +17,23 @@ export interface ApiAdapterClientOptions {
 	runtimeConfig?: Partial<ApiRuntimeConfig>;
 }
 
+export interface ListOrganizationGamesOptions {
+	includeInactive?: boolean;
+}
+
+export interface ListOrganizationsOptions {
+	gameId?: number;
+	gameSlug?: string;
+	limit?: number;
+	offset?: number;
+	q?: string;
+}
+
+export interface ListMyOrganizationsOptions {
+	limit?: number;
+	offset?: number;
+}
+
 export class ApiAdapter {
 	private readonly client: ApiClientLike;
 
@@ -76,20 +93,28 @@ export class ApiAdapter {
 		return this.client.postAdminUsersByIdEnable({ pathParams: { id } });
 	}
 
-	listOrganizationGames() {
-		return this.client.getOrganizationsGames();
+	listOrganizationGames(options: ListOrganizationGamesOptions = {}) {
+		return this.client.getOrganizationsGames({
+			query: {
+				includeInactive: options.includeInactive ? 'true' : undefined,
+			},
+		});
 	}
 
-	listOrganizations() {
-		return this.client.getOrganizations();
+	listOrganizations(options: ListOrganizationsOptions = {}) {
+		return this.client.getOrganizations({
+			query: options,
+		});
 	}
 
 	createOrganization(payload: CreateOrganizationRequest) {
 		return this.client.postOrganizations({ body: payload });
 	}
 
-	listMyOrganizations() {
-		return this.client.getOrganizationsMe();
+	listMyOrganizations(options: ListMyOrganizationsOptions = {}) {
+		return this.client.getOrganizationsMe({
+			query: options,
+		});
 	}
 
 	getOrganization(id: number) {

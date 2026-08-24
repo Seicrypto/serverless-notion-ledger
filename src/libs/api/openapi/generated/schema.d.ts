@@ -47,19 +47,29 @@ export type GameListResponse = { "games": Array<Game>; };
 
 export type Game = { "description": string | unknown; "iconUrl": string | unknown; "id": number; "isActive": boolean; "name": string; "slug": string; "source": "internal" | "steam"; "sourceId": string | unknown; "type": "game" | "activity"; };
 
-export type OrganizationListResponse = { "organizations": Array<OrganizationSearchItem>; };
+export type OrganizationListResponse = { "organizations": Array<OrganizationCard>; "pagination": OffsetPagination; };
+
+export type OrganizationCard = { "description": string | unknown; "display": OrganizationCardDisplay; "games": Array<OrganizationCardGame>; "iconUrl": string | unknown; "id": number; "membership": OrganizationCardMembership; "name": string; "slug": string; "stats": OrganizationCardStats; "tags": Array<string>; };
+
+export type OrganizationCardDisplay = { "isSupportedOrg": boolean; "maxVisibleGames": number; "maxVisibleTags": number; };
+
+export type OrganizationCardGame = { "iconUrl": string | unknown; "name": string; "primary": boolean; };
+
+export type OrganizationCardMembership = { "role": "owner" | "admin" | "member" | null; "status": "pending" | "active" | null; } | { "role": "owner" | "admin" | "member" | null; "status": "pending" | "active" | null; };
+
+export type OrganizationCardStats = { "characterCount": number; "memberCount": number; };
+
+export type OffsetPagination = { "hasMore": boolean; "limit": number; "offset": number; };
+
+export type MyOrganizationsResponse = { "organizations": Array<OrganizationCard>; "pagination": OffsetPagination; };
+
+export type OrganizationDetailResponse = { "organization": OrganizationSearchItem; };
 
 export type OrganizationSearchItem = Organization & { "activeCharacterCount": number; "activeMemberCount": number; "games": Array<OrganizationGameSummary>; };
 
 export type OrganizationGameSummary = { "displayName": string | unknown; "gameId": number; "gameName": string; "gameSlug": string; "isPrimary": boolean; "source": "internal" | "steam"; "sourceId": string | unknown; "type": "game" | "activity"; };
 
 export type Organization = { "createdAt": string; "createdByUserId": number; "description": string | unknown; "iconUrl": string | unknown; "id": number; "name": string; "slug": string; "updatedAt": string; "vanity": string | unknown; };
-
-export type MyOrganizationsResponse = { "organizations": Array<MyOrganization>; };
-
-export type MyOrganization = OrganizationSearchItem & { "membership": { "approvedAt": string | unknown; "joinedAt": string; "role": "owner" | "admin" | "member"; "status": "pending" | "active"; }; };
-
-export type OrganizationDetailResponse = { "organization": OrganizationSearchItem; };
 
 export type OrganizationCharactersResponse = { "characters": Array<OrganizationCharacter>; };
 
