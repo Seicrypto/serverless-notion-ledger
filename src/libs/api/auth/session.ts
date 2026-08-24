@@ -40,6 +40,28 @@ function isObject(value: unknown): value is Record<string, unknown> {
 	return typeof value === 'object' && value !== null;
 }
 
+function toNullableString(value: unknown) {
+	return typeof value === 'string' ? value : null;
+}
+
+export function normalizeAuthUser(user: Record<string, unknown>): AuthUser {
+	return {
+		id: Number(user.id),
+		email: typeof user.email === 'string' ? user.email : '',
+		displayName: toNullableString(user.displayName),
+		emailVerifiedAt: toNullableString(user.emailVerifiedAt),
+		isStaff: Boolean(user.isStaff),
+		staffRole: user.staffRole === 'admin' || user.staffRole === 'staff' ? user.staffRole : null,
+		status:
+			user.status === 'pending_verification' ||
+			user.status === 'pending_approval' ||
+			user.status === 'active' ||
+			user.status === 'disabled'
+				? user.status
+				: 'disabled',
+	};
+}
+
 export function isAuthenticatedSession(session: AuthSession | null): session is AuthenticatedSession {
 	return session?.kind === 'authenticated';
 }
@@ -99,12 +121,28 @@ export async function refreshAuthSession(guestLabel = 'Guest') {
 		const response = await getApiAdapter().getCurrentUser();
 		return writeAuthSession({
 			kind: 'authenticated',
-			user: response.user,
+			user: normalizeAuthUser(response.user as Record<string, unknown>),
 			fetchedAt: new Date().toISOString(),
 		});
 	} catch {
 		return writeAuthSession(createGuestSession(guestLabel));
 	}
+}
+
+export function updateAuthenticatedSessionUserDisplayName(displayName: string) {
+	const stored = readAuthSession();
+	if (!isAuthenticatedSession(stored)) {
+		return null;
+	}
+
+	return writeAuthSession({
+		...stored,
+		user: {
+			...stored.user,
+			displayName,
+		},
+		fetchedAt: new Date().toISOString(),
+	});
 }
 
 export async function ensureAuthSession(guestLabel = 'Guest') {

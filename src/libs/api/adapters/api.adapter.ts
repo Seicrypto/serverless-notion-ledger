@@ -9,6 +9,7 @@ import type {
 	LoginRequest,
 	RegisterRequest,
 	ResetPasswordRequest,
+	UpdateDisplayNameRequest,
 	UpdateOrganizationRequest,
 } from '../openapi/generated/schema';
 
@@ -55,6 +56,10 @@ export class ApiAdapter {
 
 	getCurrentUser() {
 		return this.client.getAuthMe();
+	}
+
+	updateDisplayName(payload: UpdateDisplayNameRequest) {
+		return this.client.patchAuthMe({ body: payload });
 	}
 
 	logout() {

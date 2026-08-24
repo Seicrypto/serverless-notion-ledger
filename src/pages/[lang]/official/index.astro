@@ -1,0 +1,45 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+import OfficialDashboard from '../../../components/features/official/OfficialDashboard.svelte';
+import '../../../styles/app-pages.css';
+import { getI18n, getLangFromUrl } from '../../../libs/i18n';
+import { buildLayoutLabels } from '../../../libs/i18n/layoutLabels';
+export { getStaticPaths } from '../../../libs/static/staticPaths';
+
+const lang = getLangFromUrl(Astro.url);
+const t = getI18n(lang);
+---
+
+<Layout
+	title={`${t.app.official_title} | ${t.common.product_name}`}
+	description={t.app.official_intro}
+	productName={t.common.product_name}
+	lang={lang}
+	currentPath={`${Astro.url.pathname}${Astro.url.search}`}
+	labels={buildLayoutLabels(t)}
+>
+	<Fragment slot="head">
+		<meta name="robots" content="noindex, nofollow, noarchive" />
+	</Fragment>
+
+	<OfficialDashboard
+		client:load
+		lang={lang}
+		labels={{
+			eyebrow: t.common.official_dashboard,
+			title: t.app.official_title,
+			intro: t.app.official_intro,
+			loadingLabel: t.app.official_gate_loading_label,
+			loginRequiredTitle: t.app.official_gate_login_required_title,
+			loginRequiredBody: t.app.official_gate_login_required_body,
+			staffOnlyTitle: t.app.official_gate_denied_title,
+			staffOnlyBody: t.app.official_gate_denied_body,
+			loginLabel: t.app.action_login,
+			homeLabel: t.app.action_back_home,
+			usersPanelLabel: t.app.official_overview_users_label,
+			usersPanelTitle: t.app.official_overview_users_title,
+			usersPanelBody: t.app.official_overview_users_body,
+			openUsersLabel: t.app.action_manage_pending_users,
+		}}
+	/>
+</Layout>
