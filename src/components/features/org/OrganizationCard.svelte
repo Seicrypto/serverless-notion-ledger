@@ -1,90 +1,141 @@
 <script lang="ts">
-	export interface OrganizationCardGame {
-		name: string;
-		primary?: boolean;
+	import type { OrganizationCardResponse } from '../../../libs/api/organizations/organization-card.ts';
+	import {
+		DEFAULT_ORGANIZATION_CARD_DISPLAY,
+		ORGANIZATION_CARD_UI_LIMITS,
+	} from '../../../libs/api/organizations/organization-card.ts';
+
+	interface PropsLabels {
+		members: string;
+		characters: string;
+		supportedOrg: string;
 	}
 
-	export interface OrganizationCardStat {
-		label: string;
-		value: string;
-	}
-
-	export let name: string;
-	export let slug: string;
-	export let description: string = '';
+	export let organization: OrganizationCardResponse;
 	export let href: string = '#';
-	export let iconUrl: string | null = null;
-	export let games: OrganizationCardGame[] = [];
-	export let stats: OrganizationCardStat[] = [];
-	export let membershipRole: string | null = null;
-	export let membershipStatus: string | null = null;
-	export let note: string | null = null;
 	export let actionLabel: string = 'Open';
+	export let labels: PropsLabels = {
+		members: 'Members',
+		characters: 'Characters',
+		supportedOrg: 'Supported org',
+	};
 
-	$: initials = name
+	const MEMBERSHIP_ROLE_LABELS = {
+		owner: 'Owner',
+		admin: 'Admin',
+		member: 'Member',
+	} as const;
+
+	const MEMBERSHIP_STATUS_LABELS = {
+		pending: 'Pending',
+		active: 'Joined',
+	} as const;
+
+	$: initials = organization.name
 		.split(/\s+/)
 		.filter(Boolean)
 		.slice(0, 2)
 		.map((part) => part[0]?.toUpperCase() ?? '')
 		.join('')
 		.slice(0, 2);
+
+	$: display = {
+		...DEFAULT_ORGANIZATION_CARD_DISPLAY,
+		...organization.display,
+	};
+
+	$: visibleGames = organization.games.slice(
+		0,
+		Math.min(display.maxVisibleGames, ORGANIZATION_CARD_UI_LIMITS.maxVisibleGames),
+	);
+	$: hiddenGamesCount = Math.max(0, organization.games.length - visibleGames.length);
+	$: visibleTags = organization.tags.slice(
+		0,
+		Math.min(display.maxVisibleTags, ORGANIZATION_CARD_UI_LIMITS.maxVisibleTags),
+	);
+	$: hiddenTagsCount = Math.max(0, organization.tags.length - visibleTags.length);
+	$: membershipRoleLabel = organization.membership?.role
+		? MEMBERSHIP_ROLE_LABELS[organization.membership.role]
+		: null;
+	$: membershipStatusLabel = organization.membership?.status
+		? MEMBERSHIP_STATUS_LABELS[organization.membership.status]
+		: null;
 </script>
 
-<article class="org-card">
+<article class="org-card" data-supported={display.isSupportedOrg ? 'true' : 'false'}>
 	<div class="org-card-top">
 		<div class="org-card-brand">
-			{#if iconUrl}
-				<img class="org-card-avatar-image" src={iconUrl} alt="" loading="lazy" />
+			{#if organization.iconUrl}
+				<img class="org-card-avatar-image" src={organization.iconUrl} alt="" loading="lazy" />
 			{:else}
 				<div class="org-card-avatar" aria-hidden="true">{initials || 'OG'}</div>
 			{/if}
 
 			<div class="org-card-copy">
-				<p class="org-card-slug">/{slug}</p>
-				<h3>{name}</h3>
+				<p class="org-card-slug">/{organization.slug}</p>
+				<h3>{organization.name}</h3>
 			</div>
 		</div>
 
-		{#if membershipRole || membershipStatus}
+		{#if membershipRoleLabel || membershipStatusLabel}
 			<div class="org-card-membership">
-				{#if membershipRole}
-					<span>{membershipRole}</span>
+				{#if membershipRoleLabel}
+					<span>{membershipRoleLabel}</span>
 				{/if}
-				{#if membershipStatus}
-					<span data-quiet>{membershipStatus}</span>
+				{#if membershipStatusLabel}
+					<span data-quiet>{membershipStatusLabel}</span>
 				{/if}
 			</div>
 		{/if}
 	</div>
 
-	{#if description}
-		<p class="org-card-description">{description}</p>
+	{#if organization.description}
+		<p class="org-card-description">{organization.description}</p>
 	{/if}
 
-	{#if games.length > 0}
+	{#if visibleGames.length > 0}
 		<div class="org-card-games">
-			{#each games as game}
-				<span class:primary={game.primary}>{game.name}</span>
+			{#each visibleGames as game}
+				<span class:primary={game.primary}>
+					{#if game.iconUrl}
+						<img src={game.iconUrl} alt="" width="16" height="16" loading="lazy" />
+					{/if}
+					<em>{game.name}</em>
+				</span>
 			{/each}
+			{#if hiddenGamesCount > 0}
+				<span>+{hiddenGamesCount}</span>
+			{/if}
 		</div>
 	{/if}
 
-	{#if stats.length > 0}
-		<dl class="org-card-stats">
-			{#each stats as stat}
-				<div>
-					<dt>{stat.label}</dt>
-					<dd>{stat.value}</dd>
-				</div>
+	{#if visibleTags.length > 0 || hiddenTagsCount > 0}
+		<div class="org-card-tags">
+			{#each visibleTags as tag}
+				<span>{tag}</span>
 			{/each}
-		</dl>
+			{#if hiddenTagsCount > 0}
+				<span>+{hiddenTagsCount}</span>
+			{/if}
+		</div>
+	{/if}
+
+	<dl class="org-card-stats">
+		<div>
+			<dt>{labels.members}</dt>
+			<dd>{organization.stats.memberCount}</dd>
+		</div>
+		<div>
+			<dt>{labels.characters}</dt>
+			<dd>{organization.stats.characterCount}</dd>
+		</div>
+	</dl>
+
+	{#if display.isSupportedOrg}
+		<p class="org-card-support">{labels.supportedOrg}</p>
 	{/if}
 
 	<div class="org-card-footer">
-		{#if note}
-			<p class="org-card-note">{note}</p>
-		{/if}
-
 		<a class="org-card-link" href={href}>{actionLabel}</a>
 	</div>
 </article>
@@ -101,6 +152,13 @@
 		box-shadow: var(--shadow);
 		display: grid;
 		gap: 18px;
+	}
+
+	.org-card[data-supported='true'] {
+		border-color: color-mix(in srgb, var(--accent) 34%, white);
+		box-shadow:
+			0 0 0 1px color-mix(in srgb, var(--accent) 12%, transparent),
+			var(--shadow);
 	}
 
 	.org-card-top {
@@ -168,7 +226,8 @@
 	}
 
 	.org-card-membership span,
-	.org-card-games span {
+	.org-card-games span,
+	.org-card-tags span {
 		min-height: 30px;
 		padding: 0 12px;
 		border-radius: 999px;
@@ -189,22 +248,38 @@
 		color: var(--text-soft);
 	}
 
-	.org-card-description,
-	.org-card-note {
+	.org-card-description {
 		margin: 0;
 		line-height: 1.65;
 		color: var(--text-soft);
 	}
 
-	.org-card-games {
+	.org-card-games,
+	.org-card-tags {
 		display: flex;
 		flex-wrap: wrap;
 		gap: 10px;
 	}
 
-	.org-card-games span {
+	.org-card-games span,
+	.org-card-tags span {
 		background: color-mix(in srgb, var(--surface-soft) 88%, white);
 		color: var(--text-main);
+	}
+
+	.org-card-games span {
+		gap: 8px;
+	}
+
+	.org-card-games img {
+		width: 16px;
+		height: 16px;
+		border-radius: 999px;
+		object-fit: cover;
+	}
+
+	.org-card-games em {
+		font-style: normal;
 	}
 
 	.org-card-games span.primary {
@@ -217,7 +292,7 @@
 		padding: 16px 0 0;
 		border-top: 1px solid color-mix(in srgb, var(--line) 72%, transparent);
 		display: grid;
-		grid-template-columns: repeat(3, minmax(0, 1fr));
+		grid-template-columns: repeat(2, minmax(0, 1fr));
 		gap: 12px;
 	}
 
@@ -240,12 +315,20 @@
 		color: var(--text-main);
 	}
 
+	.org-card-support {
+		margin: 0;
+		font-size: 0.82rem;
+		font-weight: 700;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+		color: var(--accent-deep);
+	}
+
 	.org-card-footer {
 		margin-top: auto;
-		padding-top: 4px;
+		padding-top: 8px;
 		display: flex;
-		align-items: flex-end;
-		justify-content: space-between;
+		justify-content: flex-end;
 		gap: 16px;
 	}
 
@@ -289,7 +372,7 @@
 		}
 
 		.org-card-stats {
-			grid-template-columns: 1fr 1fr;
+			grid-template-columns: 1fr;
 		}
 
 		.org-card-link {
