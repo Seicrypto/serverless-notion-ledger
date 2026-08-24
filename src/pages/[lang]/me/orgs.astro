@@ -1,6 +1,7 @@
 ---
 import Layout from '../../../layouts/Layout.astro';
-import AppPage from '../../../components/AppPage.astro';
+import AppPage from '../../../components/page/AppPage.astro';
+import OrganizationCard from '../../../components/features/org/OrganizationCard.svelte';
 import '../../../styles/app-pages.css';
 import { getI18n, getLangFromUrl } from '../../../libs/i18n';
 import { buildLayoutLabels } from '../../../libs/i18n/layoutLabels';
@@ -8,6 +9,94 @@ export { getStaticPaths } from '../../../libs/static/staticPaths';
 
 const lang = getLangFromUrl(Astro.url);
 const t = getI18n(lang);
+
+const previewCopy =
+	lang === 'zh-tw'
+		? {
+				eyebrow: 'Org Card Preview',
+				title: '已加入公會卡片預覽',
+				intro: '這批先用假資料看卡片資訊密度。之後接上 API 時，可以沿用同一張卡片到推薦列表、搜尋結果與我的組織頁。',
+				countLabel: '示範卡片',
+				actionLabel: '查看公會',
+			}
+		: lang === 'ja'
+			? {
+					eyebrow: 'Org Card Preview',
+					title: '参加中ギルドカードのプレビュー',
+					intro: 'まずはダミーデータで情報密度を確認します。API 接続後も同じカードをおすすめ一覧、検索結果、自分の組織ページで共通利用できます。',
+					countLabel: 'Preview cards',
+					actionLabel: 'ギルドを見る',
+				}
+			: {
+					eyebrow: 'Org Card Preview',
+					title: 'Joined guild card preview',
+					intro: 'This first pass uses mock data so we can judge the card density. Once the API is wired, the same card can power recommended lists, search results, and the personal org page.',
+					countLabel: 'Preview cards',
+					actionLabel: 'Open guild',
+				};
+
+const sampleOrganizations = [
+	{
+		name: 'Crimson Harbor',
+		slug: 'crimson-harbor',
+		description:
+			lang === 'zh-tw'
+				? '主打團本進度與分裝追蹤，平日偏固定隊，週末會開新手補位。'
+				: lang === 'ja'
+					? 'レイド進行と分配管理が中心のギルドです。平日は固定、週末は初心者補充枠も開きます。'
+					: 'A raid-focused guild with steady progression runs on weekdays and newcomer fill groups on weekends.',
+		games: [
+			{ name: 'Final Fantasy XIV', primary: true },
+			{ name: 'Savage' },
+			{ name: 'Treasure Maps' },
+		],
+		stats: [
+			{ label: lang === 'zh-tw' ? '成員' : lang === 'ja' ? 'メンバー' : 'Members', value: '48' },
+			{ label: lang === 'zh-tw' ? '角色' : lang === 'ja' ? 'キャラ' : 'Characters', value: '61' },
+			{ label: lang === 'zh-tw' ? '出勤' : lang === 'ja' ? '稼働' : 'Activity', value: 'High' },
+		],
+		membershipRole: lang === 'zh-tw' ? '管理員' : lang === 'ja' ? '管理者' : 'Admin',
+		membershipStatus: lang === 'zh-tw' ? '已加入' : lang === 'ja' ? '参加中' : 'Joined',
+		note:
+			lang === 'zh-tw'
+				? '這張卡適合放「你目前常用的組織」摘要。'
+				: lang === 'ja'
+					? '普段使う所属組織のサマリー向けです。'
+					: 'This one works well as the summary card for the org a member uses most often.',
+		href: `/${lang}/members?org=crimson-harbor`,
+		actionLabel: previewCopy.actionLabel,
+	},
+	{
+		name: 'Moonlit Caravan',
+		slug: 'moonlit-caravan',
+		description:
+			lang === 'zh-tw'
+				? '偏生活向與活動向的社群公會，成員流動高，適合強調搜尋與推薦情境。'
+				: lang === 'ja'
+					? '生活系とイベント系が中心のコミュニティ寄りギルドで、検索やおすすめ用途の見え方確認に向いています。'
+					: 'A social and event-heavy guild with higher member turnover, useful for previewing search and recommendation layouts.',
+		games: [
+			{ name: 'World of Warcraft', primary: true },
+			{ name: 'Mythic+' },
+			{ name: 'Community Events' },
+		],
+		stats: [
+			{ label: lang === 'zh-tw' ? '成員' : lang === 'ja' ? 'メンバー' : 'Members', value: '92' },
+			{ label: lang === 'zh-tw' ? '角色' : lang === 'ja' ? 'キャラ' : 'Characters', value: '134' },
+			{ label: lang === 'zh-tw' ? '申請' : lang === 'ja' ? '申請' : 'Applications', value: '12 open' },
+		],
+		membershipRole: lang === 'zh-tw' ? '成員' : lang === 'ja' ? 'メンバー' : 'Member',
+		membershipStatus: lang === 'zh-tw' ? '待切換' : lang === 'ja' ? '切替候補' : 'Switch candidate',
+		note:
+			lang === 'zh-tw'
+				? '這張卡可模擬搜尋結果或推薦結果的資訊層。'
+				: lang === 'ja'
+					? '検索結果やおすすめ結果に近い情報量です。'
+					: 'This one is closer to the density we would want for recommended or searched org results.',
+		href: `/${lang}/orgs?org=moonlit-caravan`,
+		actionLabel: previewCopy.actionLabel,
+	},
+];
 ---
 
 <Layout
@@ -32,4 +121,21 @@ const t = getI18n(lang);
 			{ label: t.app.card_next_label, title: t.app.card_next_title, body: t.app.card_next_body },
 		]}
 	/>
+
+	<section class="app-section">
+		<div class="app-section-head">
+			<div class="app-section-copy">
+				<p class="app-eyebrow">{previewCopy.eyebrow}</p>
+				<h2>{previewCopy.title}</h2>
+				<p>{previewCopy.intro}</p>
+			</div>
+			<p class="app-section-badge">
+				{previewCopy.countLabel}: {sampleOrganizations.length}
+			</p>
+		</div>
+
+		<div class="org-card-grid">
+			{sampleOrganizations.map((organization) => <OrganizationCard {...organization} />)}
+		</div>
+	</section>
 </Layout>
