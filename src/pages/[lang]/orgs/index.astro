@@ -1,0 +1,76 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+import OrganizationDirectory from '../../../components/features/org/OrganizationDirectory.svelte';
+import '../../../styles/app-pages.css';
+import { getI18n, getLangFromUrl } from '../../../libs/i18n';
+import { buildLayoutLabels } from '../../../libs/i18n/layoutLabels';
+export { getStaticPaths } from '../../../libs/static/staticPaths';
+
+const lang = getLangFromUrl(Astro.url);
+const t = getI18n(lang);
+const initialQuery = Astro.url.searchParams.get('q') ?? '';
+const initialGameSlug = Astro.url.searchParams.get('game') ?? 'spiritvale';
+const initialOffset = Number(Astro.url.searchParams.get('offset') ?? '0');
+---
+
+<Layout
+	title={`${t.app.orgs_title} | ${t.common.product_name}`}
+	description={t.app.orgs_intro}
+	productName={t.common.product_name}
+	lang={lang}
+	currentPath={`${Astro.url.pathname}${Astro.url.search}`}
+	labels={buildLayoutLabels(t)}
+>
+	<section class="directory-hero">
+		<div class="directory-hero-copy">
+			<p class="app-eyebrow">{t.app.orgs_search_eyebrow}</p>
+			<h1>{t.app.orgs_search_title}</h1>
+			<p class="directory-hero-intro">{t.app.orgs_search_intro}</p>
+			<div class="app-actions">
+				<a class="app-action-primary" href={`/${lang}/me/orgs`}>
+					{t.app.action_view_my_orgs}
+				</a>
+				<a class="app-action-secondary" href={`/${lang}/`}>
+					{t.app.action_back_home}
+				</a>
+			</div>
+		</div>
+
+		<div class="directory-hero-side">
+			<a class="directory-create-button" href={`/${lang}/orgs/new`}>
+				{t.app.action_create_org}
+			</a>
+		</div>
+	</section>
+
+	<section class="app-section">
+		<OrganizationDirectory
+			client:load
+			lang={lang}
+			labels={{
+				searchLabel: t.app.orgs_search_label,
+				searchPlaceholder: t.app.orgs_search_placeholder,
+				gameLabel: t.app.orgs_game_label,
+				submitLabel: t.app.orgs_submit_label,
+				clearLabel: t.app.orgs_clear_label,
+				loadingLabel: t.app.orgs_loading_label,
+				emptyTitle: t.app.orgs_empty_title,
+				emptyBody: t.app.orgs_empty_body,
+				errorTitle: t.app.orgs_error_title,
+				prevLabel: t.app.orgs_prev_label,
+				nextLabel: t.app.orgs_next_label,
+				pageLabel: t.app.orgs_page_label,
+				resultCountLabel: t.app.orgs_result_count_label,
+				memberCountLabel: t.app.orgs_member_count_label,
+				characterCountLabel: t.app.orgs_character_count_label,
+				supportedOrgLabel: t.app.orgs_supported_org_label,
+				openOrgLabel: t.app.orgs_open_org_label,
+			}}
+			gameOptions={[{ label: 'SpiritVale', value: 'spiritvale' }]}
+			initialQuery={initialQuery}
+			initialGameSlug={initialGameSlug}
+			initialOffset={Number.isFinite(initialOffset) ? Math.max(initialOffset, 0) : 0}
+			pageSize={10}
+		/>
+	</section>
+</Layout>
