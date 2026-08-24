@@ -26,6 +26,13 @@ export interface GuestSession {
 
 export type AuthSession = AuthenticatedSession | GuestSession;
 
+export interface ParsedApiError {
+	code?: string;
+	error?: string;
+	issues?: string[];
+	requestId?: string;
+}
+
 const AUTH_SESSION_KEY = 'raid-ledger.auth-session';
 const AUTH_SESSION_EVENT = 'raid-ledger:auth-session-changed';
 
@@ -124,7 +131,44 @@ export function subscribeAuthSession(callback: (session: AuthSession) => void) {
 	return () => window.removeEventListener(AUTH_SESSION_EVENT, handler);
 }
 
+export function parseApiError(error: unknown): ParsedApiError | null {
+	if (!(error instanceof Error)) {
+		return null;
+	}
+
+	try {
+		const parsed = JSON.parse(error.message);
+		if (!isObject(parsed)) {
+			return null;
+		}
+
+		return {
+			code: typeof parsed.code === 'string' ? parsed.code : undefined,
+			error: typeof parsed.error === 'string' ? parsed.error : undefined,
+			issues: Array.isArray(parsed.issues)
+				? parsed.issues.filter((issue): issue is string => typeof issue === 'string')
+				: undefined,
+			requestId: typeof parsed.requestId === 'string' ? parsed.requestId : undefined,
+		};
+	} catch {
+		return null;
+	}
+}
+
+export function getApiErrorCode(error: unknown) {
+	return parseApiError(error)?.code;
+}
+
 export function getErrorMessage(error: unknown, fallback: string) {
+	const parsed = parseApiError(error);
+	if (parsed?.issues?.length) {
+		return parsed.issues.join('\n');
+	}
+
+	if (parsed?.error?.trim()) {
+		return parsed.error;
+	}
+
 	if (error instanceof Error && error.message.trim()) {
 		return error.message;
 	}

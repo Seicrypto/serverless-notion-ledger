@@ -1,0 +1,329 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import '../../styles/auth.css';
+import { getI18n, getLangFromUrl } from '../../libs/i18n';
+import { buildLayoutLabels } from '../../libs/i18n/layoutLabels';
+export { getStaticPaths } from '../../libs/static/staticPaths';
+
+const lang = getLangFromUrl(Astro.url);
+const t = getI18n(lang);
+---
+
+<Layout
+	title={`${t.app.account_status_title} | ${t.common.product_name}`}
+	description={t.app.account_status_intro}
+	productName={t.common.product_name}
+	lang={lang}
+	currentPath={`${Astro.url.pathname}${Astro.url.search}`}
+	labels={buildLayoutLabels(t)}
+>
+	<section
+		class="auth-shell"
+		data-account-status-page
+		data-default-state={t.app.account_status_unknown_title}
+		data-default-message={t.app.account_status_unknown_body}
+		data-email-verification-title={t.app.account_status_verify_title}
+		data-email-verification-message={t.app.account_status_verify_body}
+		data-pending-approval-title={t.app.account_status_pending_title}
+		data-pending-approval-message={t.app.account_status_pending_body}
+		data-disabled-title={t.app.account_status_disabled_title}
+		data-disabled-message={t.app.account_status_disabled_body}
+		data-active-title={t.app.account_status_active_title}
+		data-active-message={t.app.account_status_active_body}
+		data-reset-title={t.app.account_status_reset_title}
+		data-reset-message={t.app.account_status_reset_body}
+		data-email-label={t.app.auth_email_label}
+		data-code-label={t.app.auth_code_label}
+		data-password-label={t.app.auth_new_password_label}
+		data-verify-label={t.app.auth_submit_verify}
+		data-reset-label={t.app.auth_submit_reset_password}
+		data-resend-label={t.app.auth_submit_resend_verification}
+		data-back-login-label={t.app.action_login}
+		data-back-home-label={t.app.action_back_home}
+		data-pending-message={t.app.auth_pending}
+		data-error-message={t.app.auth_error_fallback}
+		data-verify-success-message={t.app.auth_verify_success}
+		data-resend-success-message={t.app.auth_resend_success}
+		data-reset-success-message={t.app.auth_reset_success}
+		data-login-url={`/${lang}/login`}
+		data-home-url={`/${lang}/`}
+	>
+		<article class="auth-panel">
+			<p class="auth-kicker">{t.app.account_status_kicker}</p>
+			<h1 data-account-status-title>{t.app.account_status_title}</h1>
+			<p class="auth-intro" data-account-status-message>{t.app.account_status_intro}</p>
+
+			<form class="auth-form" data-account-status-form hidden>
+				<label class="auth-field">
+					<span class="auth-field-label" data-key-label>{t.app.auth_email_label}</span>
+					<input class="auth-input" type="text" name="key" autocomplete="email" data-key-input />
+				</label>
+				<label class="auth-field">
+					<span class="auth-field-label">{t.app.auth_code_label}</span>
+					<input class="auth-input" type="text" name="token" autocomplete="one-time-code" required />
+				</label>
+				<label class="auth-field" data-password-field hidden>
+					<span class="auth-field-label">{t.app.auth_new_password_label}</span>
+					<input
+						class="auth-input"
+						type="password"
+						name="password"
+						autocomplete="new-password"
+						minlength="8"
+					/>
+				</label>
+				<div class="auth-actions">
+					<button class="auth-submit" type="submit" data-submit-button>
+						{t.app.auth_submit_verify}
+					</button>
+					<button class="auth-secondary-button" type="button" data-resend-button hidden>
+						{t.app.auth_submit_resend_verification}
+					</button>
+				</div>
+			</form>
+
+			<div class="auth-status" data-state="idle" data-auth-status>
+				<p class="auth-status-label">{t.app.auth_status_label}</p>
+				<p class="auth-status-text" data-auth-status-text></p>
+			</div>
+		</article>
+
+		<aside class="auth-side-card">
+			<p class="auth-side-kicker">{t.app.account_status_help_kicker}</p>
+			<h2>{t.app.account_status_help_title}</h2>
+			<p data-account-status-side-message>{t.app.account_status_help_body}</p>
+			<ul class="auth-side-list">
+				<li>{t.app.account_status_help_item_one}</li>
+				<li>{t.app.account_status_help_item_two}</li>
+				<li>{t.app.account_status_help_item_three}</li>
+			</ul>
+			<div class="auth-actions">
+				<a class="auth-link-button" href={`/${lang}/login`} data-login-link>{t.app.action_login}</a>
+				<a class="auth-link-button" href={`/${lang}/`}>{t.app.action_back_home}</a>
+			</div>
+		</aside>
+	</section>
+
+	<script>
+		import { getApiAdapter } from '../../libs/api/adapters/api.adapter.ts';
+		import { getErrorMessage } from '../../libs/api/auth/session.ts';
+
+		const initAccountStatusPage = () => {
+			const page = document.querySelector('[data-account-status-page]');
+			const title = document.querySelector('[data-account-status-title]');
+			const message = document.querySelector('[data-account-status-message]');
+			const sideMessage = document.querySelector('[data-account-status-side-message]');
+			const form = document.querySelector('[data-account-status-form]');
+			const keyLabel = document.querySelector('[data-key-label]');
+			const keyInput = document.querySelector('[data-key-input]');
+			const passwordField = document.querySelector('[data-password-field]');
+			const submitButton = document.querySelector('[data-submit-button]');
+			const resendButton = document.querySelector('[data-resend-button]');
+			const loginLink = document.querySelector('[data-login-link]');
+			const status = document.querySelector('[data-auth-status]');
+			const statusText = document.querySelector('[data-auth-status-text]');
+
+			if (
+				!(page instanceof HTMLElement) ||
+				!(title instanceof HTMLElement) ||
+				!(message instanceof HTMLElement) ||
+				!(sideMessage instanceof HTMLElement) ||
+				!(form instanceof HTMLFormElement) ||
+				!(keyLabel instanceof HTMLElement) ||
+				!(keyInput instanceof HTMLInputElement) ||
+				!(passwordField instanceof HTMLElement) ||
+				!(submitButton instanceof HTMLButtonElement) ||
+				!(resendButton instanceof HTMLButtonElement) ||
+				!(loginLink instanceof HTMLAnchorElement) ||
+				!(status instanceof HTMLElement) ||
+				!(statusText instanceof HTMLElement)
+			) {
+				return;
+			}
+
+			const params = new URLSearchParams(window.location.search);
+			const rawStatus = params.get('status') || '';
+			const rawCode = params.get('code') || '';
+			const mode = params.get('mode') || '';
+			const email = params.get('email') || '';
+			const key = params.get('key') || email;
+			const token = params.get('token') || '';
+			const loginUrl = page.dataset.loginUrl || '/';
+			const homeUrl = page.dataset.homeUrl || '/';
+			const pendingMessage = page.dataset.pendingMessage || 'Submitting request';
+			const errorMessage = page.dataset.errorMessage || 'Request failed.';
+			const verifySuccessMessage = page.dataset.verifySuccessMessage || 'Verification completed.';
+			const resendSuccessMessage = page.dataset.resendSuccessMessage || 'Verification email sent.';
+			const resetSuccessMessage = page.dataset.resetSuccessMessage || 'Password updated.';
+			const verifyLabel = page.dataset.verifyLabel || 'Verify';
+			const resetLabel = page.dataset.resetLabel || 'Reset password';
+			const resendLabel = page.dataset.resendLabel || 'Resend verification';
+
+			const statusMap = {
+				pending_verification: {
+					title: page.dataset.emailVerificationTitle,
+					message: page.dataset.emailVerificationMessage,
+					side: page.dataset.emailVerificationMessage,
+					showForm: true,
+					mode: 'verify-email',
+				},
+				EMAIL_VERIFICATION_REQUIRED: {
+					title: page.dataset.emailVerificationTitle,
+					message: page.dataset.emailVerificationMessage,
+					side: page.dataset.emailVerificationMessage,
+					showForm: true,
+					mode: 'verify-email',
+				},
+				pending_approval: {
+					title: page.dataset.pendingApprovalTitle,
+					message: page.dataset.pendingApprovalMessage,
+					side: page.dataset.pendingApprovalMessage,
+					showForm: false,
+					mode: 'info',
+				},
+				ACCOUNT_PENDING_APPROVAL: {
+					title: page.dataset.pendingApprovalTitle,
+					message: page.dataset.pendingApprovalMessage,
+					side: page.dataset.pendingApprovalMessage,
+					showForm: false,
+					mode: 'info',
+				},
+				disabled: {
+					title: page.dataset.disabledTitle,
+					message: page.dataset.disabledMessage,
+					side: page.dataset.disabledMessage,
+					showForm: false,
+					mode: 'info',
+				},
+				ACCOUNT_DISABLED: {
+					title: page.dataset.disabledTitle,
+					message: page.dataset.disabledMessage,
+					side: page.dataset.disabledMessage,
+					showForm: false,
+					mode: 'info',
+				},
+				active: {
+					title: page.dataset.activeTitle,
+					message: page.dataset.activeMessage,
+					side: page.dataset.activeMessage,
+					showForm: false,
+					mode: 'info',
+				},
+			};
+
+			const resolvedState =
+				mode === 'reset-password'
+					? {
+							title: page.dataset.resetTitle,
+							message: page.dataset.resetMessage,
+							side: page.dataset.resetMessage,
+							showForm: true,
+							mode: 'reset-password',
+						}
+					: statusMap[rawStatus] ||
+						statusMap[rawCode] || {
+							title: page.dataset.defaultState,
+							message: page.dataset.defaultMessage,
+							side: page.dataset.defaultMessage,
+							showForm: false,
+							mode: 'info',
+						};
+
+			const setStatus = (state, text) => {
+				status.dataset.state = state;
+				statusText.textContent = text;
+			};
+
+			const setPending = (pending, label) => {
+				submitButton.disabled = pending;
+				resendButton.disabled = pending;
+				submitButton.textContent = pending ? pendingMessage : label;
+			};
+
+			title.textContent = resolvedState.title || '';
+			message.textContent = resolvedState.message || '';
+			sideMessage.textContent = resolvedState.side || '';
+
+			if (!resolvedState.showForm) {
+				form.hidden = true;
+				loginLink.href = rawStatus === 'active' ? homeUrl : loginUrl;
+				return;
+			}
+
+			form.hidden = false;
+			keyInput.value = key;
+			form.elements.namedItem('token').value = token;
+			keyLabel.textContent = page.dataset.emailLabel || 'Email';
+
+			if (resolvedState.mode === 'reset-password') {
+				passwordField.hidden = false;
+				keyInput.autocomplete = 'email';
+				submitButton.textContent = resetLabel;
+				const passwordInput = form.elements.namedItem('password');
+				if (passwordInput instanceof HTMLInputElement) {
+					passwordInput.required = true;
+				}
+			} else {
+				passwordField.hidden = true;
+				submitButton.textContent = verifyLabel;
+				resendButton.hidden = !email;
+			}
+
+			form.addEventListener('submit', async (event) => {
+				event.preventDefault();
+				const formData = new FormData(form);
+				const currentKey = String(formData.get('key') || '').trim();
+				const currentToken = String(formData.get('token') || '').trim();
+				const currentPassword = String(formData.get('password') || '');
+
+				setPending(true, resolvedState.mode === 'reset-password' ? resetLabel : verifyLabel);
+				setStatus('pending', pendingMessage);
+
+				try {
+					if (resolvedState.mode === 'reset-password') {
+						await getApiAdapter().resetPassword({
+							key: currentKey,
+							token: currentToken,
+							password: currentPassword,
+						});
+						setStatus('success', resetSuccessMessage);
+					} else {
+						const response = await getApiAdapter().verifyEmail({
+							key: currentKey,
+							token: currentToken,
+						});
+						setStatus('success', response.message || verifySuccessMessage);
+					}
+				} catch (error) {
+					setStatus('error', getErrorMessage(error, errorMessage));
+				} finally {
+					setPending(false, resolvedState.mode === 'reset-password' ? resetLabel : verifyLabel);
+				}
+			});
+
+			resendButton.addEventListener('click', async () => {
+				if (!email) {
+					return;
+				}
+
+				setPending(true, verifyLabel);
+				setStatus('pending', pendingMessage);
+
+				try {
+					const response = await getApiAdapter().resendVerificationEmail({ email });
+					setStatus('success', response.message || resendSuccessMessage);
+				} catch (error) {
+					setStatus('error', getErrorMessage(error, errorMessage));
+				} finally {
+					setPending(false, verifyLabel);
+				}
+			});
+		};
+
+		if (document.readyState === 'loading') {
+			document.addEventListener('DOMContentLoaded', initAccountStatusPage, { once: true });
+		} else {
+			initAccountStatusPage();
+		}
+	</script>
+</Layout>

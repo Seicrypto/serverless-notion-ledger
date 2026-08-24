@@ -43,6 +43,10 @@ export class ApiAdapter {
 		return this.client.getAuthVerifyEmail({ query: payload });
 	}
 
+	resendVerificationEmail(payload: { email: string }) {
+		return this.client.postAuthResendVerificationEmail({ body: payload });
+	}
+
 	forgotPassword(payload: ForgotPasswordRequest) {
 		return this.client.postAuthForgotPassword({ body: payload });
 	}

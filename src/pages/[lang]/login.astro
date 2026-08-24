@@ -26,6 +26,7 @@ const t = getI18n(lang);
 		data-pending-message={t.app.auth_pending}
 		data-redirect-url={`/${lang}/me`}
 		data-register-url={`/${lang}/register`}
+		data-status-url={`/${lang}/account-status`}
 	>
 		<article class="auth-panel">
 			<p class="auth-kicker">{t.common.login}</p>
@@ -94,7 +95,11 @@ const t = getI18n(lang);
 
 	<script>
 		import { getApiAdapter } from '../../libs/api/adapters/api.adapter.ts';
-		import { getErrorMessage, refreshAuthSession } from '../../libs/api/auth/session.ts';
+		import {
+			getApiErrorCode,
+			getErrorMessage,
+			refreshAuthSession,
+		} from '../../libs/api/auth/session.ts';
 
 		const initLoginPage = () => {
 			const page = document.querySelector('[data-login-page]');
@@ -124,7 +129,13 @@ const t = getI18n(lang);
 			const successMessage = page.dataset.successMessage || 'Login succeeded.';
 			const errorMessage = page.dataset.errorMessage || 'Request failed.';
 			const redirectUrl = page.dataset.redirectUrl || '/';
+			const statusUrl = page.dataset.statusUrl || '/';
 			const idleLabel = submitButton.textContent || 'Login';
+			const redirectCodes = new Map([
+				['EMAIL_VERIFICATION_REQUIRED', 'pending_verification'],
+				['ACCOUNT_PENDING_APPROVAL', 'pending_approval'],
+				['ACCOUNT_DISABLED', 'disabled'],
+			]);
 
 			const setStatus = (state, message) => {
 				status.dataset.state = state;
@@ -153,14 +164,29 @@ const t = getI18n(lang);
 				setStatus('pending', pendingMessage);
 
 				try {
+					const email = String(formData.get('email') || '');
 					await getApiAdapter().login({
-						email: String(formData.get('email') || ''),
+						email,
 						password: String(formData.get('password') || ''),
 					});
 					await refreshAuthSession(guestLabel);
 					setStatus('success', successMessage);
 					window.location.href = redirectUrl;
 				} catch (error) {
+					const errorCode = getApiErrorCode(error);
+					const targetStatus = errorCode ? redirectCodes.get(errorCode) : null;
+					if (targetStatus) {
+						const nextUrl = new URL(statusUrl, window.location.origin);
+						nextUrl.searchParams.set('status', targetStatus);
+						nextUrl.searchParams.set('code', errorCode);
+						nextUrl.searchParams.set('email', String(formData.get('email') || ''));
+						if (targetStatus === 'pending_verification') {
+							nextUrl.searchParams.set('mode', 'verify-email');
+						}
+						window.location.href = nextUrl.toString();
+						return;
+					}
+
 					setStatus('error', getErrorMessage(error, errorMessage));
 				} finally {
 					setPending(false);

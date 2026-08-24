@@ -8,6 +8,7 @@ export interface ApiClientLike {
 	getAuthMe: OpenApiClient['getAuthMe'];
 	postAuthLogout: OpenApiClient['postAuthLogout'];
 	getAuthVerifyEmail: OpenApiClient['getAuthVerifyEmail'];
+	postAuthResendVerificationEmail: OpenApiClient['postAuthResendVerificationEmail'];
 	postAuthForgotPassword: OpenApiClient['postAuthForgotPassword'];
 	postAuthResetPassword: OpenApiClient['postAuthResetPassword'];
 	getAdminUsersPending: OpenApiClient['getAdminUsersPending'];

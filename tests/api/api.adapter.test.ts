@@ -23,6 +23,7 @@ function createMockClient() {
 		getAuthMe: () => response('getAuthMe'),
 		postAuthLogout: () => response('postAuthLogout'),
 		getAuthVerifyEmail: (payload) => response('getAuthVerifyEmail', payload),
+		postAuthResendVerificationEmail: (payload) => response('postAuthResendVerificationEmail', payload),
 		postAuthForgotPassword: (payload) => response('postAuthForgotPassword', payload),
 		postAuthResetPassword: (payload) => response('postAuthResetPassword', payload),
 		getAdminUsersPending: () => response('getAdminUsersPending'),
@@ -47,6 +48,7 @@ test('ApiAdapter maps auth operations to generated client methods', async () => 
 	await adapter.getCurrentUser();
 	await adapter.logout();
 	await adapter.verifyEmail({ key: 'verify-key', token: 'verify-token' });
+	await adapter.resendVerificationEmail({ email: 'demo@example.com' });
 
 	assert.deepEqual(calls, [
 		{
@@ -58,6 +60,10 @@ test('ApiAdapter maps auth operations to generated client methods', async () => 
 		{
 			method: 'getAuthVerifyEmail',
 			payload: { query: { key: 'verify-key', token: 'verify-token' } },
+		},
+		{
+			method: 'postAuthResendVerificationEmail',
+			payload: { body: { email: 'demo@example.com' } },
 		},
 	]);
 });

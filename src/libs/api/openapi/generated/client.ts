@@ -10,7 +10,11 @@ import type {
 	LoginRequest,
 	LogoutResponse,
 	AuthMeResponse,
+	UpdateDisplayNameResponse,
+	UpdateDisplayNameRequest,
 	VerifyEmailResponse,
+	ResendVerificationEmailResponse,
+	ResendVerificationEmailRequest,
 	ForgotPasswordResponse,
 	ForgotPasswordRequest,
 	ResetPasswordResponse,
@@ -27,7 +31,9 @@ export const operationPaths = {
 	postAuthLogin: "/auth/login",
 	postAuthLogout: "/auth/logout",
 	getAuthMe: "/auth/me",
+	patchAuthMe: "/auth/me",
 	getAuthVerifyEmail: "/auth/verify-email",
+	postAuthResendVerificationEmail: "/auth/resend-verification-email",
 	postAuthForgotPassword: "/auth/forgot-password",
 	postAuthResetPassword: "/auth/reset-password",
 	getAdminUsersPending: "/admin/users/pending",
@@ -47,7 +53,9 @@ export type ApiOperations = {
 	postAuthLogin: { body: LoginRequest; response: LoginResponse; };
 	postAuthLogout: { response: LogoutResponse; };
 	getAuthMe: { response: AuthMeResponse; };
+	patchAuthMe: { body: UpdateDisplayNameRequest; response: UpdateDisplayNameResponse; };
 	getAuthVerifyEmail: { query: { "key": string; "token": string; }; response: VerifyEmailResponse; };
+	postAuthResendVerificationEmail: { body: ResendVerificationEmailRequest; response: ResendVerificationEmailResponse; };
 	postAuthForgotPassword: { body: ForgotPasswordRequest; response: ForgotPasswordResponse; };
 	postAuthResetPassword: { body: ResetPasswordRequest; response: ResetPasswordResponse; };
 	getAdminUsersPending: { response: PendingUsersResponse; };
@@ -240,6 +248,25 @@ export class OpenApiClient {
 	}
 
 	/**
+	 * PATCH /auth/me
+	 */
+	async patchAuthMe(options: RequestOptions<ApiOperations['patchAuthMe']> = {}): Promise<ApiOperations['patchAuthMe']['response']> {
+		const body = options.body === undefined ? undefined : JSON.stringify(options.body);
+
+		return this.request<ApiOperations['patchAuthMe']['response']>({
+			method: "PATCH",
+			path: operationPaths.patchAuthMe,
+			pathParams: options.pathParams,
+			query: options.query,
+			headers: {
+			...(options.body === undefined ? {} : { 'content-type': 'application/json' }),
+				...options.headers,
+			},
+			body,
+		});
+	}
+
+	/**
 	 * GET /auth/verify-email
 	 */
 	async getAuthVerifyEmail(options: RequestOptions<ApiOperations['getAuthVerifyEmail']> = {}): Promise<ApiOperations['getAuthVerifyEmail']['response']> {
@@ -252,6 +279,25 @@ export class OpenApiClient {
 				...options.headers,
 			},
 			body: undefined,
+		});
+	}
+
+	/**
+	 * POST /auth/resend-verification-email
+	 */
+	async postAuthResendVerificationEmail(options: RequestOptions<ApiOperations['postAuthResendVerificationEmail']> = {}): Promise<ApiOperations['postAuthResendVerificationEmail']['response']> {
+		const body = options.body === undefined ? undefined : JSON.stringify(options.body);
+
+		return this.request<ApiOperations['postAuthResendVerificationEmail']['response']>({
+			method: "POST",
+			path: operationPaths.postAuthResendVerificationEmail,
+			pathParams: options.pathParams,
+			query: options.query,
+			headers: {
+			...(options.body === undefined ? {} : { 'content-type': 'application/json' }),
+				...options.headers,
+			},
+			body,
 		});
 	}
 
