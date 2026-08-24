@@ -1,6 +1,6 @@
 ---
 import Layout from '../../../layouts/Layout.astro';
-import AppPage from '../../../components/page/AppPage.astro';
+import CreateOrganizationForm from '../../../components/features/org/CreateOrganizationForm.svelte';
 import '../../../styles/app-pages.css';
 import { getI18n, getLangFromUrl } from '../../../libs/i18n';
 import { buildLayoutLabels } from '../../../libs/i18n/layoutLabels';
@@ -18,18 +18,54 @@ const t = getI18n(lang);
 	currentPath={`${Astro.url.pathname}${Astro.url.search}`}
 	labels={buildLayoutLabels(t)}
 >
-	<AppPage
-		eyebrow={t.common.nav_orgs}
-		title={t.app.orgs_new_title}
-		intro={t.app.orgs_new_intro}
-		statusLabel={t.common.user_status}
-		statusValue={t.app.orgs_new_status}
-		primaryLink={{ label: t.app.action_view_my_orgs, href: `/${lang}/me/orgs` }}
-		secondaryLink={{ label: t.app.action_view_orgs, href: `/${lang}/orgs` }}
-		cards={[
-			{ label: t.app.card_scope_label, title: t.app.card_scope_title, body: t.app.card_scope_body },
-			{ label: t.app.card_data_label, title: t.app.card_data_title, body: t.app.card_data_body },
-			{ label: t.app.card_next_label, title: t.app.card_next_title, body: t.app.card_next_body },
-		]}
+	<section class="directory-hero">
+		<div class="directory-hero-copy">
+			<p class="app-eyebrow">{t.common.nav_orgs}</p>
+			<h1>{t.app.orgs_new_title}</h1>
+			<p class="directory-hero-intro">{t.app.orgs_new_intro}</p>
+		</div>
+	</section>
+
+	<CreateOrganizationForm
+		client:load
+		lang={lang}
+		labels={{
+			nameLabel: t.app.orgs_new_form_name_label,
+			slugLabel: t.app.orgs_new_form_slug_label,
+			descriptionLabel: t.app.orgs_new_form_description_label,
+			iconUrlLabel: t.app.orgs_new_form_icon_url_label,
+			gameLabel: t.app.orgs_new_form_game_label,
+			characterNameLabel: t.app.orgs_new_form_character_name_label,
+			characterSlugLabel: t.app.orgs_new_form_character_slug_label,
+			characterNotesLabel: t.app.orgs_new_form_character_notes_label,
+			requiredHint: t.app.orgs_new_form_required_hint,
+			optionalHint: t.app.orgs_new_form_optional_hint,
+			submitLabel: t.app.orgs_new_form_submit_label,
+			namePlaceholder: t.app.orgs_new_form_name_placeholder,
+			slugPlaceholder: t.app.orgs_new_form_slug_placeholder,
+			descriptionPlaceholder: t.app.orgs_new_form_description_placeholder,
+			iconUrlPlaceholder: t.app.orgs_new_form_icon_url_placeholder,
+			characterNamePlaceholder: t.app.orgs_new_form_character_name_placeholder,
+			characterSlugPlaceholder: t.app.orgs_new_form_character_slug_placeholder,
+			characterNotesPlaceholder: t.app.orgs_new_form_character_notes_placeholder,
+			validationRequired: t.app.orgs_new_form_validation_required,
+			validationSlug: t.app.orgs_new_form_validation_slug,
+			validationUrl: t.app.orgs_new_form_validation_url,
+			validationNameLength: t.app.orgs_new_form_validation_name_length,
+			validationSlugLength: t.app.orgs_new_form_validation_slug_length,
+			validationDescriptionLength: t.app.orgs_new_form_validation_description_length,
+			validationNotesLength: t.app.orgs_new_form_validation_notes_length,
+			validationGameRequired: t.app.orgs_new_form_validation_game_required,
+			loadingGames: t.app.orgs_new_form_loading_games,
+			loadingCreateTitle: t.app.orgs_new_form_loading_title,
+			loadingCreateBody: t.app.orgs_new_form_loading_body,
+			errorCreateTitle: t.app.orgs_new_form_error_title,
+			errorTimeoutBody: t.app.orgs_new_form_error_timeout_body,
+			errorRetryLabel: t.app.orgs_new_form_error_retry_label,
+			successCreateTitle: t.app.orgs_new_form_success_title,
+			successCreateBodyPrefix: t.app.orgs_new_form_success_body_prefix,
+			goHomeLabel: t.app.orgs_new_form_go_home_label,
+			goManageLabelPrefix: t.app.orgs_new_form_go_manage_label_prefix,
+		}}
 	/>
 </Layout>

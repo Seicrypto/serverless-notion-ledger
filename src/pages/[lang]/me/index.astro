@@ -1,6 +1,6 @@
 ---
 import Layout from '../../../layouts/Layout.astro';
-import AppPage from '../../../components/page/AppPage.astro';
+import ProfileOverview from '../../../components/features/me/ProfileOverview.svelte';
 import '../../../styles/app-pages.css';
 import { getI18n, getLangFromUrl } from '../../../libs/i18n';
 import { buildLayoutLabels } from '../../../libs/i18n/layoutLabels';
@@ -18,18 +18,43 @@ const t = getI18n(lang);
 	currentPath={`${Astro.url.pathname}${Astro.url.search}`}
 	labels={buildLayoutLabels(t)}
 >
-	<AppPage
-		eyebrow={t.common.nav_my}
-		title={t.app.me_title}
-		intro={t.app.me_intro}
-		statusLabel={t.common.user_status}
-		statusValue={t.app.me_status}
-		primaryLink={{ label: t.app.action_view_orgs, href: `/${lang}/orgs` }}
-		secondaryLink={{ label: t.app.action_back_home, href: `/${lang}/` }}
-		cards={[
-			{ label: t.app.card_scope_label, title: t.app.card_scope_title, body: t.app.card_scope_body },
-			{ label: t.app.card_data_label, title: t.app.card_data_title, body: t.app.card_data_body },
-			{ label: t.app.card_next_label, title: t.app.card_next_title, body: t.app.card_next_body },
-		]}
+	<ProfileOverview
+		client:load
+		lang={lang}
+		labels={{
+			eyebrow: t.app.me_profile_eyebrow,
+			title: t.app.me_title,
+			intro: t.app.me_intro,
+			displayNameLabel: t.app.me_profile_display_name_label,
+			emailLabel: t.app.me_profile_email_label,
+			statusLabel: t.app.me_profile_account_status_label,
+			staffLabel: t.app.me_profile_staff_label,
+			yesLabel: t.app.me_profile_yes_label,
+			noLabel: t.app.me_profile_no_label,
+			editLabel: t.app.me_profile_edit_label,
+			myOrganizationsLabel: t.app.me_profile_my_orgs_label,
+			editDialogTitle: t.app.me_profile_edit_dialog_title,
+			editDialogBody: t.app.me_profile_edit_dialog_body,
+			editInputLabel: t.app.me_profile_edit_input_label,
+			editSubmitLabel: t.app.me_profile_edit_submit_label,
+			editCancelLabel: t.app.me_profile_edit_cancel_label,
+			editPlaceholder: t.app.me_profile_edit_placeholder,
+			editRequiredError: t.app.me_profile_edit_required_error,
+			editLengthError: t.app.me_profile_edit_length_error,
+			editPatternError: t.app.me_profile_edit_pattern_error,
+			pendingTitle: t.app.me_profile_pending_title,
+			pendingBody: t.app.me_profile_pending_body,
+			errorTitle: t.app.me_profile_error_title,
+			errorTimeoutBody: t.app.me_profile_error_timeout_body,
+			retryLabel: t.app.me_profile_retry_label,
+			successTitle: t.app.me_profile_success_title,
+			successBody: t.app.me_profile_success_body,
+			confirmLabel: t.app.me_profile_confirm_label,
+			authRequiredTitle: t.app.auth_required_title,
+			authRequiredBody: t.app.auth_required_body,
+			loginLabel: t.app.action_login,
+			homeLabel: t.app.action_back_home,
+			loadingLabel: t.app.auth_required_loading_label,
+		}}
 	/>
 </Layout>
