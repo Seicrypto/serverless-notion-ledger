@@ -1,10 +1,15 @@
 import { getApiClient, resetApiClient, type ApiClientLike } from '../services/api-client.ts';
 import type { ApiRuntimeConfig } from '../runtime/api-config.ts';
 import type {
+	AddOrganizationMemberRequest,
+	ApplyOrganizationMemberRequest,
+	CreateCharacterRequest,
+	CreateOrganizationRequest,
 	ForgotPasswordRequest,
 	LoginRequest,
 	RegisterRequest,
 	ResetPasswordRequest,
+	UpdateOrganizationRequest,
 } from '../openapi/generated/schema';
 
 export interface ApiAdapterClientOptions {
@@ -69,6 +74,60 @@ export class ApiAdapter {
 
 	enableUser(id: number) {
 		return this.client.postAdminUsersByIdEnable({ pathParams: { id } });
+	}
+
+	listOrganizationGames() {
+		return this.client.getOrganizationsGames();
+	}
+
+	listOrganizations() {
+		return this.client.getOrganizations();
+	}
+
+	createOrganization(payload: CreateOrganizationRequest) {
+		return this.client.postOrganizations({ body: payload });
+	}
+
+	listMyOrganizations() {
+		return this.client.getOrganizationsMe();
+	}
+
+	getOrganization(id: number) {
+		return this.client.getOrganizationsById({ pathParams: { id } });
+	}
+
+	deleteOrganization(id: number) {
+		return this.client.deleteOrganizationsById({ pathParams: { id } });
+	}
+
+	updateOrganization(id: number, payload: UpdateOrganizationRequest) {
+		return this.client.patchOrganizationsById({ pathParams: { id }, body: payload });
+	}
+
+	listOrganizationCharacters(id: number) {
+		return this.client.getOrganizationsByIdCharacters({ pathParams: { id } });
+	}
+
+	createOrganizationCharacter(id: number, payload: CreateCharacterRequest) {
+		return this.client.postOrganizationsByIdCharacters({ pathParams: { id }, body: payload });
+	}
+
+	listOrganizationMembers(id: number) {
+		return this.client.getOrganizationsByIdMembers({ pathParams: { id } });
+	}
+
+	addOrganizationMember(id: number, payload: AddOrganizationMemberRequest) {
+		return this.client.postOrganizationsByIdMembers({ pathParams: { id }, body: payload });
+	}
+
+	applyToOrganization(id: number, payload: ApplyOrganizationMemberRequest) {
+		return this.client.postOrganizationsByIdMembersApply({ pathParams: { id }, body: payload });
+	}
+
+	approveOrganizationMember(id: number, memberId: number) {
+		return this.client.postOrganizationsByIdMembersByMemberIdApprove({
+			pathParams: { id, memberId },
+		});
 	}
 
 	getCurrentOrganization() {

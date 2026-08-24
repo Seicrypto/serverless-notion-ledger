@@ -18,6 +18,8 @@
     "test:api": "node --test --experimental-strip-types ./tests/api/**/*.test.ts"
   },
   "dependencies": {
-    "astro": "^7.2.2"
+    "@astrojs/svelte": "^9.0.1",
+    "astro": "^7.2.2",
+    "svelte": "^5.56.10"
   }
 }
