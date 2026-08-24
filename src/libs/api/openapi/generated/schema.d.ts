@@ -17,9 +17,17 @@ export type LoginRequest = { "email": string; "password": string; };
 
 export type LogoutResponse = { "message": string; };
 
-export type AuthMeResponse = { "user": { "displayName": string | unknown; "email": string; "emailVerifiedAt": string | unknown; "id": number; "isStaff": boolean; "staffRole": "admin" | "staff" | null; "status": "pending_verification" | "pending_approval" | "active" | "disabled"; }; };
+export type AuthMeResponse = { "user": { "displayName": string | unknown; "email": string; "emailVerifiedAt": string | unknown; "id": number; "isStaff": boolean; "staffRole": "admin" | "staff" | null; "status": "pending_verification" | "pending_approval" | "active" | "disabled"; "vanity": string | unknown; }; };
+
+export type UpdateDisplayNameResponse = { "email": string; "message": string; "user": { "displayName": string; "id": number; }; };
+
+export type UpdateDisplayNameRequest = { "displayName": string; };
 
 export type VerifyEmailResponse = { "email": string; "message": string; "status": "pending_approval" | "active"; "userId": number; };
+
+export type ResendVerificationEmailResponse = { "message": string; };
+
+export type ResendVerificationEmailRequest = { "email": string; };
 
 export type ForgotPasswordResponse = { "message": string; };
 
@@ -34,5 +42,65 @@ export type PendingUsersResponse = { "users": Array<ManagedUser>; };
 export type ManagedUser = { "email": string; "emailVerifiedAt": string | unknown; "id": number; "status": "pending_verification" | "pending_approval" | "active" | "disabled"; };
 
 export type ManagedUserResponse = { "message": string; "user": ManagedUser; };
+
+export type GameListResponse = { "games": Array<Game>; };
+
+export type Game = { "description": string | unknown; "iconUrl": string | unknown; "id": number; "isActive": boolean; "name": string; "slug": string; "source": "internal" | "steam"; "sourceId": string | unknown; "type": "game" | "activity"; };
+
+export type OrganizationListResponse = { "organizations": Array<OrganizationCard>; "pagination": OffsetPagination; };
+
+export type OrganizationCard = { "description": string | unknown; "display": OrganizationCardDisplay; "games": Array<OrganizationCardGame>; "iconUrl": string | unknown; "id": number; "membership": OrganizationCardMembership; "name": string; "slug": string; "stats": OrganizationCardStats; "tags": Array<string>; };
+
+export type OrganizationCardDisplay = { "isSupportedOrg": boolean; "maxVisibleGames": number; "maxVisibleTags": number; };
+
+export type OrganizationCardGame = { "iconUrl": string | unknown; "name": string; "primary": boolean; };
+
+export type OrganizationCardMembership = { "role": "owner" | "admin" | "member" | null; "status": "pending" | "active" | null; } | { "role": "owner" | "admin" | "member" | null; "status": "pending" | "active" | null; };
+
+export type OrganizationCardStats = { "characterCount": number; "memberCount": number; };
+
+export type OffsetPagination = { "hasMore": boolean; "limit": number; "offset": number; };
+
+export type MyOrganizationsResponse = { "organizations": Array<OrganizationCard>; "pagination": OffsetPagination; };
+
+export type OrganizationDetailResponse = { "organization": OrganizationSearchItem; };
+
+export type OrganizationSearchItem = Organization & { "activeCharacterCount": number; "activeMemberCount": number; "games": Array<OrganizationGameSummary>; };
+
+export type OrganizationGameSummary = { "displayName": string | unknown; "gameId": number; "gameName": string; "gameSlug": string; "isPrimary": boolean; "source": "internal" | "steam"; "sourceId": string | unknown; "type": "game" | "activity"; };
+
+export type Organization = { "createdAt": string; "createdByUserId": number; "description": string | unknown; "iconUrl": string | unknown; "id": number; "name": string; "slug": string; "updatedAt": string; "vanity": string | unknown; };
+
+export type OrganizationCharactersResponse = { "characters": Array<OrganizationCharacter>; };
+
+export type OrganizationCharacter = { "claimedByUserId": number | unknown; "createdAt": string; "gameId": number | unknown; "id": number; "isActive": boolean; "name": string; "notes": string | unknown; "organizationId": number; "slug": string | unknown; "updatedAt": string; };
+
+export type OrganizationMembersResponse = { "members": Array<OrganizationMember>; };
+
+export type OrganizationMember = { "approvedAt": string | unknown; "createdAt": string; "id": number; "joinedAt": string; "organizationId": number; "role": "owner" | "admin" | "member"; "status": "pending" | "active"; "userId": number; };
+
+export type CreateOrganizationResponse = { "character": OrganizationCharacter; "message": string; "membership": OrganizationMember; "organization": Organization; };
+
+export type CreateOrganizationRequest = { "description"?: string | unknown; "iconUrl"?: string | unknown; "initialCharacter": InitialCharacterRequest; "name": string; "slug": string; };
+
+export type InitialCharacterRequest = { "gameId": number; "name": string; "notes"?: string | unknown; "slug"?: string | unknown; };
+
+export type CreateCharacterResponse = { "character": OrganizationCharacter; "message": string; };
+
+export type CreateCharacterRequest = { "gameId": number; "name": string; "notes"?: string | unknown; "slug"?: string | unknown; };
+
+export type OrganizationMemberWithCharacterResponse = { "character": OrganizationCharacter; "member": OrganizationMember; "message": string; };
+
+export type AddOrganizationMemberRequest = { "characterId": number; "role"?: "admin" | "member"; "userId": number; };
+
+export type ApplyOrganizationMemberRequest = { "characterId": number; };
+
+export type OrganizationMemberResponse = { "member": OrganizationMember; "message": string; };
+
+export type DeleteOrganizationResponse = { "message": string; };
+
+export type UpdateOrganizationResponse = { "message": string; "organization": Organization; };
+
+export type UpdateOrganizationRequest = { "description"?: string | unknown; "iconUrl"?: string | unknown; "name"?: string; "slug"?: string; };
 
 export type MessageResponse = { "message": string; };

@@ -1,13 +1,147 @@
 ---
 import Layout from '../../../layouts/Layout.astro';
-import AppPage from '../../../components/AppPage.astro';
+import AppPage from '../../../components/page/AppPage.astro';
+import OrganizationCard from '../../../components/features/org/OrganizationCard.svelte';
 import '../../../styles/app-pages.css';
 import { getI18n, getLangFromUrl } from '../../../libs/i18n';
 import { buildLayoutLabels } from '../../../libs/i18n/layoutLabels';
+import { createOrganizationCardResponse } from '../../../libs/api/organizations/organization-card.ts';
 export { getStaticPaths } from '../../../libs/static/staticPaths';
 
 const lang = getLangFromUrl(Astro.url);
 const t = getI18n(lang);
+
+const previewCopy =
+	lang === 'zh-tw'
+		? {
+				eyebrow: 'Org Card Preview',
+				title: '已加入公會卡片預覽',
+				intro: '這批先用假資料看卡片資訊密度。之後接上 API 時，可以沿用同一張卡片到推薦列表、搜尋結果與我的組織頁。',
+				countLabel: '示範卡片',
+				actionLabel: '查看公會',
+				memberCountLabel: '成員',
+				characterCountLabel: '角色',
+				supportedOrgLabel: '支持公會',
+			}
+		: lang === 'ja'
+			? {
+					eyebrow: 'Org Card Preview',
+					title: '参加中ギルドカードのプレビュー',
+					intro: 'まずはダミーデータで情報密度を確認します。API 接続後も同じカードをおすすめ一覧、検索結果、自分の組織ページで共通利用できます。',
+					countLabel: 'Preview cards',
+					actionLabel: 'ギルドを見る',
+					memberCountLabel: 'メンバー',
+					characterCountLabel: 'キャラ',
+					supportedOrgLabel: 'サポート対象',
+				}
+			: {
+					eyebrow: 'Org Card Preview',
+					title: 'Joined guild card preview',
+					intro: 'This first pass uses mock data so we can judge the card density. Once the API is wired, the same card can power recommended lists, search results, and the personal org page.',
+					countLabel: 'Preview cards',
+					actionLabel: 'Open guild',
+					memberCountLabel: 'Members',
+					characterCountLabel: 'Characters',
+					supportedOrgLabel: 'Supported org',
+				};
+
+const sampleOrganizations = [
+	createOrganizationCardResponse({
+		id: 1,
+		name: 'Crimson Harbor',
+		slug: 'crimson-harbor',
+		iconUrl: null,
+		description:
+			lang === 'zh-tw'
+				? '主打團本進度與分裝追蹤，平日偏固定隊，週末會開新手補位。'
+				: lang === 'ja'
+					? 'レイド進行と分配管理が中心のギルドです。平日は固定、週末は初心者補充枠も開きます。'
+					: 'A raid-focused guild with steady progression runs on weekdays and newcomer fill groups on weekends.',
+		membership: {
+			role: 'admin',
+			status: 'active',
+		},
+		stats: {
+			memberCount: 48,
+			characterCount: 61,
+		},
+		games: [
+			{
+				name: 'Final Fantasy XIV',
+				iconUrl: '/assets/icons/game-generic.svg',
+				primary: true,
+			},
+			{
+				name: 'Guild Wars 2',
+				iconUrl: '/assets/icons/game-generic.svg',
+				primary: false,
+			},
+		],
+		tags: [
+			lang === 'zh-tw' ? '固定團' : lang === 'ja' ? '固定レイド' : 'Static Raid',
+			lang === 'zh-tw' ? '新手友善' : lang === 'ja' ? '初心者歓迎' : 'Beginner Friendly',
+		],
+		display: {
+			maxVisibleGames: 2,
+			maxVisibleTags: 2,
+			isSupportedOrg: false,
+		},
+	}),
+	createOrganizationCardResponse({
+		id: 2,
+		name: 'Moonlit Caravan',
+		slug: 'moonlit-caravan',
+		iconUrl: null,
+		description:
+			lang === 'zh-tw'
+				? '偏生活向與活動向的社群公會，成員流動高，適合強調搜尋與推薦情境。'
+				: lang === 'ja'
+					? '生活系とイベント系が中心のコミュニティ寄りギルドで、検索やおすすめ用途の見え方確認に向いています。'
+					: 'A social and event-heavy guild with higher member turnover, useful for previewing search and recommendation layouts.',
+		membership: {
+			role: 'member',
+			status: 'active',
+		},
+		stats: {
+			memberCount: 92,
+			characterCount: 134,
+		},
+		games: [
+			{
+				name: 'World of Warcraft',
+				iconUrl: '/assets/icons/game-generic.svg',
+				primary: true,
+			},
+			{
+				name: 'Final Fantasy XIV',
+				iconUrl: '/assets/icons/game-generic.svg',
+				primary: false,
+			},
+			{
+				name: 'Path of Exile 2',
+				iconUrl: '/assets/icons/game-generic.svg',
+				primary: false,
+			},
+			{
+				name: 'Guild Wars 2',
+				iconUrl: '/assets/icons/game-generic.svg',
+				primary: false,
+			},
+		],
+		tags: [
+			'Mythic+',
+			lang === 'zh-tw' ? '活動向' : lang === 'ja' ? 'イベント重視' : 'Event Focused',
+			lang === 'zh-tw' ? '招募中' : lang === 'ja' ? '募集中' : 'Recruiting',
+			lang === 'zh-tw' ? '休閒' : lang === 'ja' ? 'カジュアル' : 'Casual',
+			lang === 'zh-tw' ? '跨遊戲' : lang === 'ja' ? 'マルチゲーム' : 'Multi-game',
+		],
+		display: {
+			maxVisibleGames: 5,
+			maxVisibleTags: 5,
+			isSupportedOrg: true,
+		},
+	}),
+];
 ---
 
 <Layout
@@ -32,4 +166,32 @@ const t = getI18n(lang);
 			{ label: t.app.card_next_label, title: t.app.card_next_title, body: t.app.card_next_body },
 		]}
 	/>
+
+	<section class="app-section">
+		<div class="app-section-head">
+			<div class="app-section-copy">
+				<p class="app-eyebrow">{previewCopy.eyebrow}</p>
+				<h2>{previewCopy.title}</h2>
+				<p>{previewCopy.intro}</p>
+			</div>
+			<p class="app-section-badge">
+				{previewCopy.countLabel}: {sampleOrganizations.length}
+			</p>
+		</div>
+
+		<div class="org-card-grid">
+			{sampleOrganizations.map((organization) => (
+				<OrganizationCard
+					organization={organization}
+					href={`/${lang}/members?org=${organization.slug}`}
+					actionLabel={previewCopy.actionLabel}
+					labels={{
+						members: previewCopy.memberCountLabel,
+						characters: previewCopy.characterCountLabel,
+						supportedOrg: previewCopy.supportedOrgLabel,
+					}}
+				/>
+			))}
+		</div>
+	</section>
 </Layout>

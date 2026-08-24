@@ -79,6 +79,10 @@
 	outline-offset: 2px;
 }
 
+.auth-input[readonly] {
+	opacity: 0.78;
+}
+
 .auth-actions {
 	display: flex;
 	flex-wrap: wrap;
