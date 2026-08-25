@@ -36,16 +36,41 @@ function createMockClient() {
 		getOrganizations: (payload) => response('getOrganizations', payload),
 		postOrganizations: (payload) => response('postOrganizations', payload),
 		getOrganizationsMe: (payload) => response('getOrganizationsMe', payload),
-		getOrganizationsById: (payload) => response('getOrganizationsById', payload),
-		deleteOrganizationsById: (payload) => response('deleteOrganizationsById', payload),
-		patchOrganizationsById: (payload) => response('patchOrganizationsById', payload),
-		getOrganizationsByIdCharacters: (payload) => response('getOrganizationsByIdCharacters', payload),
-		postOrganizationsByIdCharacters: (payload) => response('postOrganizationsByIdCharacters', payload),
-		getOrganizationsByIdMembers: (payload) => response('getOrganizationsByIdMembers', payload),
-		postOrganizationsByIdMembers: (payload) => response('postOrganizationsByIdMembers', payload),
-		postOrganizationsByIdMembersApply: (payload) => response('postOrganizationsByIdMembersApply', payload),
-		postOrganizationsByIdMembersByMemberIdApprove: (payload) =>
-			response('postOrganizationsByIdMembersByMemberIdApprove', payload),
+		getOrganizationsByOrganization: (payload) => response('getOrganizationsByOrganization', payload),
+		deleteOrganizationsByOrganization: (payload) => response('deleteOrganizationsByOrganization', payload),
+		patchOrganizationsByOrganization: (payload) => response('patchOrganizationsByOrganization', payload),
+		getOrganizationsByOrganizationCharacters: (payload) =>
+			response('getOrganizationsByOrganizationCharacters', payload),
+		postOrganizationsByOrganizationCharacters: (payload) =>
+			response('postOrganizationsByOrganizationCharacters', payload),
+		getOrganizationsByOrganizationMembers: (payload) =>
+			response('getOrganizationsByOrganizationMembers', payload),
+		postOrganizationsByOrganizationMembers: (payload) =>
+			response('postOrganizationsByOrganizationMembers', payload),
+		getOrganizationsByOrganizationManagementCharacters: (payload) =>
+			response('getOrganizationsByOrganizationManagementCharacters', payload),
+		getOrganizationsByOrganizationManagementMembersActive: (payload) =>
+			response('getOrganizationsByOrganizationManagementMembersActive', payload),
+		getOrganizationsByOrganizationManagementMembersPending: (payload) =>
+			response('getOrganizationsByOrganizationManagementMembersPending', payload),
+		getOrganizationsByOrganizationCharactersAvailable: (payload) =>
+			response('getOrganizationsByOrganizationCharactersAvailable', payload),
+		postOrganizationsByOrganizationMembersInvite: (payload) =>
+			response('postOrganizationsByOrganizationMembersInvite', payload),
+		postOrganizationsByOrganizationMembersApply: (payload) =>
+			response('postOrganizationsByOrganizationMembersApply', payload),
+		postOrganizationsByOrganizationMembersByMemberIdApprove: (payload) =>
+			response('postOrganizationsByOrganizationMembersByMemberIdApprove', payload),
+		postOrganizationsByOrganizationMembersByMemberIdReject: (payload) =>
+			response('postOrganizationsByOrganizationMembersByMemberIdReject', payload),
+		postOrganizationsByOrganizationMembersByMemberIdAppointAdmin: (payload) =>
+			response('postOrganizationsByOrganizationMembersByMemberIdAppointAdmin', payload),
+		postOrganizationsByOrganizationMembersByMemberIdRemoveAdmin: (payload) =>
+			response('postOrganizationsByOrganizationMembersByMemberIdRemoveAdmin', payload),
+		postOrganizationsByOrganizationMembersByMemberIdAcceptInvite: (payload) =>
+			response('postOrganizationsByOrganizationMembersByMemberIdAcceptInvite', payload),
+		postOrganizationsByOrganizationMembersByMemberIdDeclineInvite: (payload) =>
+			response('postOrganizationsByOrganizationMembersByMemberIdDeclineInvite', payload),
 		getOrganizationsCurrent: () => response('getOrganizationsCurrent'),
 		getOrganizationsCurrentMembers: () => response('getOrganizationsCurrentMembers'),
 		getDashboardMe: () => response('getDashboardMe'),
@@ -118,15 +143,27 @@ test('ApiAdapter maps organization operations to generated client methods', asyn
 		initialCharacter: { gameId: 100, name: 'Tank Main' },
 	});
 	await adapter.listMyOrganizations({ limit: 10, offset: 10 });
-	await adapter.getOrganization(10);
-	await adapter.updateOrganization(10, { name: 'Renamed Guild' });
-	await adapter.listOrganizationCharacters(10);
-	await adapter.createOrganizationCharacter(10, { gameId: 100, name: 'Healer Alt' });
-	await adapter.listOrganizationMembers(10);
-	await adapter.addOrganizationMember(10, { userId: 42, characterId: 7, role: 'admin' });
-	await adapter.applyToOrganization(10, { characterId: 9 });
-	await adapter.approveOrganizationMember(10, 88);
-	await adapter.deleteOrganization(10);
+	await adapter.getOrganization('demo-guild');
+	await adapter.updateOrganization('demo-guild', { name: 'Renamed Guild' });
+	await adapter.listOrganizationCharacters('demo-guild');
+	await adapter.createOrganizationCharacter('demo-guild', { gameId: 100, name: 'Healer Alt' });
+	await adapter.listOrganizationMembers('demo-guild');
+	await adapter.addOrganizationMember('demo-guild', { userId: 42, characterId: 7, role: 'admin' });
+	await adapter.listOrganizationManagementCharacters('demo-guild');
+	await adapter.listOrganizationActiveMembers('demo-guild');
+	await adapter.listOrganizationPendingMembers('demo-guild');
+	await adapter.listOrganizationAvailableCharacters('demo-guild');
+	await adapter.inviteOrganizationMember('demo-guild', { userVanity: 'teammate', role: 'member' });
+	await adapter.applyToOrganization('demo-guild', {
+		newCharacter: { gameId: 100, name: 'Fresh Alt' },
+	});
+	await adapter.approveOrganizationMember('demo-guild', 88);
+	await adapter.rejectOrganizationMember('demo-guild', 89);
+	await adapter.appointOrganizationMemberAdmin('demo-guild', 90);
+	await adapter.removeOrganizationMemberAdmin('demo-guild', 91);
+	await adapter.acceptOrganizationInvite('demo-guild', 92);
+	await adapter.declineOrganizationInvite('demo-guild', 93);
+	await adapter.deleteOrganization('demo-guild');
 
 	assert.deepEqual(calls, [
 		{
@@ -151,45 +188,94 @@ test('ApiAdapter maps organization operations to generated client methods', asyn
 			method: 'getOrganizationsMe',
 			payload: { query: { limit: 10, offset: 10 } },
 		},
-		{ method: 'getOrganizationsById', payload: { pathParams: { id: 10 } } },
 		{
-			method: 'patchOrganizationsById',
-			payload: { pathParams: { id: 10 }, body: { name: 'Renamed Guild' } },
+			method: 'getOrganizationsByOrganization',
+			payload: { pathParams: { organization: 'demo-guild' } },
 		},
 		{
-			method: 'getOrganizationsByIdCharacters',
-			payload: { pathParams: { id: 10 } },
+			method: 'patchOrganizationsByOrganization',
+			payload: { pathParams: { organization: 'demo-guild' }, body: { name: 'Renamed Guild' } },
 		},
 		{
-			method: 'postOrganizationsByIdCharacters',
+			method: 'getOrganizationsByOrganizationCharacters',
+			payload: { pathParams: { organization: 'demo-guild' } },
+		},
+		{
+			method: 'postOrganizationsByOrganizationCharacters',
 			payload: {
-				pathParams: { id: 10 },
+				pathParams: { organization: 'demo-guild' },
 				body: { gameId: 100, name: 'Healer Alt' },
 			},
 		},
 		{
-			method: 'getOrganizationsByIdMembers',
-			payload: { pathParams: { id: 10 } },
+			method: 'getOrganizationsByOrganizationMembers',
+			payload: { pathParams: { organization: 'demo-guild' } },
 		},
 		{
-			method: 'postOrganizationsByIdMembers',
+			method: 'postOrganizationsByOrganizationMembers',
 			payload: {
-				pathParams: { id: 10 },
+				pathParams: { organization: 'demo-guild' },
 				body: { userId: 42, characterId: 7, role: 'admin' },
 			},
 		},
 		{
-			method: 'postOrganizationsByIdMembersApply',
+			method: 'getOrganizationsByOrganizationManagementCharacters',
+			payload: { pathParams: { organization: 'demo-guild' } },
+		},
+		{
+			method: 'getOrganizationsByOrganizationManagementMembersActive',
+			payload: { pathParams: { organization: 'demo-guild' } },
+		},
+		{
+			method: 'getOrganizationsByOrganizationManagementMembersPending',
+			payload: { pathParams: { organization: 'demo-guild' } },
+		},
+		{
+			method: 'getOrganizationsByOrganizationCharactersAvailable',
+			payload: { pathParams: { organization: 'demo-guild' } },
+		},
+		{
+			method: 'postOrganizationsByOrganizationMembersInvite',
 			payload: {
-				pathParams: { id: 10 },
-				body: { characterId: 9 },
+				pathParams: { organization: 'demo-guild' },
+				body: { userVanity: 'teammate', role: 'member' },
 			},
 		},
 		{
-			method: 'postOrganizationsByIdMembersByMemberIdApprove',
-			payload: { pathParams: { id: 10, memberId: 88 } },
+			method: 'postOrganizationsByOrganizationMembersApply',
+			payload: {
+				pathParams: { organization: 'demo-guild' },
+				body: { newCharacter: { gameId: 100, name: 'Fresh Alt' } },
+			},
 		},
-		{ method: 'deleteOrganizationsById', payload: { pathParams: { id: 10 } } },
+		{
+			method: 'postOrganizationsByOrganizationMembersByMemberIdApprove',
+			payload: { pathParams: { organization: 'demo-guild', memberId: 88 } },
+		},
+		{
+			method: 'postOrganizationsByOrganizationMembersByMemberIdReject',
+			payload: { pathParams: { organization: 'demo-guild', memberId: 89 } },
+		},
+		{
+			method: 'postOrganizationsByOrganizationMembersByMemberIdAppointAdmin',
+			payload: { pathParams: { organization: 'demo-guild', memberId: 90 } },
+		},
+		{
+			method: 'postOrganizationsByOrganizationMembersByMemberIdRemoveAdmin',
+			payload: { pathParams: { organization: 'demo-guild', memberId: 91 } },
+		},
+		{
+			method: 'postOrganizationsByOrganizationMembersByMemberIdAcceptInvite',
+			payload: { pathParams: { organization: 'demo-guild', memberId: 92 } },
+		},
+		{
+			method: 'postOrganizationsByOrganizationMembersByMemberIdDeclineInvite',
+			payload: { pathParams: { organization: 'demo-guild', memberId: 93 } },
+		},
+		{
+			method: 'deleteOrganizationsByOrganization',
+			payload: { pathParams: { organization: 'demo-guild' } },
+		},
 	]);
 });
 

@@ -1,0 +1,29 @@
+---
+import Layout from '../../../../layouts/Layout.astro';
+import AccessNoticeCard from '../../../../components/features/shared/AccessNoticeCard.svelte';
+import '../../../../styles/app-pages.css';
+import { getI18n, getLangFromUrl } from '../../../../libs/i18n';
+import { buildLayoutLabels } from '../../../../libs/i18n/layoutLabels';
+export { getStaticPaths } from '../../../../libs/static/staticPaths';
+
+const lang = getLangFromUrl(Astro.url);
+const t = getI18n(lang);
+const orgVanity = Astro.url.searchParams.get('orgVanity') ?? Astro.url.searchParams.get('org');
+---
+
+<Layout
+	title={`${t.app.orgs_manage_pending_title} | ${t.common.product_name}`}
+	description={t.app.orgs_manage_pending_intro}
+	productName={t.common.product_name}
+	lang={lang}
+	currentPath={`${Astro.url.pathname}${Astro.url.search}`}
+	labels={buildLayoutLabels(t)}
+>
+	<AccessNoticeCard
+		client:load
+		title={t.app.orgs_manage_pending_title}
+		body={`${t.app.orgs_manage_pending_intro}${orgVanity ? ` (@${orgVanity})` : ''}`}
+		primaryAction={{ label: t.app.action_back_org_manage, href: `/${lang}/orgs/manage${Astro.url.search}` }}
+		secondaryAction={{ label: t.app.action_view_my_orgs, href: `/${lang}/me/orgs` }}
+	/>
+</Layout>

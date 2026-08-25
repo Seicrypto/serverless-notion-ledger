@@ -6,6 +6,7 @@ import type {
 	CreateCharacterRequest,
 	CreateOrganizationRequest,
 	ForgotPasswordRequest,
+	InviteOrganizationMemberRequest,
 	LoginRequest,
 	RegisterRequest,
 	ResetPasswordRequest,
@@ -40,6 +41,12 @@ export interface ListDisabledUsersOptions {
 	email?: string;
 	limit?: number;
 	offset?: number;
+}
+
+export type OrganizationReference = string | number;
+
+function normalizeOrganizationReference(organization: OrganizationReference) {
+	return String(organization);
 }
 
 export class ApiAdapter {
@@ -135,41 +142,122 @@ export class ApiAdapter {
 		});
 	}
 
-	getOrganization(id: number) {
-		return this.client.getOrganizationsById({ pathParams: { id } });
+	getOrganization(organization: OrganizationReference) {
+		return this.client.getOrganizationsByOrganization({
+			pathParams: { organization: normalizeOrganizationReference(organization) },
+		});
 	}
 
-	deleteOrganization(id: number) {
-		return this.client.deleteOrganizationsById({ pathParams: { id } });
+	deleteOrganization(organization: OrganizationReference) {
+		return this.client.deleteOrganizationsByOrganization({
+			pathParams: { organization: normalizeOrganizationReference(organization) },
+		});
 	}
 
-	updateOrganization(id: number, payload: UpdateOrganizationRequest) {
-		return this.client.patchOrganizationsById({ pathParams: { id }, body: payload });
+	updateOrganization(organization: OrganizationReference, payload: UpdateOrganizationRequest) {
+		return this.client.patchOrganizationsByOrganization({
+			pathParams: { organization: normalizeOrganizationReference(organization) },
+			body: payload,
+		});
 	}
 
-	listOrganizationCharacters(id: number) {
-		return this.client.getOrganizationsByIdCharacters({ pathParams: { id } });
+	listOrganizationCharacters(organization: OrganizationReference) {
+		return this.client.getOrganizationsByOrganizationCharacters({
+			pathParams: { organization: normalizeOrganizationReference(organization) },
+		});
 	}
 
-	createOrganizationCharacter(id: number, payload: CreateCharacterRequest) {
-		return this.client.postOrganizationsByIdCharacters({ pathParams: { id }, body: payload });
+	createOrganizationCharacter(organization: OrganizationReference, payload: CreateCharacterRequest) {
+		return this.client.postOrganizationsByOrganizationCharacters({
+			pathParams: { organization: normalizeOrganizationReference(organization) },
+			body: payload,
+		});
 	}
 
-	listOrganizationMembers(id: number) {
-		return this.client.getOrganizationsByIdMembers({ pathParams: { id } });
+	listOrganizationMembers(organization: OrganizationReference) {
+		return this.client.getOrganizationsByOrganizationMembers({
+			pathParams: { organization: normalizeOrganizationReference(organization) },
+		});
 	}
 
-	addOrganizationMember(id: number, payload: AddOrganizationMemberRequest) {
-		return this.client.postOrganizationsByIdMembers({ pathParams: { id }, body: payload });
+	addOrganizationMember(organization: OrganizationReference, payload: AddOrganizationMemberRequest) {
+		return this.client.postOrganizationsByOrganizationMembers({
+			pathParams: { organization: normalizeOrganizationReference(organization) },
+			body: payload,
+		});
 	}
 
-	applyToOrganization(id: number, payload: ApplyOrganizationMemberRequest) {
-		return this.client.postOrganizationsByIdMembersApply({ pathParams: { id }, body: payload });
+	listOrganizationManagementCharacters(organization: OrganizationReference) {
+		return this.client.getOrganizationsByOrganizationManagementCharacters({
+			pathParams: { organization: normalizeOrganizationReference(organization) },
+		});
 	}
 
-	approveOrganizationMember(id: number, memberId: number) {
-		return this.client.postOrganizationsByIdMembersByMemberIdApprove({
-			pathParams: { id, memberId },
+	listOrganizationActiveMembers(organization: OrganizationReference) {
+		return this.client.getOrganizationsByOrganizationManagementMembersActive({
+			pathParams: { organization: normalizeOrganizationReference(organization) },
+		});
+	}
+
+	listOrganizationPendingMembers(organization: OrganizationReference) {
+		return this.client.getOrganizationsByOrganizationManagementMembersPending({
+			pathParams: { organization: normalizeOrganizationReference(organization) },
+		});
+	}
+
+	listOrganizationAvailableCharacters(organization: OrganizationReference) {
+		return this.client.getOrganizationsByOrganizationCharactersAvailable({
+			pathParams: { organization: normalizeOrganizationReference(organization) },
+		});
+	}
+
+	inviteOrganizationMember(organization: OrganizationReference, payload: InviteOrganizationMemberRequest) {
+		return this.client.postOrganizationsByOrganizationMembersInvite({
+			pathParams: { organization: normalizeOrganizationReference(organization) },
+			body: payload,
+		});
+	}
+
+	applyToOrganization(organization: OrganizationReference, payload: ApplyOrganizationMemberRequest) {
+		return this.client.postOrganizationsByOrganizationMembersApply({
+			pathParams: { organization: normalizeOrganizationReference(organization) },
+			body: payload,
+		});
+	}
+
+	approveOrganizationMember(organization: OrganizationReference, memberId: number) {
+		return this.client.postOrganizationsByOrganizationMembersByMemberIdApprove({
+			pathParams: { organization: normalizeOrganizationReference(organization), memberId },
+		});
+	}
+
+	rejectOrganizationMember(organization: OrganizationReference, memberId: number) {
+		return this.client.postOrganizationsByOrganizationMembersByMemberIdReject({
+			pathParams: { organization: normalizeOrganizationReference(organization), memberId },
+		});
+	}
+
+	appointOrganizationMemberAdmin(organization: OrganizationReference, memberId: number) {
+		return this.client.postOrganizationsByOrganizationMembersByMemberIdAppointAdmin({
+			pathParams: { organization: normalizeOrganizationReference(organization), memberId },
+		});
+	}
+
+	removeOrganizationMemberAdmin(organization: OrganizationReference, memberId: number) {
+		return this.client.postOrganizationsByOrganizationMembersByMemberIdRemoveAdmin({
+			pathParams: { organization: normalizeOrganizationReference(organization), memberId },
+		});
+	}
+
+	acceptOrganizationInvite(organization: OrganizationReference, memberId: number) {
+		return this.client.postOrganizationsByOrganizationMembersByMemberIdAcceptInvite({
+			pathParams: { organization: normalizeOrganizationReference(organization), memberId },
+		});
+	}
+
+	declineOrganizationInvite(organization: OrganizationReference, memberId: number) {
+		return this.client.postOrganizationsByOrganizationMembersByMemberIdDeclineInvite({
+			pathParams: { organization: normalizeOrganizationReference(organization), memberId },
 		});
 	}
 

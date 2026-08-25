@@ -108,7 +108,7 @@
 		};
 	};
 
-	const openSuccessDialog = (orgName: string, orgSlug: string, orgId: number) => {
+	const openSuccessDialog = (orgName: string, orgVanity: string | null, orgSlug: string) => {
 		dialogOpen = true;
 		dialogState = 'success';
 		dialogTitle = labels.successCreateTitle;
@@ -119,7 +119,7 @@
 		};
 		dialogPrimaryAction = {
 			label: `${labels.goManageLabelPrefix} ${orgName}`,
-			href: `/${lang}/orgs/manage?orgId=${orgId}&org=${encodeURIComponent(orgSlug)}`,
+			href: `/${lang}/orgs/manage?orgVanity=${encodeURIComponent(orgVanity ?? orgSlug)}`,
 		};
 	};
 
@@ -253,7 +253,11 @@
 			} catch {
 				// Ignore cache refresh failures after creation succeeds.
 			}
-			openSuccessDialog(response.organization.name, response.organization.slug, response.organization.id);
+			openSuccessDialog(
+				response.organization.name,
+				typeof response.organization.vanity === 'string' ? response.organization.vanity : null,
+				response.organization.slug,
+			);
 		} catch (error) {
 			if (timedOut) {
 				return;
