@@ -28,6 +28,7 @@ function createMockClient() {
 		postAuthForgotPassword: (payload) => response('postAuthForgotPassword', payload),
 		postAuthResetPassword: (payload) => response('postAuthResetPassword', payload),
 		getAdminUsersPending: () => response('getAdminUsersPending'),
+		getAdminUsersDisabled: (payload) => response('getAdminUsersDisabled', payload),
 		postAdminUsersByIdApprove: (payload) => response('postAdminUsersByIdApprove', payload),
 		postAdminUsersByIdDisable: (payload) => response('postAdminUsersByIdDisable', payload),
 		postAdminUsersByIdEnable: (payload) => response('postAdminUsersByIdEnable', payload),
@@ -89,11 +90,16 @@ test('ApiAdapter maps admin operations to generated client path params', async (
 	const { client, calls } = createMockClient();
 	const adapter = new ApiAdapter(client);
 
+	await adapter.listDisabledUsers({ displayName: 'mika', limit: 10, offset: 0 });
 	await adapter.approveUser(7);
 	await adapter.disableUser(8);
 	await adapter.enableUser(9);
 
 	assert.deepEqual(calls, [
+		{
+			method: 'getAdminUsersDisabled',
+			payload: { query: { displayName: 'mika', limit: 10, offset: 0 } },
+		},
 		{ method: 'postAdminUsersByIdApprove', payload: { pathParams: { id: 7 } } },
 		{ method: 'postAdminUsersByIdDisable', payload: { pathParams: { id: 8 } } },
 		{ method: 'postAdminUsersByIdEnable', payload: { pathParams: { id: 9 } } },

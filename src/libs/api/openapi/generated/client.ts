@@ -21,6 +21,8 @@ import type {
 	ResetPasswordRequest,
 	PendingUsersResponse,
 	ManagedUser,
+	DisabledUsersResponse,
+	AdminOffsetPagination,
 	ManagedUserResponse,
 	GameListResponse,
 	Game,
@@ -67,6 +69,7 @@ export const operationPaths = {
 	postAuthForgotPassword: "/auth/forgot-password",
 	postAuthResetPassword: "/auth/reset-password",
 	getAdminUsersPending: "/admin/users/pending",
+	getAdminUsersDisabled: "/admin/users/disabled",
 	postAdminUsersByIdApprove: "/admin/users/{id}/approve",
 	postAdminUsersByIdDisable: "/admin/users/{id}/disable",
 	postAdminUsersByIdEnable: "/admin/users/{id}/enable",
@@ -102,6 +105,7 @@ export type ApiOperations = {
 	postAuthForgotPassword: { body: ForgotPasswordRequest; response: ForgotPasswordResponse; };
 	postAuthResetPassword: { body: ResetPasswordRequest; response: ResetPasswordResponse; };
 	getAdminUsersPending: { response: PendingUsersResponse; };
+	getAdminUsersDisabled: { query: { "displayName"?: string; "email"?: string; "limit"?: number; "offset"?: number | unknown; }; response: DisabledUsersResponse; };
 	postAdminUsersByIdApprove: { pathParams: { "id": number; }; response: ManagedUserResponse; };
 	postAdminUsersByIdDisable: { pathParams: { "id": number; }; response: ManagedUserResponse; };
 	postAdminUsersByIdEnable: { pathParams: { "id": number; }; response: ManagedUserResponse; };
@@ -402,6 +406,22 @@ export class OpenApiClient {
 		return this.request<ApiOperations['getAdminUsersPending']['response']>({
 			method: "GET",
 			path: operationPaths.getAdminUsersPending,
+			pathParams: options.pathParams,
+			query: options.query,
+			headers: {
+				...options.headers,
+			},
+			body: undefined,
+		});
+	}
+
+	/**
+	 * GET /admin/users/disabled
+	 */
+	async getAdminUsersDisabled(options: RequestOptions<ApiOperations['getAdminUsersDisabled']> = {}): Promise<ApiOperations['getAdminUsersDisabled']['response']> {
+		return this.request<ApiOperations['getAdminUsersDisabled']['response']>({
+			method: "GET",
+			path: operationPaths.getAdminUsersDisabled,
 			pathParams: options.pathParams,
 			query: options.query,
 			headers: {

@@ -13,6 +13,7 @@ export interface ApiClientLike {
 	postAuthForgotPassword: OpenApiClient['postAuthForgotPassword'];
 	postAuthResetPassword: OpenApiClient['postAuthResetPassword'];
 	getAdminUsersPending: OpenApiClient['getAdminUsersPending'];
+	getAdminUsersDisabled: OpenApiClient['getAdminUsersDisabled'];
 	postAdminUsersByIdApprove: OpenApiClient['postAdminUsersByIdApprove'];
 	postAdminUsersByIdDisable: OpenApiClient['postAdminUsersByIdDisable'];
 	postAdminUsersByIdEnable: OpenApiClient['postAdminUsersByIdEnable'];

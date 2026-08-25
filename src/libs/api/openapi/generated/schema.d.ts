@@ -39,7 +39,11 @@ export type ResetPasswordRequest = { "key": string; "password": string; "token":
 
 export type PendingUsersResponse = { "users": Array<ManagedUser>; };
 
-export type ManagedUser = { "email": string; "emailVerifiedAt": string | unknown; "id": number; "status": "pending_verification" | "pending_approval" | "active" | "disabled"; };
+export type ManagedUser = { "displayName": string | unknown; "email": string; "emailVerifiedAt": string | unknown; "id": number; "status": "pending_verification" | "pending_approval" | "active" | "disabled"; };
+
+export type DisabledUsersResponse = { "pagination": AdminOffsetPagination; "users": Array<ManagedUser>; };
+
+export type AdminOffsetPagination = { "hasMore": boolean; "limit": number; "offset": number; };
 
 export type ManagedUserResponse = { "message": string; "user": ManagedUser; };
 

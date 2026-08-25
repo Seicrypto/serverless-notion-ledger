@@ -35,6 +35,13 @@ export interface ListMyOrganizationsOptions {
 	offset?: number;
 }
 
+export interface ListDisabledUsersOptions {
+	displayName?: string;
+	email?: string;
+	limit?: number;
+	offset?: number;
+}
+
 export class ApiAdapter {
 	private readonly client: ApiClientLike;
 
@@ -84,6 +91,12 @@ export class ApiAdapter {
 
 	listPendingUsers() {
 		return this.client.getAdminUsersPending();
+	}
+
+	listDisabledUsers(options: ListDisabledUsersOptions = {}) {
+		return this.client.getAdminUsersDisabled({
+			query: options,
+		});
 	}
 
 	approveUser(id: number) {
