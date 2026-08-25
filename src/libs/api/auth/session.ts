@@ -2,6 +2,7 @@ import { getApiAdapter } from '../adapters/api.adapter.ts';
 
 export interface AuthUser {
 	id: number;
+	vanity: string | null;
 	email: string;
 	displayName: string | null;
 	emailVerifiedAt: string | null;
@@ -47,6 +48,7 @@ function toNullableString(value: unknown) {
 export function normalizeAuthUser(user: Record<string, unknown>): AuthUser {
 	return {
 		id: Number(user.id),
+		vanity: toNullableString(user.vanity),
 		email: typeof user.email === 'string' ? user.email : '',
 		displayName: toNullableString(user.displayName),
 		emailVerifiedAt: toNullableString(user.emailVerifiedAt),
