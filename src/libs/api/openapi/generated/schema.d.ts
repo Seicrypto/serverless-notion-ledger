@@ -39,7 +39,11 @@ export type ResetPasswordRequest = { "key": string; "password": string; "token":
 
 export type PendingUsersResponse = { "users": Array<ManagedUser>; };
 
-export type ManagedUser = { "email": string; "emailVerifiedAt": string | unknown; "id": number; "status": "pending_verification" | "pending_approval" | "active" | "disabled"; };
+export type ManagedUser = { "displayName": string | unknown; "email": string; "emailVerifiedAt": string | unknown; "id": number; "status": "pending_verification" | "pending_approval" | "active" | "disabled"; };
+
+export type DisabledUsersResponse = { "pagination": AdminOffsetPagination; "users": Array<ManagedUser>; };
+
+export type AdminOffsetPagination = { "hasMore": boolean; "limit": number; "offset": number; };
 
 export type ManagedUserResponse = { "message": string; "user": ManagedUser; };
 
@@ -73,11 +77,33 @@ export type Organization = { "createdAt": string; "createdByUserId": number; "de
 
 export type OrganizationCharactersResponse = { "characters": Array<OrganizationCharacter>; };
 
-export type OrganizationCharacter = { "claimedByUserId": number | unknown; "createdAt": string; "gameId": number | unknown; "id": number; "isActive": boolean; "name": string; "notes": string | unknown; "organizationId": number; "slug": string | unknown; "updatedAt": string; };
+export type OrganizationCharacter = { "claimedByUserId": number | unknown; "createdAt": string; "gameId": number | unknown; "id": number; "isActive": boolean; "name": string; "notes": string | unknown; "organizationId": number; "slug": string | unknown; "updatedAt": string; "vanity": string | unknown; };
 
 export type OrganizationMembersResponse = { "members": Array<OrganizationMember>; };
 
-export type OrganizationMember = { "approvedAt": string | unknown; "createdAt": string; "id": number; "joinedAt": string; "organizationId": number; "role": "owner" | "admin" | "member"; "status": "pending" | "active"; "userId": number; };
+export type OrganizationMember = { "approvedAt": string | unknown; "createdAt": string; "id": number; "joinedAt": string; "organizationId": number; "role": "owner" | "admin" | "member"; "status": "pending" | "active" | "left" | "removed"; "userId": number; };
+
+export type OrganizationManagementCharactersResponse = { "characters": Array<OrganizationManagementCharacter>; };
+
+export type OrganizationManagementCharacter = { "claimedBy": { "displayName": string | unknown; "userId": number; "vanity": string | unknown; } | { "displayName": string | unknown; "userId": number; "vanity": string | unknown; }; "description": string | unknown; "displayName": string; "id": number; "isClaimed": boolean; "slug": string | unknown; "vanity": string | unknown; };
+
+export type OrganizationActiveMembersResponse = { "members": Array<OrganizationActiveMember>; };
+
+export type OrganizationActiveMember = { "displayName": string | unknown; "memberId": number; "role": "owner" | "admin" | "member"; "userId": number; "vanity": string | unknown; };
+
+export type OrganizationPendingMembersResponse = { "members": Array<OrganizationPendingMember>; };
+
+export type OrganizationPendingMember = { "displayName": string | unknown; "invitedByUserId": number | unknown; "memberId": number; "pendingCharacter": OrganizationMemberAssignmentCharacter; "pendingKind": "apply" | "invite"; "role": "owner" | "admin" | "member"; "status": "pending"; "userId": number; "userVanity": string | unknown; };
+
+export type OrganizationMemberAssignmentCharacter = { "characterId": number | unknown; "description": string | unknown; "name": string; "slug": string | unknown; "vanity": string | unknown; } | { "characterId": number | unknown; "description": string | unknown; "name": string; "slug": string | unknown; "vanity": string | unknown; };
+
+export type OrganizationAvailableCharactersResponse = { "characters": Array<OrganizationMemberAssignmentCharacter>; };
+
+export type OrganizationMemberResponse = { "member": OrganizationMember; "message": string; };
+
+export type InviteOrganizationMemberRequest = { "role"?: "admin" | "member"; "userId"?: number; "userVanity"?: string; "characterId"?: number; "newCharacter"?: CreateCharacterRequest; };
+
+export type CreateCharacterRequest = { "gameId": number; "name": string; "notes"?: string | unknown; "slug"?: string | unknown; };
 
 export type CreateOrganizationResponse = { "character": OrganizationCharacter; "message": string; "membership": OrganizationMember; "organization": Organization; };
 
@@ -87,15 +113,11 @@ export type InitialCharacterRequest = { "gameId": number; "name": string; "notes
 
 export type CreateCharacterResponse = { "character": OrganizationCharacter; "message": string; };
 
-export type CreateCharacterRequest = { "gameId": number; "name": string; "notes"?: string | unknown; "slug"?: string | unknown; };
-
 export type OrganizationMemberWithCharacterResponse = { "character": OrganizationCharacter; "member": OrganizationMember; "message": string; };
 
 export type AddOrganizationMemberRequest = { "characterId": number; "role"?: "admin" | "member"; "userId": number; };
 
-export type ApplyOrganizationMemberRequest = { "characterId": number; };
-
-export type OrganizationMemberResponse = { "member": OrganizationMember; "message": string; };
+export type ApplyOrganizationMemberRequest = { "characterId"?: number; "newCharacter"?: CreateCharacterRequest; };
 
 export type DeleteOrganizationResponse = { "message": string; };
 

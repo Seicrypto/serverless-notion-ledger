@@ -1,6 +1,6 @@
 ---
 import Layout from '../../../layouts/Layout.astro';
-import PendingUsersApproval from '../../../components/features/official/PendingUsersApproval.svelte';
+import DisabledUsersTable from '../../../components/features/official/DisabledUsersTable.svelte';
 import '../../../styles/app-pages.css';
 import { getI18n, getLangFromUrl } from '../../../libs/i18n';
 import { buildLayoutLabels } from '../../../libs/i18n/layoutLabels';
@@ -22,14 +22,13 @@ const t = getI18n(lang);
 		<meta name="robots" content="noindex, nofollow, noarchive" />
 	</Fragment>
 
-	<PendingUsersApproval
+	<DisabledUsersTable
 		client:load
 		lang={lang}
 		labels={{
 			eyebrow: t.app.official_overview_users_label,
 			title: t.app.official_users_title,
 			intro: t.app.official_users_intro,
-			mockNotice: t.app.official_users_mock_notice,
 			nameLabel: t.app.official_users_name_label,
 			emailLabel: t.app.official_users_email_label,
 			approveLabel: t.app.official_users_approve_label,
@@ -49,6 +48,16 @@ const t = getI18n(lang);
 			errorBody: t.app.official_users_error_body,
 			confirmLabel: t.app.me_profile_confirm_label,
 			emptyTitle: t.app.official_users_empty_title,
+			searchFieldLabel: t.app.official_users_search_field_label,
+			searchInputLabel: t.app.official_users_search_input_label,
+			searchPlaceholderDisplayName: t.app.official_users_search_placeholder_display_name,
+			searchPlaceholderEmail: t.app.official_users_search_placeholder_email,
+			searchDisplayNameOption: t.app.official_users_search_display_name_option,
+			searchEmailOption: t.app.official_users_search_email_option,
+			searchSubmitLabel: t.app.official_users_search_submit_label,
+			searchClearLabel: t.app.official_users_search_clear_label,
+			searchValidationEmail: t.app.official_users_search_validation_email,
+			tableActionLabel: t.app.official_users_table_action_label,
 		}}
 	/>
 </Layout>

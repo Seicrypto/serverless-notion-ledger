@@ -1,18 +1,14 @@
 ---
 import Layout from '../../../../layouts/Layout.astro';
-import AppPage from '../../../../components/page/AppPage.astro';
+import OrganizationManageWorkspace from '../../../../components/features/org/OrganizationManageWorkspace.svelte';
 import '../../../../styles/app-pages.css';
-import '../../../../styles/query-notice.css';
-import QueryOrgNotice from '../../../../components/features/org/QueryOrgNotice.astro';
 import { getI18n, getLangFromUrl } from '../../../../libs/i18n';
 import { buildLayoutLabels } from '../../../../libs/i18n/layoutLabels';
 export { getStaticPaths } from '../../../../libs/static/staticPaths';
 
 const lang = getLangFromUrl(Astro.url);
 const t = getI18n(lang);
-const orgSlug = Astro.url.searchParams.get('org');
-const orgId = Astro.url.searchParams.get('orgId');
-const orgParam = orgSlug ? `org=${orgSlug}` : orgId ? `orgId=${orgId}` : null;
+const orgVanity = Astro.url.searchParams.get('orgVanity') ?? Astro.url.searchParams.get('org');
 ---
 
 <Layout
@@ -23,25 +19,94 @@ const orgParam = orgSlug ? `org=${orgSlug}` : orgId ? `orgId=${orgId}` : null;
 	currentPath={`${Astro.url.pathname}${Astro.url.search}`}
 	labels={buildLayoutLabels(t)}
 >
-	<AppPage
-		eyebrow={t.common.nav_orgs}
-		title={t.app.orgs_manage_title}
-		intro={t.app.orgs_manage_intro}
-		statusLabel={t.common.user_status}
-		statusValue={t.app.orgs_manage_status}
-		primaryLink={{ label: t.app.action_view_orgs, href: `/${lang}/orgs` }}
-		secondaryLink={{ label: t.app.action_view_my_orgs, href: `/${lang}/me/orgs` }}
-		cards={[
-			{ label: t.app.card_scope_label, title: t.app.card_scope_title, body: t.app.card_scope_body },
-			{ label: t.app.card_data_label, title: t.app.card_data_title, body: t.app.card_data_body },
-			{ label: t.app.card_next_label, title: t.app.card_next_title, body: t.app.card_next_body },
-		]}
-	/>
-
-	<QueryOrgNotice
-		label={t.app.orgs_manage_query_label}
-		missing={t.app.orgs_manage_query_missing}
-		prefix={t.app.orgs_manage_query_prefix}
-		orgSlug={orgParam}
+	<OrganizationManageWorkspace
+		client:load
+		lang={lang}
+		orgVanity={orgVanity}
+		labels={{
+			title: t.app.orgs_manage_title,
+			intro: t.app.orgs_manage_intro,
+			loadingLabel: t.app.orgs_manage_loading_label,
+			authRequiredTitle: t.app.auth_required_title,
+			authRequiredBody: t.app.auth_required_body,
+			loginLabel: t.app.action_login,
+			homeLabel: t.app.action_back_home,
+			missingOrgTitle: t.app.orgs_manage_missing_title,
+			missingOrgBody: t.app.orgs_manage_missing_body,
+			orgCardEditLabel: t.app.orgs_manage_edit_org_label,
+			orgCardMembersLabel: t.app.orgs_member_count_label,
+			orgCardCharactersLabel: t.app.orgs_character_count_label,
+			orgCardSupportedLabel: t.app.orgs_supported_org_label,
+			orgCardVanityLabel: t.app.orgs_manage_vanity_label,
+			tabCharactersLabel: t.app.orgs_manage_tab_characters,
+			tabMembersLabel: t.app.orgs_manage_tab_members,
+			charactersCreateLabel: t.app.orgs_manage_create_character_label,
+			charactersRefreshLabel: t.app.orgs_manage_refresh_label,
+			membersInviteLabel: t.app.orgs_manage_invite_member_label,
+			membersPendingLabel: t.app.orgs_manage_pending_members_label,
+			refreshCooldownLabel: t.app.orgs_manage_refresh_cooldown_label,
+			refreshingLabel: t.app.orgs_manage_refreshing_label,
+			inviteSearchFieldLabel: t.app.orgs_manage_invite_search_field_label,
+			inviteSearchInputLabel: t.app.orgs_manage_invite_search_input_label,
+			inviteSearchDisplayNameOption: t.app.orgs_manage_invite_search_display_name_option,
+			inviteSearchEmailOption: t.app.orgs_manage_invite_search_email_option,
+			inviteSearchPlaceholderDisplayName: t.app.orgs_manage_invite_search_placeholder_display_name,
+			inviteSearchPlaceholderEmail: t.app.orgs_manage_invite_search_placeholder_email,
+			inviteSearchValidationEmail: t.app.orgs_manage_invite_search_validation_email,
+			inviteSearchSubmitLabel: t.app.orgs_manage_invite_search_submit_label,
+			inviteSearchCancelLabel: t.app.orgs_manage_invite_search_cancel_label,
+			editOrgTitle: t.app.orgs_manage_edit_org_title,
+			editOrgNameLabel: t.app.orgs_new_form_name_label,
+			editOrgSlugLabel: t.app.orgs_new_form_slug_label,
+			editOrgDescriptionLabel: t.app.orgs_new_form_description_label,
+			editOrgIconUrlLabel: t.app.orgs_new_form_icon_url_label,
+			editOrgSubmitLabel: t.app.orgs_manage_save_org_label,
+			editOrgCancelLabel: t.app.me_profile_edit_cancel_label,
+			createCharacterTitle: t.app.orgs_manage_create_character_title,
+			createCharacterNameLabel: t.app.orgs_manage_create_character_name_label,
+			createCharacterDescriptionLabel: t.app.orgs_manage_create_character_description_label,
+			createCharacterAssigneeLabel: t.app.orgs_manage_create_character_assignee_label,
+			createCharacterAssigneeHint: t.app.orgs_manage_create_character_assignee_hint,
+			createCharacterSubmitLabel: t.app.orgs_manage_create_character_submit_label,
+			createCharacterCancelLabel: t.app.me_profile_edit_cancel_label,
+			characterNameColumn: t.app.orgs_manage_character_name_column,
+			characterClaimStateColumn: t.app.orgs_manage_character_claim_state_column,
+			characterClaimByColumn: t.app.orgs_manage_character_claim_by_column,
+			characterDescriptionColumn: t.app.orgs_manage_character_description_column,
+			characterActionsColumn: t.app.orgs_manage_character_actions_column,
+			memberNameColumn: t.app.orgs_manage_member_name_column,
+			memberActionsColumn: t.app.orgs_manage_member_actions_column,
+			claimStateClaimed: t.app.orgs_manage_claim_state_claimed,
+			claimStateUnclaimed: t.app.orgs_manage_claim_state_unclaimed,
+			claimStatePending: t.app.orgs_manage_claim_state_pending,
+			claimCharacterLabel: t.app.orgs_manage_claim_character_label,
+			editLabel: t.app.orgs_manage_edit_character_label,
+			deleteLabel: t.app.orgs_manage_delete_character_label,
+			removeMemberLabel: t.app.orgs_manage_remove_member_label,
+			pendingBadgeLabel: t.app.orgs_manage_pending_badge_label,
+			currentUserLabel: t.app.orgs_manage_current_user_label,
+			placeholderActionTitle: t.app.orgs_manage_placeholder_title,
+			placeholderActionBody: t.app.orgs_manage_placeholder_body,
+			savePendingTitle: t.app.orgs_manage_save_pending_title,
+			savePendingBody: t.app.orgs_manage_save_pending_body,
+			saveSuccessTitle: t.app.orgs_manage_save_success_title,
+			saveSuccessBody: t.app.orgs_manage_save_success_body,
+			saveErrorTitle: t.app.orgs_manage_save_error_title,
+			createPendingTitle: t.app.orgs_manage_create_pending_title,
+			createPendingBody: t.app.orgs_manage_create_pending_body,
+			createSuccessTitle: t.app.orgs_manage_create_success_title,
+			createSuccessBody: t.app.orgs_manage_create_success_body,
+			createErrorTitle: t.app.orgs_manage_create_error_title,
+			confirmLabel: t.app.me_profile_confirm_label,
+			closeLabel: t.app.me_profile_confirm_label,
+			validationRequired: t.app.orgs_new_form_validation_required,
+			validationSlug: t.app.orgs_new_form_validation_slug,
+			validationUrl: t.app.orgs_new_form_validation_url,
+			validationNameLength: t.app.orgs_new_form_validation_name_length,
+			validationSlugLength: t.app.orgs_new_form_validation_slug_length,
+			validationDescriptionLength: t.app.orgs_new_form_validation_notes_length,
+			emptyCharactersTitle: t.app.orgs_manage_empty_characters_title,
+			emptyMembersTitle: t.app.orgs_manage_empty_members_title,
+		}}
 	/>
 </Layout>

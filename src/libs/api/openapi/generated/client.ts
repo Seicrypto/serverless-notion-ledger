@@ -21,6 +21,8 @@ import type {
 	ResetPasswordRequest,
 	PendingUsersResponse,
 	ManagedUser,
+	DisabledUsersResponse,
+	AdminOffsetPagination,
 	ManagedUserResponse,
 	GameListResponse,
 	Game,
@@ -40,15 +42,24 @@ import type {
 	OrganizationCharacter,
 	OrganizationMembersResponse,
 	OrganizationMember,
+	OrganizationManagementCharactersResponse,
+	OrganizationManagementCharacter,
+	OrganizationActiveMembersResponse,
+	OrganizationActiveMember,
+	OrganizationPendingMembersResponse,
+	OrganizationPendingMember,
+	OrganizationMemberAssignmentCharacter,
+	OrganizationAvailableCharactersResponse,
+	OrganizationMemberResponse,
+	InviteOrganizationMemberRequest,
+	CreateCharacterRequest,
 	CreateOrganizationResponse,
 	CreateOrganizationRequest,
 	InitialCharacterRequest,
 	CreateCharacterResponse,
-	CreateCharacterRequest,
 	OrganizationMemberWithCharacterResponse,
 	AddOrganizationMemberRequest,
 	ApplyOrganizationMemberRequest,
-	OrganizationMemberResponse,
 	DeleteOrganizationResponse,
 	UpdateOrganizationResponse,
 	UpdateOrganizationRequest,
@@ -67,6 +78,7 @@ export const operationPaths = {
 	postAuthForgotPassword: "/auth/forgot-password",
 	postAuthResetPassword: "/auth/reset-password",
 	getAdminUsersPending: "/admin/users/pending",
+	getAdminUsersDisabled: "/admin/users/disabled",
 	postAdminUsersByIdApprove: "/admin/users/{id}/approve",
 	postAdminUsersByIdDisable: "/admin/users/{id}/disable",
 	postAdminUsersByIdEnable: "/admin/users/{id}/enable",
@@ -74,15 +86,25 @@ export const operationPaths = {
 	getOrganizations: "/organizations",
 	postOrganizations: "/organizations",
 	getOrganizationsMe: "/organizations/me",
-	getOrganizationsById: "/organizations/{id}",
-	deleteOrganizationsById: "/organizations/{id}",
-	patchOrganizationsById: "/organizations/{id}",
-	getOrganizationsByIdCharacters: "/organizations/{id}/characters",
-	postOrganizationsByIdCharacters: "/organizations/{id}/characters",
-	getOrganizationsByIdMembers: "/organizations/{id}/members",
-	postOrganizationsByIdMembers: "/organizations/{id}/members",
-	postOrganizationsByIdMembersApply: "/organizations/{id}/members/apply",
-	postOrganizationsByIdMembersByMemberIdApprove: "/organizations/{id}/members/{memberId}/approve",
+	getOrganizationsByOrganization: "/organizations/{organization}",
+	deleteOrganizationsByOrganization: "/organizations/{organization}",
+	patchOrganizationsByOrganization: "/organizations/{organization}",
+	getOrganizationsByOrganizationCharacters: "/organizations/{organization}/characters",
+	postOrganizationsByOrganizationCharacters: "/organizations/{organization}/characters",
+	getOrganizationsByOrganizationMembers: "/organizations/{organization}/members",
+	postOrganizationsByOrganizationMembers: "/organizations/{organization}/members",
+	getOrganizationsByOrganizationManagementCharacters: "/organizations/{organization}/management/characters",
+	getOrganizationsByOrganizationManagementMembersActive: "/organizations/{organization}/management/members/active",
+	getOrganizationsByOrganizationManagementMembersPending: "/organizations/{organization}/management/members/pending",
+	getOrganizationsByOrganizationCharactersAvailable: "/organizations/{organization}/characters/available",
+	postOrganizationsByOrganizationMembersInvite: "/organizations/{organization}/members/invite",
+	postOrganizationsByOrganizationMembersApply: "/organizations/{organization}/members/apply",
+	postOrganizationsByOrganizationMembersByMemberIdApprove: "/organizations/{organization}/members/{memberId}/approve",
+	postOrganizationsByOrganizationMembersByMemberIdReject: "/organizations/{organization}/members/{memberId}/reject",
+	postOrganizationsByOrganizationMembersByMemberIdAppointAdmin: "/organizations/{organization}/members/{memberId}/appoint-admin",
+	postOrganizationsByOrganizationMembersByMemberIdRemoveAdmin: "/organizations/{organization}/members/{memberId}/remove-admin",
+	postOrganizationsByOrganizationMembersByMemberIdAcceptInvite: "/organizations/{organization}/members/{memberId}/accept-invite",
+	postOrganizationsByOrganizationMembersByMemberIdDeclineInvite: "/organizations/{organization}/members/{memberId}/decline-invite",
 	getOrganizationsCurrent: "/organizations/current",
 	getOrganizationsCurrentMembers: "/organizations/current/members",
 	getDashboardMe: "/dashboard/me",
@@ -102,6 +124,7 @@ export type ApiOperations = {
 	postAuthForgotPassword: { body: ForgotPasswordRequest; response: ForgotPasswordResponse; };
 	postAuthResetPassword: { body: ResetPasswordRequest; response: ResetPasswordResponse; };
 	getAdminUsersPending: { response: PendingUsersResponse; };
+	getAdminUsersDisabled: { query: { "displayName"?: string; "email"?: string; "limit"?: number; "offset"?: number | unknown; }; response: DisabledUsersResponse; };
 	postAdminUsersByIdApprove: { pathParams: { "id": number; }; response: ManagedUserResponse; };
 	postAdminUsersByIdDisable: { pathParams: { "id": number; }; response: ManagedUserResponse; };
 	postAdminUsersByIdEnable: { pathParams: { "id": number; }; response: ManagedUserResponse; };
@@ -109,15 +132,25 @@ export type ApiOperations = {
 	getOrganizations: { query: { "gameId"?: number; "gameSlug"?: string; "limit"?: number; "offset"?: number | unknown; "q"?: string; }; response: OrganizationListResponse; };
 	postOrganizations: { body: CreateOrganizationRequest; response: CreateOrganizationResponse; };
 	getOrganizationsMe: { query: { "limit"?: number; "offset"?: number | unknown; }; response: MyOrganizationsResponse; };
-	getOrganizationsById: { pathParams: { "id": number; }; response: OrganizationDetailResponse; };
-	deleteOrganizationsById: { pathParams: { "id": number; }; response: DeleteOrganizationResponse; };
-	patchOrganizationsById: { pathParams: { "id": number; }; body: UpdateOrganizationRequest; response: UpdateOrganizationResponse; };
-	getOrganizationsByIdCharacters: { pathParams: { "id": number; }; response: OrganizationCharactersResponse; };
-	postOrganizationsByIdCharacters: { pathParams: { "id": number; }; body: CreateCharacterRequest; response: CreateCharacterResponse; };
-	getOrganizationsByIdMembers: { pathParams: { "id": number; }; response: OrganizationMembersResponse; };
-	postOrganizationsByIdMembers: { pathParams: { "id": number; }; body: AddOrganizationMemberRequest; response: OrganizationMemberWithCharacterResponse; };
-	postOrganizationsByIdMembersApply: { pathParams: { "id": number; }; body: ApplyOrganizationMemberRequest; response: OrganizationMemberWithCharacterResponse; };
-	postOrganizationsByIdMembersByMemberIdApprove: { pathParams: { "id": number; "memberId": number; }; response: OrganizationMemberResponse; };
+	getOrganizationsByOrganization: { pathParams: { "organization": string; }; response: OrganizationDetailResponse; };
+	deleteOrganizationsByOrganization: { pathParams: { "organization": string; }; response: DeleteOrganizationResponse; };
+	patchOrganizationsByOrganization: { pathParams: { "organization": string; }; body: UpdateOrganizationRequest; response: UpdateOrganizationResponse; };
+	getOrganizationsByOrganizationCharacters: { pathParams: { "organization": string; }; response: OrganizationCharactersResponse; };
+	postOrganizationsByOrganizationCharacters: { pathParams: { "organization": string; }; body: CreateCharacterRequest; response: CreateCharacterResponse; };
+	getOrganizationsByOrganizationMembers: { pathParams: { "organization": string; }; response: OrganizationMembersResponse; };
+	postOrganizationsByOrganizationMembers: { pathParams: { "organization": string; }; body: AddOrganizationMemberRequest; response: OrganizationMemberWithCharacterResponse; };
+	getOrganizationsByOrganizationManagementCharacters: { pathParams: { "organization": string; }; response: OrganizationManagementCharactersResponse; };
+	getOrganizationsByOrganizationManagementMembersActive: { pathParams: { "organization": string; }; response: OrganizationActiveMembersResponse; };
+	getOrganizationsByOrganizationManagementMembersPending: { pathParams: { "organization": string; }; response: OrganizationPendingMembersResponse; };
+	getOrganizationsByOrganizationCharactersAvailable: { pathParams: { "organization": string; }; response: OrganizationAvailableCharactersResponse; };
+	postOrganizationsByOrganizationMembersInvite: { pathParams: { "organization": string; }; body: InviteOrganizationMemberRequest; response: OrganizationMemberResponse; };
+	postOrganizationsByOrganizationMembersApply: { pathParams: { "organization": string; }; body: ApplyOrganizationMemberRequest; response: OrganizationMemberWithCharacterResponse; };
+	postOrganizationsByOrganizationMembersByMemberIdApprove: { pathParams: { "memberId": number; "organization": string; }; response: OrganizationMemberResponse; };
+	postOrganizationsByOrganizationMembersByMemberIdReject: { pathParams: { "memberId": number; "organization": string; }; response: OrganizationMemberResponse; };
+	postOrganizationsByOrganizationMembersByMemberIdAppointAdmin: { pathParams: { "memberId": number; "organization": string; }; response: OrganizationMemberResponse; };
+	postOrganizationsByOrganizationMembersByMemberIdRemoveAdmin: { pathParams: { "memberId": number; "organization": string; }; response: OrganizationMemberResponse; };
+	postOrganizationsByOrganizationMembersByMemberIdAcceptInvite: { pathParams: { "memberId": number; "organization": string; }; response: OrganizationMemberResponse; };
+	postOrganizationsByOrganizationMembersByMemberIdDeclineInvite: { pathParams: { "memberId": number; "organization": string; }; response: OrganizationMemberResponse; };
 	getOrganizationsCurrent: { response: void; };
 	getOrganizationsCurrentMembers: { response: void; };
 	getDashboardMe: { response: void; };
@@ -412,6 +445,22 @@ export class OpenApiClient {
 	}
 
 	/**
+	 * GET /admin/users/disabled
+	 */
+	async getAdminUsersDisabled(options: RequestOptions<ApiOperations['getAdminUsersDisabled']> = {}): Promise<ApiOperations['getAdminUsersDisabled']['response']> {
+		return this.request<ApiOperations['getAdminUsersDisabled']['response']>({
+			method: "GET",
+			path: operationPaths.getAdminUsersDisabled,
+			pathParams: options.pathParams,
+			query: options.query,
+			headers: {
+				...options.headers,
+			},
+			body: undefined,
+		});
+	}
+
+	/**
 	 * POST /admin/users/{id}/approve
 	 */
 	async postAdminUsersByIdApprove(options: RequestOptions<ApiOperations['postAdminUsersByIdApprove']> = {}): Promise<ApiOperations['postAdminUsersByIdApprove']['response']> {
@@ -527,12 +576,12 @@ export class OpenApiClient {
 	}
 
 	/**
-	 * GET /organizations/{id}
+	 * GET /organizations/{organization}
 	 */
-	async getOrganizationsById(options: RequestOptions<ApiOperations['getOrganizationsById']> = {}): Promise<ApiOperations['getOrganizationsById']['response']> {
-		return this.request<ApiOperations['getOrganizationsById']['response']>({
+	async getOrganizationsByOrganization(options: RequestOptions<ApiOperations['getOrganizationsByOrganization']> = {}): Promise<ApiOperations['getOrganizationsByOrganization']['response']> {
+		return this.request<ApiOperations['getOrganizationsByOrganization']['response']>({
 			method: "GET",
-			path: operationPaths.getOrganizationsById,
+			path: operationPaths.getOrganizationsByOrganization,
 			pathParams: options.pathParams,
 			query: options.query,
 			headers: {
@@ -543,12 +592,12 @@ export class OpenApiClient {
 	}
 
 	/**
-	 * DELETE /organizations/{id}
+	 * DELETE /organizations/{organization}
 	 */
-	async deleteOrganizationsById(options: RequestOptions<ApiOperations['deleteOrganizationsById']> = {}): Promise<ApiOperations['deleteOrganizationsById']['response']> {
-		return this.request<ApiOperations['deleteOrganizationsById']['response']>({
+	async deleteOrganizationsByOrganization(options: RequestOptions<ApiOperations['deleteOrganizationsByOrganization']> = {}): Promise<ApiOperations['deleteOrganizationsByOrganization']['response']> {
+		return this.request<ApiOperations['deleteOrganizationsByOrganization']['response']>({
 			method: "DELETE",
-			path: operationPaths.deleteOrganizationsById,
+			path: operationPaths.deleteOrganizationsByOrganization,
 			pathParams: options.pathParams,
 			query: options.query,
 			headers: {
@@ -559,14 +608,14 @@ export class OpenApiClient {
 	}
 
 	/**
-	 * PATCH /organizations/{id}
+	 * PATCH /organizations/{organization}
 	 */
-	async patchOrganizationsById(options: RequestOptions<ApiOperations['patchOrganizationsById']> = {}): Promise<ApiOperations['patchOrganizationsById']['response']> {
+	async patchOrganizationsByOrganization(options: RequestOptions<ApiOperations['patchOrganizationsByOrganization']> = {}): Promise<ApiOperations['patchOrganizationsByOrganization']['response']> {
 		const body = options.body === undefined ? undefined : JSON.stringify(options.body);
 
-		return this.request<ApiOperations['patchOrganizationsById']['response']>({
+		return this.request<ApiOperations['patchOrganizationsByOrganization']['response']>({
 			method: "PATCH",
-			path: operationPaths.patchOrganizationsById,
+			path: operationPaths.patchOrganizationsByOrganization,
 			pathParams: options.pathParams,
 			query: options.query,
 			headers: {
@@ -578,12 +627,12 @@ export class OpenApiClient {
 	}
 
 	/**
-	 * GET /organizations/{id}/characters
+	 * GET /organizations/{organization}/characters
 	 */
-	async getOrganizationsByIdCharacters(options: RequestOptions<ApiOperations['getOrganizationsByIdCharacters']> = {}): Promise<ApiOperations['getOrganizationsByIdCharacters']['response']> {
-		return this.request<ApiOperations['getOrganizationsByIdCharacters']['response']>({
+	async getOrganizationsByOrganizationCharacters(options: RequestOptions<ApiOperations['getOrganizationsByOrganizationCharacters']> = {}): Promise<ApiOperations['getOrganizationsByOrganizationCharacters']['response']> {
+		return this.request<ApiOperations['getOrganizationsByOrganizationCharacters']['response']>({
 			method: "GET",
-			path: operationPaths.getOrganizationsByIdCharacters,
+			path: operationPaths.getOrganizationsByOrganizationCharacters,
 			pathParams: options.pathParams,
 			query: options.query,
 			headers: {
@@ -594,14 +643,14 @@ export class OpenApiClient {
 	}
 
 	/**
-	 * POST /organizations/{id}/characters
+	 * POST /organizations/{organization}/characters
 	 */
-	async postOrganizationsByIdCharacters(options: RequestOptions<ApiOperations['postOrganizationsByIdCharacters']> = {}): Promise<ApiOperations['postOrganizationsByIdCharacters']['response']> {
+	async postOrganizationsByOrganizationCharacters(options: RequestOptions<ApiOperations['postOrganizationsByOrganizationCharacters']> = {}): Promise<ApiOperations['postOrganizationsByOrganizationCharacters']['response']> {
 		const body = options.body === undefined ? undefined : JSON.stringify(options.body);
 
-		return this.request<ApiOperations['postOrganizationsByIdCharacters']['response']>({
+		return this.request<ApiOperations['postOrganizationsByOrganizationCharacters']['response']>({
 			method: "POST",
-			path: operationPaths.postOrganizationsByIdCharacters,
+			path: operationPaths.postOrganizationsByOrganizationCharacters,
 			pathParams: options.pathParams,
 			query: options.query,
 			headers: {
@@ -613,12 +662,12 @@ export class OpenApiClient {
 	}
 
 	/**
-	 * GET /organizations/{id}/members
+	 * GET /organizations/{organization}/members
 	 */
-	async getOrganizationsByIdMembers(options: RequestOptions<ApiOperations['getOrganizationsByIdMembers']> = {}): Promise<ApiOperations['getOrganizationsByIdMembers']['response']> {
-		return this.request<ApiOperations['getOrganizationsByIdMembers']['response']>({
+	async getOrganizationsByOrganizationMembers(options: RequestOptions<ApiOperations['getOrganizationsByOrganizationMembers']> = {}): Promise<ApiOperations['getOrganizationsByOrganizationMembers']['response']> {
+		return this.request<ApiOperations['getOrganizationsByOrganizationMembers']['response']>({
 			method: "GET",
-			path: operationPaths.getOrganizationsByIdMembers,
+			path: operationPaths.getOrganizationsByOrganizationMembers,
 			pathParams: options.pathParams,
 			query: options.query,
 			headers: {
@@ -629,14 +678,14 @@ export class OpenApiClient {
 	}
 
 	/**
-	 * POST /organizations/{id}/members
+	 * POST /organizations/{organization}/members
 	 */
-	async postOrganizationsByIdMembers(options: RequestOptions<ApiOperations['postOrganizationsByIdMembers']> = {}): Promise<ApiOperations['postOrganizationsByIdMembers']['response']> {
+	async postOrganizationsByOrganizationMembers(options: RequestOptions<ApiOperations['postOrganizationsByOrganizationMembers']> = {}): Promise<ApiOperations['postOrganizationsByOrganizationMembers']['response']> {
 		const body = options.body === undefined ? undefined : JSON.stringify(options.body);
 
-		return this.request<ApiOperations['postOrganizationsByIdMembers']['response']>({
+		return this.request<ApiOperations['postOrganizationsByOrganizationMembers']['response']>({
 			method: "POST",
-			path: operationPaths.postOrganizationsByIdMembers,
+			path: operationPaths.postOrganizationsByOrganizationMembers,
 			pathParams: options.pathParams,
 			query: options.query,
 			headers: {
@@ -648,14 +697,78 @@ export class OpenApiClient {
 	}
 
 	/**
-	 * POST /organizations/{id}/members/apply
+	 * GET /organizations/{organization}/management/characters
 	 */
-	async postOrganizationsByIdMembersApply(options: RequestOptions<ApiOperations['postOrganizationsByIdMembersApply']> = {}): Promise<ApiOperations['postOrganizationsByIdMembersApply']['response']> {
+	async getOrganizationsByOrganizationManagementCharacters(options: RequestOptions<ApiOperations['getOrganizationsByOrganizationManagementCharacters']> = {}): Promise<ApiOperations['getOrganizationsByOrganizationManagementCharacters']['response']> {
+		return this.request<ApiOperations['getOrganizationsByOrganizationManagementCharacters']['response']>({
+			method: "GET",
+			path: operationPaths.getOrganizationsByOrganizationManagementCharacters,
+			pathParams: options.pathParams,
+			query: options.query,
+			headers: {
+				...options.headers,
+			},
+			body: undefined,
+		});
+	}
+
+	/**
+	 * GET /organizations/{organization}/management/members/active
+	 */
+	async getOrganizationsByOrganizationManagementMembersActive(options: RequestOptions<ApiOperations['getOrganizationsByOrganizationManagementMembersActive']> = {}): Promise<ApiOperations['getOrganizationsByOrganizationManagementMembersActive']['response']> {
+		return this.request<ApiOperations['getOrganizationsByOrganizationManagementMembersActive']['response']>({
+			method: "GET",
+			path: operationPaths.getOrganizationsByOrganizationManagementMembersActive,
+			pathParams: options.pathParams,
+			query: options.query,
+			headers: {
+				...options.headers,
+			},
+			body: undefined,
+		});
+	}
+
+	/**
+	 * GET /organizations/{organization}/management/members/pending
+	 */
+	async getOrganizationsByOrganizationManagementMembersPending(options: RequestOptions<ApiOperations['getOrganizationsByOrganizationManagementMembersPending']> = {}): Promise<ApiOperations['getOrganizationsByOrganizationManagementMembersPending']['response']> {
+		return this.request<ApiOperations['getOrganizationsByOrganizationManagementMembersPending']['response']>({
+			method: "GET",
+			path: operationPaths.getOrganizationsByOrganizationManagementMembersPending,
+			pathParams: options.pathParams,
+			query: options.query,
+			headers: {
+				...options.headers,
+			},
+			body: undefined,
+		});
+	}
+
+	/**
+	 * GET /organizations/{organization}/characters/available
+	 */
+	async getOrganizationsByOrganizationCharactersAvailable(options: RequestOptions<ApiOperations['getOrganizationsByOrganizationCharactersAvailable']> = {}): Promise<ApiOperations['getOrganizationsByOrganizationCharactersAvailable']['response']> {
+		return this.request<ApiOperations['getOrganizationsByOrganizationCharactersAvailable']['response']>({
+			method: "GET",
+			path: operationPaths.getOrganizationsByOrganizationCharactersAvailable,
+			pathParams: options.pathParams,
+			query: options.query,
+			headers: {
+				...options.headers,
+			},
+			body: undefined,
+		});
+	}
+
+	/**
+	 * POST /organizations/{organization}/members/invite
+	 */
+	async postOrganizationsByOrganizationMembersInvite(options: RequestOptions<ApiOperations['postOrganizationsByOrganizationMembersInvite']> = {}): Promise<ApiOperations['postOrganizationsByOrganizationMembersInvite']['response']> {
 		const body = options.body === undefined ? undefined : JSON.stringify(options.body);
 
-		return this.request<ApiOperations['postOrganizationsByIdMembersApply']['response']>({
+		return this.request<ApiOperations['postOrganizationsByOrganizationMembersInvite']['response']>({
 			method: "POST",
-			path: operationPaths.postOrganizationsByIdMembersApply,
+			path: operationPaths.postOrganizationsByOrganizationMembersInvite,
 			pathParams: options.pathParams,
 			query: options.query,
 			headers: {
@@ -667,12 +780,111 @@ export class OpenApiClient {
 	}
 
 	/**
-	 * POST /organizations/{id}/members/{memberId}/approve
+	 * POST /organizations/{organization}/members/apply
 	 */
-	async postOrganizationsByIdMembersByMemberIdApprove(options: RequestOptions<ApiOperations['postOrganizationsByIdMembersByMemberIdApprove']> = {}): Promise<ApiOperations['postOrganizationsByIdMembersByMemberIdApprove']['response']> {
-		return this.request<ApiOperations['postOrganizationsByIdMembersByMemberIdApprove']['response']>({
+	async postOrganizationsByOrganizationMembersApply(options: RequestOptions<ApiOperations['postOrganizationsByOrganizationMembersApply']> = {}): Promise<ApiOperations['postOrganizationsByOrganizationMembersApply']['response']> {
+		const body = options.body === undefined ? undefined : JSON.stringify(options.body);
+
+		return this.request<ApiOperations['postOrganizationsByOrganizationMembersApply']['response']>({
 			method: "POST",
-			path: operationPaths.postOrganizationsByIdMembersByMemberIdApprove,
+			path: operationPaths.postOrganizationsByOrganizationMembersApply,
+			pathParams: options.pathParams,
+			query: options.query,
+			headers: {
+			...(options.body === undefined ? {} : { 'content-type': 'application/json' }),
+				...options.headers,
+			},
+			body,
+		});
+	}
+
+	/**
+	 * POST /organizations/{organization}/members/{memberId}/approve
+	 */
+	async postOrganizationsByOrganizationMembersByMemberIdApprove(options: RequestOptions<ApiOperations['postOrganizationsByOrganizationMembersByMemberIdApprove']> = {}): Promise<ApiOperations['postOrganizationsByOrganizationMembersByMemberIdApprove']['response']> {
+		return this.request<ApiOperations['postOrganizationsByOrganizationMembersByMemberIdApprove']['response']>({
+			method: "POST",
+			path: operationPaths.postOrganizationsByOrganizationMembersByMemberIdApprove,
+			pathParams: options.pathParams,
+			query: options.query,
+			headers: {
+				...options.headers,
+			},
+			body: undefined,
+		});
+	}
+
+	/**
+	 * POST /organizations/{organization}/members/{memberId}/reject
+	 */
+	async postOrganizationsByOrganizationMembersByMemberIdReject(options: RequestOptions<ApiOperations['postOrganizationsByOrganizationMembersByMemberIdReject']> = {}): Promise<ApiOperations['postOrganizationsByOrganizationMembersByMemberIdReject']['response']> {
+		return this.request<ApiOperations['postOrganizationsByOrganizationMembersByMemberIdReject']['response']>({
+			method: "POST",
+			path: operationPaths.postOrganizationsByOrganizationMembersByMemberIdReject,
+			pathParams: options.pathParams,
+			query: options.query,
+			headers: {
+				...options.headers,
+			},
+			body: undefined,
+		});
+	}
+
+	/**
+	 * POST /organizations/{organization}/members/{memberId}/appoint-admin
+	 */
+	async postOrganizationsByOrganizationMembersByMemberIdAppointAdmin(options: RequestOptions<ApiOperations['postOrganizationsByOrganizationMembersByMemberIdAppointAdmin']> = {}): Promise<ApiOperations['postOrganizationsByOrganizationMembersByMemberIdAppointAdmin']['response']> {
+		return this.request<ApiOperations['postOrganizationsByOrganizationMembersByMemberIdAppointAdmin']['response']>({
+			method: "POST",
+			path: operationPaths.postOrganizationsByOrganizationMembersByMemberIdAppointAdmin,
+			pathParams: options.pathParams,
+			query: options.query,
+			headers: {
+				...options.headers,
+			},
+			body: undefined,
+		});
+	}
+
+	/**
+	 * POST /organizations/{organization}/members/{memberId}/remove-admin
+	 */
+	async postOrganizationsByOrganizationMembersByMemberIdRemoveAdmin(options: RequestOptions<ApiOperations['postOrganizationsByOrganizationMembersByMemberIdRemoveAdmin']> = {}): Promise<ApiOperations['postOrganizationsByOrganizationMembersByMemberIdRemoveAdmin']['response']> {
+		return this.request<ApiOperations['postOrganizationsByOrganizationMembersByMemberIdRemoveAdmin']['response']>({
+			method: "POST",
+			path: operationPaths.postOrganizationsByOrganizationMembersByMemberIdRemoveAdmin,
+			pathParams: options.pathParams,
+			query: options.query,
+			headers: {
+				...options.headers,
+			},
+			body: undefined,
+		});
+	}
+
+	/**
+	 * POST /organizations/{organization}/members/{memberId}/accept-invite
+	 */
+	async postOrganizationsByOrganizationMembersByMemberIdAcceptInvite(options: RequestOptions<ApiOperations['postOrganizationsByOrganizationMembersByMemberIdAcceptInvite']> = {}): Promise<ApiOperations['postOrganizationsByOrganizationMembersByMemberIdAcceptInvite']['response']> {
+		return this.request<ApiOperations['postOrganizationsByOrganizationMembersByMemberIdAcceptInvite']['response']>({
+			method: "POST",
+			path: operationPaths.postOrganizationsByOrganizationMembersByMemberIdAcceptInvite,
+			pathParams: options.pathParams,
+			query: options.query,
+			headers: {
+				...options.headers,
+			},
+			body: undefined,
+		});
+	}
+
+	/**
+	 * POST /organizations/{organization}/members/{memberId}/decline-invite
+	 */
+	async postOrganizationsByOrganizationMembersByMemberIdDeclineInvite(options: RequestOptions<ApiOperations['postOrganizationsByOrganizationMembersByMemberIdDeclineInvite']> = {}): Promise<ApiOperations['postOrganizationsByOrganizationMembersByMemberIdDeclineInvite']['response']> {
+		return this.request<ApiOperations['postOrganizationsByOrganizationMembersByMemberIdDeclineInvite']['response']>({
+			method: "POST",
+			path: operationPaths.postOrganizationsByOrganizationMembersByMemberIdDeclineInvite,
 			pathParams: options.pathParams,
 			query: options.query,
 			headers: {
