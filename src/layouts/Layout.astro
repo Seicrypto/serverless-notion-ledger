@@ -80,7 +80,7 @@ const navItems = [
 		<meta charset="utf-8" />
 		<meta name="viewport" content="width=device-width" />
 		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-		<link rel="icon" href="/favicon.ico" />
+		<link rel="shortcut icon" type="image/svg+xml" href="/favicon.svg" />
 		<meta name="generator" content={Astro.generator} />
 		<meta name="description" content={description} />
 		<title>{title}</title>
@@ -235,6 +235,7 @@ const navItems = [
 				ensureAuthSession,
 				isAuthenticatedSession,
 				subscribeAuthSession,
+				type AuthSession,
 			} from '../libs/api/auth/session.ts';
 
 			const initAuthChrome = async () => {
@@ -270,7 +271,7 @@ const navItems = [
 					menuTrigger.setAttribute('aria-expanded', 'false');
 				};
 
-				const render = (session) => {
+				const render = (session: AuthSession) => {
 					const displayName = isAuthenticatedSession(session)
 						? session.user.displayName || session.user.email
 						: guestLabel;
