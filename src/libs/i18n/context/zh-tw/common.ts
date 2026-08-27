@@ -10,6 +10,7 @@ export const common = {
 	loading: '讀取中',
 	nav_home: '首頁',
 	nav_my: '我的頁面',
+	nav_events: '事件建立',
 	nav_orgs: '組織清單',
 	nav_drops: '掉落明細',
 	mode_light: 'Light',

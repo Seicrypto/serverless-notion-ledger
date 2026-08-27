@@ -10,6 +10,7 @@ export const common = {
 	loading: 'Loading',
 	nav_home: 'Home',
 	nav_my: 'My pages',
+	nav_events: 'Events',
 	nav_orgs: 'Organizations',
 	nav_drops: 'Drops',
 	mode_light: 'Light',

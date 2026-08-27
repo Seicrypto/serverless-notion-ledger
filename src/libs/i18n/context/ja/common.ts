@@ -10,6 +10,7 @@ export const common = {
 	loading: '読み込み中',
 	nav_home: 'ホーム',
 	nav_my: '自分のページ',
+	nav_events: 'イベント作成',
 	nav_orgs: '組織一覧',
 	nav_drops: 'ドロップ明細',
 	mode_light: 'Light',
