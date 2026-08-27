@@ -22,6 +22,7 @@ function createMockClient() {
 		postAuthLogin: (payload) => response('postAuthLogin', payload),
 		getAuthMe: () => response('getAuthMe'),
 		patchAuthMe: (payload) => response('patchAuthMe', payload),
+		getAuthUsersByUser: (payload) => response('getAuthUsersByUser', payload),
 		postAuthLogout: () => response('postAuthLogout'),
 		getAuthVerifyEmail: (payload) => response('getAuthVerifyEmail', payload),
 		postAuthResendVerificationEmail: (payload) => response('postAuthResendVerificationEmail', payload),
@@ -29,9 +30,14 @@ function createMockClient() {
 		postAuthResetPassword: (payload) => response('postAuthResetPassword', payload),
 		getAdminUsersPending: () => response('getAdminUsersPending'),
 		getAdminUsersDisabled: (payload) => response('getAdminUsersDisabled', payload),
+		getAdminUsersByUser: (payload) => response('getAdminUsersByUser', payload),
+		patchAdminOrganizationsByOrganizationVanity: (payload) =>
+			response('patchAdminOrganizationsByOrganizationVanity', payload),
+		patchAdminUsersByUserVanity: (payload) => response('patchAdminUsersByUserVanity', payload),
 		postAdminUsersByIdApprove: (payload) => response('postAdminUsersByIdApprove', payload),
 		postAdminUsersByIdDisable: (payload) => response('postAdminUsersByIdDisable', payload),
 		postAdminUsersByIdEnable: (payload) => response('postAdminUsersByIdEnable', payload),
+		postAdminAssetsByAssetIdMerge: (payload) => response('postAdminAssetsByAssetIdMerge', payload),
 		getOrganizationsGames: (payload) => response('getOrganizationsGames', payload),
 		getOrganizations: (payload) => response('getOrganizations', payload),
 		postOrganizations: (payload) => response('postOrganizations', payload),
@@ -73,6 +79,24 @@ function createMockClient() {
 			response('postOrganizationsByOrganizationMembersByMemberIdDeclineInvite', payload),
 		getOrganizationsCurrent: () => response('getOrganizationsCurrent'),
 		getOrganizationsCurrentMembers: () => response('getOrganizationsCurrentMembers'),
+		postOrganizationsByOrganizationAssets: (payload) =>
+			response('postOrganizationsByOrganizationAssets', payload),
+		postOrganizationsByOrganizationLedgerEvents: (payload) =>
+			response('postOrganizationsByOrganizationLedgerEvents', payload),
+		patchOrganizationsByOrganizationLedgerEventsByEventIdStatus: (payload) =>
+			response('patchOrganizationsByOrganizationLedgerEventsByEventIdStatus', payload),
+		postOrganizationsByOrganizationLedgerSettlements: (payload) =>
+			response('postOrganizationsByOrganizationLedgerSettlements', payload),
+		patchOrganizationsByOrganizationLedgerSettlementsBySettlementIdStatus: (payload) =>
+			response('patchOrganizationsByOrganizationLedgerSettlementsBySettlementIdStatus', payload),
+		postOrganizationsByOrganizationLedgerAllocations: (payload) =>
+			response('postOrganizationsByOrganizationLedgerAllocations', payload),
+		patchOrganizationsByOrganizationLedgerAllocationsByAllocationIdStatus: (payload) =>
+			response('patchOrganizationsByOrganizationLedgerAllocationsByAllocationIdStatus', payload),
+		postOrganizationsByOrganizationLedgerClaims: (payload) =>
+			response('postOrganizationsByOrganizationLedgerClaims', payload),
+		patchOrganizationsByOrganizationLedgerClaimsByClaimIdStatus: (payload) =>
+			response('patchOrganizationsByOrganizationLedgerClaimsByClaimIdStatus', payload),
 		getDashboardMe: () => response('getDashboardMe'),
 		postNotionQuery: () => response('postNotionQuery'),
 		postNotionMutate: () => response('postNotionMutate'),
@@ -88,6 +112,7 @@ test('ApiAdapter maps auth operations to generated client methods', async () => 
 	await adapter.login({ email: 'demo@example.com', password: 'password123' });
 	await adapter.getCurrentUser();
 	await adapter.updateDisplayName({ displayName: 'Demo User' });
+	await adapter.getPublicUser('demo-user');
 	await adapter.logout();
 	await adapter.verifyEmail({ key: 'verify-key', token: 'verify-token' });
 	await adapter.resendVerificationEmail({ email: 'demo@example.com' });
@@ -99,6 +124,7 @@ test('ApiAdapter maps auth operations to generated client methods', async () => 
 		},
 		{ method: 'getAuthMe', payload: undefined },
 		{ method: 'patchAuthMe', payload: { body: { displayName: 'Demo User' } } },
+		{ method: 'getAuthUsersByUser', payload: { pathParams: { user: 'demo-user' } } },
 		{ method: 'postAuthLogout', payload: undefined },
 		{
 			method: 'getAuthVerifyEmail',
@@ -116,18 +142,38 @@ test('ApiAdapter maps admin operations to generated client path params', async (
 	const adapter = new ApiAdapter(client);
 
 	await adapter.listDisabledUsers({ displayName: 'mika', limit: 10, offset: 0 });
+	await adapter.getManagedUser('demo-user');
+	await adapter.updateOrganizationVanity('demo-guild', { vanity: 'demo' });
+	await adapter.updateUserVanity('demo-user', { vanity: 'mika-demo' });
 	await adapter.approveUser(7);
 	await adapter.disableUser(8);
 	await adapter.enableUser(9);
+	await adapter.mergeAsset(11, { targetAssetId: 12 });
 
 	assert.deepEqual(calls, [
 		{
 			method: 'getAdminUsersDisabled',
 			payload: { query: { displayName: 'mika', limit: 10, offset: 0 } },
 		},
+		{
+			method: 'getAdminUsersByUser',
+			payload: { pathParams: { user: 'demo-user' } },
+		},
+		{
+			method: 'patchAdminOrganizationsByOrganizationVanity',
+			payload: { pathParams: { organization: 'demo-guild' }, body: { vanity: 'demo' } },
+		},
+		{
+			method: 'patchAdminUsersByUserVanity',
+			payload: { pathParams: { user: 'demo-user' }, body: { vanity: 'mika-demo' } },
+		},
 		{ method: 'postAdminUsersByIdApprove', payload: { pathParams: { id: 7 } } },
 		{ method: 'postAdminUsersByIdDisable', payload: { pathParams: { id: 8 } } },
 		{ method: 'postAdminUsersByIdEnable', payload: { pathParams: { id: 9 } } },
+		{
+			method: 'postAdminAssetsByAssetIdMerge',
+			payload: { pathParams: { assetId: 11 }, body: { targetAssetId: 12 } },
+		},
 	]);
 });
 
@@ -136,7 +182,13 @@ test('ApiAdapter maps organization operations to generated client methods', asyn
 	const adapter = new ApiAdapter(client);
 
 	await adapter.listOrganizationGames({ includeInactive: true });
-	await adapter.listOrganizations({ limit: 20, offset: 40, q: 'moon', gameSlug: 'wow' });
+	await adapter.listOrganizations({
+		displayName: 'Moon Raiders',
+		limit: 20,
+		offset: 40,
+		q: 'moon',
+		gameSlug: 'wow',
+	});
 	await adapter.createOrganization({
 		name: 'Demo Guild',
 		slug: 'demo-guild',
@@ -164,6 +216,30 @@ test('ApiAdapter maps organization operations to generated client methods', asyn
 	await adapter.acceptOrganizationInvite('demo-guild', 92);
 	await adapter.declineOrganizationInvite('demo-guild', 93);
 	await adapter.deleteOrganization('demo-guild');
+	await adapter.createOrganizationAsset('demo-guild', { name: 'Epic Sword', assetType: 'item' });
+	await adapter.createOrganizationLedgerEvent('demo-guild', {
+		title: 'Weekly Raid',
+		occurredAt: '2026-08-27T12:00:00.000Z',
+	});
+	await adapter.updateOrganizationLedgerEventStatus('demo-guild', 101, { status: 'cancelled' });
+	await adapter.createOrganizationLedgerSettlement('demo-guild', {
+		title: 'Raid Sale',
+		decidedAt: '2026-08-27T12:00:00.000Z',
+		grossAmount: 1000,
+		netAmount: 900,
+	});
+	await adapter.updateOrganizationLedgerSettlementStatus('demo-guild', 102, { status: 'paid' });
+	await adapter.createOrganizationLedgerAllocation('demo-guild', {
+		settlementId: 102,
+		amount: 450,
+	});
+	await adapter.updateOrganizationLedgerAllocationStatus('demo-guild', 103, { status: 'waived' });
+	await adapter.createOrganizationLedgerClaim('demo-guild', {
+		settlementAllocationId: 103,
+		amount: 450,
+		claimedAt: '2026-08-27T12:00:00.000Z',
+	});
+	await adapter.updateOrganizationLedgerClaimStatus('demo-guild', 104, { status: 'confirmed' });
 
 	assert.deepEqual(calls, [
 		{
@@ -172,7 +248,9 @@ test('ApiAdapter maps organization operations to generated client methods', asyn
 		},
 		{
 			method: 'getOrganizations',
-			payload: { query: { limit: 20, offset: 40, q: 'moon', gameSlug: 'wow' } },
+			payload: {
+				query: { displayName: 'Moon Raiders', limit: 20, offset: 40, q: 'moon', gameSlug: 'wow' },
+			},
 		},
 		{
 			method: 'postOrganizations',
@@ -275,6 +353,78 @@ test('ApiAdapter maps organization operations to generated client methods', asyn
 		{
 			method: 'deleteOrganizationsByOrganization',
 			payload: { pathParams: { organization: 'demo-guild' } },
+		},
+		{
+			method: 'postOrganizationsByOrganizationAssets',
+			payload: {
+				pathParams: { organization: 'demo-guild' },
+				body: { name: 'Epic Sword', assetType: 'item' },
+			},
+		},
+		{
+			method: 'postOrganizationsByOrganizationLedgerEvents',
+			payload: {
+				pathParams: { organization: 'demo-guild' },
+				body: { title: 'Weekly Raid', occurredAt: '2026-08-27T12:00:00.000Z' },
+			},
+		},
+		{
+			method: 'patchOrganizationsByOrganizationLedgerEventsByEventIdStatus',
+			payload: {
+				pathParams: { organization: 'demo-guild', eventId: 101 },
+				body: { status: 'cancelled' },
+			},
+		},
+		{
+			method: 'postOrganizationsByOrganizationLedgerSettlements',
+			payload: {
+				pathParams: { organization: 'demo-guild' },
+				body: {
+					title: 'Raid Sale',
+					decidedAt: '2026-08-27T12:00:00.000Z',
+					grossAmount: 1000,
+					netAmount: 900,
+				},
+			},
+		},
+		{
+			method: 'patchOrganizationsByOrganizationLedgerSettlementsBySettlementIdStatus',
+			payload: {
+				pathParams: { organization: 'demo-guild', settlementId: 102 },
+				body: { status: 'paid' },
+			},
+		},
+		{
+			method: 'postOrganizationsByOrganizationLedgerAllocations',
+			payload: {
+				pathParams: { organization: 'demo-guild' },
+				body: { settlementId: 102, amount: 450 },
+			},
+		},
+		{
+			method: 'patchOrganizationsByOrganizationLedgerAllocationsByAllocationIdStatus',
+			payload: {
+				pathParams: { organization: 'demo-guild', allocationId: 103 },
+				body: { status: 'waived' },
+			},
+		},
+		{
+			method: 'postOrganizationsByOrganizationLedgerClaims',
+			payload: {
+				pathParams: { organization: 'demo-guild' },
+				body: {
+					settlementAllocationId: 103,
+					amount: 450,
+					claimedAt: '2026-08-27T12:00:00.000Z',
+				},
+			},
+		},
+		{
+			method: 'patchOrganizationsByOrganizationLedgerClaimsByClaimIdStatus',
+			payload: {
+				pathParams: { organization: 'demo-guild', claimId: 104 },
+				body: { status: 'confirmed' },
+			},
 		},
 	]);
 });

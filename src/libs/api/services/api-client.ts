@@ -7,6 +7,7 @@ export interface ApiClientLike {
 	postAuthLogin: OpenApiClient['postAuthLogin'];
 	getAuthMe: OpenApiClient['getAuthMe'];
 	patchAuthMe: OpenApiClient['patchAuthMe'];
+	getAuthUsersByUser: OpenApiClient['getAuthUsersByUser'];
 	postAuthLogout: OpenApiClient['postAuthLogout'];
 	getAuthVerifyEmail: OpenApiClient['getAuthVerifyEmail'];
 	postAuthResendVerificationEmail: OpenApiClient['postAuthResendVerificationEmail'];
@@ -14,9 +15,13 @@ export interface ApiClientLike {
 	postAuthResetPassword: OpenApiClient['postAuthResetPassword'];
 	getAdminUsersPending: OpenApiClient['getAdminUsersPending'];
 	getAdminUsersDisabled: OpenApiClient['getAdminUsersDisabled'];
+	getAdminUsersByUser: OpenApiClient['getAdminUsersByUser'];
+	patchAdminOrganizationsByOrganizationVanity: OpenApiClient['patchAdminOrganizationsByOrganizationVanity'];
+	patchAdminUsersByUserVanity: OpenApiClient['patchAdminUsersByUserVanity'];
 	postAdminUsersByIdApprove: OpenApiClient['postAdminUsersByIdApprove'];
 	postAdminUsersByIdDisable: OpenApiClient['postAdminUsersByIdDisable'];
 	postAdminUsersByIdEnable: OpenApiClient['postAdminUsersByIdEnable'];
+	postAdminAssetsByAssetIdMerge: OpenApiClient['postAdminAssetsByAssetIdMerge'];
 	getOrganizationsGames: OpenApiClient['getOrganizationsGames'];
 	getOrganizations: OpenApiClient['getOrganizations'];
 	postOrganizations: OpenApiClient['postOrganizations'];
@@ -42,6 +47,19 @@ export interface ApiClientLike {
 	postOrganizationsByOrganizationMembersByMemberIdDeclineInvite: OpenApiClient['postOrganizationsByOrganizationMembersByMemberIdDeclineInvite'];
 	getOrganizationsCurrent: OpenApiClient['getOrganizationsCurrent'];
 	getOrganizationsCurrentMembers: OpenApiClient['getOrganizationsCurrentMembers'];
+	postOrganizationsByOrganizationAssets: OpenApiClient['postOrganizationsByOrganizationAssets'];
+	postOrganizationsByOrganizationLedgerEvents: OpenApiClient['postOrganizationsByOrganizationLedgerEvents'];
+	patchOrganizationsByOrganizationLedgerEventsByEventIdStatus:
+		OpenApiClient['patchOrganizationsByOrganizationLedgerEventsByEventIdStatus'];
+	postOrganizationsByOrganizationLedgerSettlements: OpenApiClient['postOrganizationsByOrganizationLedgerSettlements'];
+	patchOrganizationsByOrganizationLedgerSettlementsBySettlementIdStatus:
+		OpenApiClient['patchOrganizationsByOrganizationLedgerSettlementsBySettlementIdStatus'];
+	postOrganizationsByOrganizationLedgerAllocations: OpenApiClient['postOrganizationsByOrganizationLedgerAllocations'];
+	patchOrganizationsByOrganizationLedgerAllocationsByAllocationIdStatus:
+		OpenApiClient['patchOrganizationsByOrganizationLedgerAllocationsByAllocationIdStatus'];
+	postOrganizationsByOrganizationLedgerClaims: OpenApiClient['postOrganizationsByOrganizationLedgerClaims'];
+	patchOrganizationsByOrganizationLedgerClaimsByClaimIdStatus:
+		OpenApiClient['patchOrganizationsByOrganizationLedgerClaimsByClaimIdStatus'];
 	getDashboardMe: OpenApiClient['getDashboardMe'];
 	postNotionQuery: OpenApiClient['postNotionQuery'];
 	postNotionMutate: OpenApiClient['postNotionMutate'];

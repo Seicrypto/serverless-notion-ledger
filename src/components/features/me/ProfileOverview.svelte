@@ -2,6 +2,7 @@
 	import { onMount } from 'svelte';
 
 	import AccessNoticeCard from '../shared/AccessNoticeCard.svelte';
+	import UserInfoCard, { type UserInfoCardItem } from '../shared/UserInfoCard.svelte';
 	import RequestStatusDialog from '../org/RequestStatusDialog.svelte';
 	import {
 		ensureAuthSession,
@@ -66,6 +67,38 @@
 	let dialogTitle = '';
 	let dialogMessage = '';
 	let dialogPrimaryAction: { label: string; onClick?: () => void } | null = null;
+
+	$: profileItems = isAuthenticatedSession(session)
+		? ([
+				{
+					key: 'displayName',
+					label: labels.displayNameLabel,
+					value: session.user.displayName || '—',
+					action: {
+						ariaLabel: labels.editLabel,
+						onClick: () => {
+							displayNameError = '';
+							editDialogOpen = true;
+						},
+					},
+				},
+				{
+					key: 'email',
+					label: labels.emailLabel,
+					value: session.user.email,
+				},
+				{
+					key: 'status',
+					label: labels.statusLabel,
+					value: session.user.status,
+				},
+				{
+					key: 'staff',
+					label: labels.staffLabel,
+					value: session.user.isStaff ? labels.yesLabel : labels.noLabel,
+				},
+			] satisfies UserInfoCardItem[])
+		: [];
 
 	const syncDraft = () => {
 		if (isAuthenticatedSession(session)) {
@@ -192,53 +225,13 @@
 	/>
 {:else}
 	<section class="me-profile">
-		<div class="me-profile-card">
-			<p class="me-profile-eyebrow">{labels.eyebrow}</p>
-			<h1>{labels.title}</h1>
-			<p class="me-profile-intro">{labels.intro}</p>
-
-			<dl class="me-profile-grid">
-				<div class="me-profile-item me-profile-item-display-name">
-					<dt>{labels.displayNameLabel}</dt>
-					<dd>
-						<span>{session.user.displayName || '—'}</span>
-						<button
-							type="button"
-							class="me-profile-edit"
-							aria-label={labels.editLabel}
-							on:click={() => {
-								displayNameError = '';
-								editDialogOpen = true;
-							}}
-						>
-							<svg viewBox="0 0 24 24" aria-hidden="true">
-								<path d="M4 20h4l10-10-4-4L4 16v4Z" fill="currentColor"></path>
-								<path d="m13 5 4 4" stroke="currentColor" stroke-width="1.5" fill="none"></path>
-							</svg>
-						</button>
-					</dd>
-				</div>
-				<div class="me-profile-item">
-					<dt>{labels.emailLabel}</dt>
-					<dd>{session.user.email}</dd>
-				</div>
-				<div class="me-profile-item">
-					<dt>{labels.statusLabel}</dt>
-					<dd>{session.user.status}</dd>
-				</div>
-				<div class="me-profile-item">
-					<dt>{labels.staffLabel}</dt>
-					<dd>{session.user.isStaff ? labels.yesLabel : labels.noLabel}</dd>
-				</div>
-			</dl>
-
-			<a class="me-profile-orgs-link" href={`/${lang}/me/orgs`}>
-				<span>{labels.myOrganizationsLabel}</span>
-				<svg viewBox="0 0 24 24" aria-hidden="true">
-					<path d="M8 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"></path>
-				</svg>
-			</a>
-		</div>
+		<UserInfoCard
+			eyebrow={labels.eyebrow}
+			title={labels.title}
+			intro={labels.intro}
+			items={profileItems}
+			footerLink={{ href: `/${lang}/me/orgs`, label: labels.myOrganizationsLabel }}
+		/>
 
 		{#if editDialogOpen}
 			<div class="me-edit-backdrop" role="presentation">
@@ -281,111 +274,6 @@
 	.me-profile {
 		width: min(var(--content-width), 100%);
 		margin: 28px auto 0;
-	}
-
-	.me-profile-card {
-		padding: 30px;
-		border: 1px solid color-mix(in srgb, var(--line) 92%, white);
-		border-radius: 28px;
-		background: var(--surface);
-		box-shadow: var(--shadow);
-		backdrop-filter: blur(16px);
-	}
-
-	.me-profile-eyebrow,
-	.me-profile-item dt {
-		margin: 0;
-		font-size: 0.8rem;
-		font-weight: 700;
-		letter-spacing: 0.12em;
-		text-transform: uppercase;
-		color: color-mix(in srgb, var(--accent) 68%, var(--text-soft));
-	}
-
-	.me-profile-card h1 {
-		margin: 12px 0 0;
-		font-size: clamp(2rem, 4vw, 3rem);
-		letter-spacing: -0.03em;
-	}
-
-	.me-profile-intro,
-	.me-profile-item dd {
-		margin: 16px 0 0;
-		line-height: 1.7;
-		color: var(--text-soft);
-	}
-
-	.me-profile-grid {
-		margin: 28px 0 0;
-		padding: 0;
-		display: grid;
-		grid-template-columns: repeat(2, minmax(0, 1fr));
-		gap: 18px;
-	}
-
-	.me-profile-item {
-		padding: 18px;
-		border: 1px solid color-mix(in srgb, var(--line) 78%, transparent);
-		border-radius: 20px;
-		background: color-mix(in srgb, var(--surface-strong) 74%, white);
-	}
-
-	.me-profile-item dd {
-		margin: 10px 0 0;
-		font-size: 1.02rem;
-		font-weight: 700;
-		color: var(--text-main);
-	}
-
-	.me-profile-item-display-name dd {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		gap: 12px;
-	}
-
-	.me-profile-edit {
-		width: 38px;
-		height: 38px;
-		padding: 0;
-		border: 1px solid var(--line);
-		border-radius: 999px;
-		background: color-mix(in srgb, var(--surface-strong) 84%, white);
-		display: inline-flex;
-		align-items: center;
-		justify-content: center;
-		cursor: pointer;
-		transition:
-			transform 0.18s ease,
-			border-color 0.18s ease;
-	}
-
-	.me-profile-edit:hover {
-		transform: translateY(-1px);
-		border-color: var(--line-strong);
-	}
-
-	.me-profile-edit svg {
-		width: 16px;
-		height: 16px;
-	}
-
-	.me-profile-orgs-link {
-		margin-top: 26px;
-		min-height: 52px;
-		padding: 0 18px;
-		border-radius: 999px;
-		border: 1px solid var(--line);
-		background: color-mix(in srgb, var(--surface-strong) 76%, white);
-		display: inline-flex;
-		align-items: center;
-		gap: 10px;
-		font-weight: 700;
-	}
-
-	.me-profile-orgs-link svg {
-		width: 16px;
-		height: 16px;
 	}
 
 	.me-edit-backdrop {
@@ -484,19 +372,9 @@
 	}
 
 	@media (max-width: 720px) {
-		.me-profile-card,
 		.me-edit-card {
 			padding: 22px;
 			border-radius: 22px;
-		}
-
-		.me-profile-grid {
-			grid-template-columns: 1fr;
-		}
-
-		.me-profile-orgs-link {
-			width: 100%;
-			justify-content: center;
 		}
 
 		.me-edit-actions {
