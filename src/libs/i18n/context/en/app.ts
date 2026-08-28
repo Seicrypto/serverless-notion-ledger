@@ -440,7 +440,7 @@ export const app = {
 		'Join or create an organization first, then come back here and the create, settle, and payout shortcuts will be ready.',
 	ledger_hub_find_organizations_label: 'Find organizations',
 	ledger_hub_organization_label: 'Working organization',
-	ledger_hub_organization_hint: 'The hub keeps the current organization in view so every shortcut opens in the right context.',
+	ledger_hub_organization_current_prefix: 'The organization currently selected for the next actions is:',
 	ledger_hub_organization_stats_members: 'Members',
 	ledger_hub_organization_stats_characters: 'Characters',
 	ledger_hub_event_eyebrow: 'Step 1',

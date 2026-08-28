@@ -24,9 +24,7 @@ const orgVanity = Astro.url.searchParams.get('orgVanity') ?? Astro.url.searchPar
 		lang={lang}
 		initialOrganization={orgVanity}
 		labels={{
-			eyebrow: t.common.nav_overview,
 			title: t.app.ledger_hub_title,
-			intro: t.app.ledger_hub_intro,
 			authRequiredTitle: t.app.ledger_hub_auth_required_title,
 			authRequiredBody: t.app.ledger_hub_auth_required_body,
 			loginLabel: t.common.login,
@@ -36,7 +34,7 @@ const orgVanity = Astro.url.searchParams.get('orgVanity') ?? Astro.url.searchPar
 			noOrganizationsBody: t.app.ledger_hub_no_organizations_body,
 			findOrganizationsLabel: t.app.ledger_hub_find_organizations_label,
 			organizationLabel: t.app.ledger_hub_organization_label,
-			organizationHint: t.app.ledger_hub_organization_hint,
+			organizationCurrentPrefix: t.app.ledger_hub_organization_current_prefix,
 			organizationStatsMembers: t.app.ledger_hub_organization_stats_members,
 			organizationStatsCharacters: t.app.ledger_hub_organization_stats_characters,
 			eventCardEyebrow: t.app.ledger_hub_event_eyebrow,

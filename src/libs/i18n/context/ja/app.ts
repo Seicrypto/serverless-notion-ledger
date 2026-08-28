@@ -440,8 +440,7 @@ export const app = {
 		'先に組織へ参加するか新しく作成してください。その後このページに戻れば、作成・精算・配布のショートカットをすぐ使えます。',
 	ledger_hub_find_organizations_label: '組織ページへ',
 	ledger_hub_organization_label: '現在の作業組織',
-	ledger_hub_organization_hint:
-		'このページで現在の組織文脈を固定し、各ショートカットが正しい orgVanity 付きで開くようにします。',
+	ledger_hub_organization_current_prefix: 'このまま次に作成を進める組織は:',
 	ledger_hub_organization_stats_members: 'メンバー数',
 	ledger_hub_organization_stats_characters: 'キャラクター数',
 	ledger_hub_event_eyebrow: 'Step 1',

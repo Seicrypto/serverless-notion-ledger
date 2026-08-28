@@ -433,7 +433,7 @@ export const app = {
 	ledger_hub_no_organizations_body: '請先加入或建立組織，之後回到這頁就可以直接使用建立、結算與派發快捷入口。',
 	ledger_hub_find_organizations_label: '前往組織頁',
 	ledger_hub_organization_label: '目前操作組織',
-	ledger_hub_organization_hint: '這裡會固定你目前的組織上下文，讓所有快捷入口都直接帶著正確的 orgVanity 前往。',
+	ledger_hub_organization_current_prefix: '目前接著建立對象的公會是：',
 	ledger_hub_organization_stats_members: '成員數',
 	ledger_hub_organization_stats_characters: '角色數',
 	ledger_hub_event_eyebrow: 'Step 1',
