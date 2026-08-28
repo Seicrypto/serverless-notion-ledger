@@ -15,10 +15,14 @@
 		staffOnlyBody: string;
 		loginLabel: string;
 		homeLabel: string;
-		usersPanelLabel: string;
-		usersPanelTitle: string;
-		usersPanelBody: string;
-		openUsersLabel: string;
+		disabledUsersPanelLabel: string;
+		disabledUsersPanelTitle: string;
+		disabledUsersPanelBody: string;
+		openDisabledUsersLabel: string;
+		userProfilePanelLabel: string;
+		userProfilePanelTitle: string;
+		userProfilePanelBody: string;
+		openUserProfileLabel: string;
 	}
 
 	export let lang: string;
@@ -69,11 +73,20 @@
 
 		<div class="official-grid">
 			<article class="official-panel">
-				<p class="official-panel-label">{labels.usersPanelLabel}</p>
-				<h2>{labels.usersPanelTitle}</h2>
-				<p>{labels.usersPanelBody}</p>
+				<p class="official-panel-label">{labels.disabledUsersPanelLabel}</p>
+				<h2>{labels.disabledUsersPanelTitle}</h2>
+				<p>{labels.disabledUsersPanelBody}</p>
+				<a class="official-panel-action" href={`/${lang}/official/disabled-users`}>
+					{labels.openDisabledUsersLabel}
+				</a>
+			</article>
+
+			<article class="official-panel">
+				<p class="official-panel-label">{labels.userProfilePanelLabel}</p>
+				<h2>{labels.userProfilePanelTitle}</h2>
+				<p>{labels.userProfilePanelBody}</p>
 				<a class="official-panel-action" href={`/${lang}/official/users`}>
-					{labels.openUsersLabel}
+					{labels.openUserProfileLabel}
 				</a>
 			</article>
 		</div>

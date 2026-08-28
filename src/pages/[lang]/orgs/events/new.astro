@@ -1,0 +1,101 @@
+---
+import Layout from '../../../../layouts/Layout.astro';
+import EventCreationWorkspace from '../../../../components/features/events/EventCreationWorkspace.svelte';
+import '../../../../styles/app-pages.css';
+import { getI18n, getLangFromUrl } from '../../../../libs/i18n';
+import { buildLayoutLabels } from '../../../../libs/i18n/layoutLabels';
+export { getStaticPaths } from '../../../../libs/static/staticPaths';
+
+const lang = getLangFromUrl(Astro.url);
+const t = getI18n(lang);
+const orgVanity = Astro.url.searchParams.get('orgVanity') ?? Astro.url.searchParams.get('org');
+const quickCreateId = Astro.url.searchParams.get('quickCreateId');
+---
+
+<Layout
+	title={`${t.app.events_title} | ${t.common.product_name}`}
+	description={t.app.events_intro}
+	productName={t.common.product_name}
+	lang={lang}
+	currentPath={`${Astro.url.pathname}${Astro.url.search}`}
+	labels={buildLayoutLabels(t)}
+>
+	<EventCreationWorkspace
+		client:load
+		lang={lang}
+		organization={orgVanity}
+		quickCreateId={quickCreateId}
+		labels={{
+			eyebrow: t.common.nav_events,
+			title: t.app.events_title,
+			intro: t.app.events_intro,
+			sessionTitle: t.app.events_session_title,
+			sessionBody: t.app.events_session_body,
+			sessionCountLabel: t.app.events_session_count_label,
+			quickCreateLabel: t.app.events_quick_create_label,
+			quickCreateEmpty: t.app.events_quick_create_empty,
+			quickCreateTitle: t.app.events_quick_create_title,
+			quickCreateBody: t.app.events_quick_create_body,
+			quickCreateSelectLabel: t.app.events_quick_create_select_label,
+			quickCreateConfirmLabel: t.app.events_quick_create_confirm_label,
+			quickCreateCancelLabel: t.app.events_quick_create_cancel_label,
+			quickCreateCloseLabel: t.app.events_quick_create_close_label,
+			quickCreateDefaultPrefix: t.app.events_quick_create_default_prefix,
+			yesterdayPrefix: t.app.events_yesterday_prefix,
+			orgRequiredTitle: t.app.events_org_required_title,
+			orgRequiredBody: t.app.events_org_required_body,
+			titleLabel: t.app.events_form_title_label,
+			titlePlaceholder: t.app.events_form_title_placeholder,
+			occurredAtLabel: t.app.events_form_occurred_at_label,
+			eventTypeLabel: t.app.events_form_event_type_label,
+			sourceTypeLabel: t.app.events_form_source_type_label,
+			gameIdLabel: t.app.events_form_game_id_label,
+			gameOptionalHint: t.app.events_form_game_optional_hint,
+			holderTypeLabel: t.app.events_form_holder_type_label,
+			holderRefLabel: t.app.events_form_holder_ref_label,
+			holderRefPlaceholder: t.app.events_form_holder_ref_placeholder,
+			notesLabel: t.app.events_form_notes_label,
+			notesPlaceholder: t.app.events_form_notes_placeholder,
+			assetSectionLabel: t.app.events_assets_section_label,
+			assetSectionBody: t.app.events_assets_section_body,
+			assetIdLabel: t.app.events_assets_asset_id_label,
+			assetIdPlaceholder: t.app.events_assets_asset_id_placeholder,
+			addAssetLabel: t.app.events_assets_add_label,
+			removeAssetLabel: t.app.events_assets_remove_label,
+			submitLabel: t.app.events_form_submit_label,
+			requiredHint: t.app.events_required_hint,
+			optionalHint: t.app.events_optional_hint,
+			validationRequired: t.app.events_validation_required,
+			validationDate: t.app.events_validation_date,
+			validationNumber: t.app.events_validation_number,
+			loadingGames: t.app.events_loading_games,
+			eventTypeLoot: t.app.events_event_type_loot,
+			eventTypeRaid: t.app.events_event_type_raid,
+			eventTypeActivity: t.app.events_event_type_activity,
+			eventTypeBonus: t.app.events_event_type_bonus,
+			eventTypeSalary: t.app.events_event_type_salary,
+			eventTypeGuildEvent: t.app.events_event_type_guild_event,
+			eventTypeOther: t.app.events_event_type_other,
+			sourceTypeManual: t.app.events_source_type_manual,
+			sourceTypeApi: t.app.events_source_type_api,
+			sourceTypeImport: t.app.events_source_type_import,
+			holderTypeCharacter: t.app.events_holder_type_character,
+			holderTypeOrgTreasury: t.app.events_holder_type_org_treasury,
+			holderTypeMarket: t.app.events_holder_type_market,
+			holderTypeExternal: t.app.events_holder_type_external,
+			holderTypeCustom: t.app.events_holder_type_custom,
+			loadingCreateTitle: t.app.events_loading_create_title,
+			loadingCreateSingleBody: t.app.events_loading_create_single_body,
+			loadingCreateBatchPrefix: t.app.events_loading_create_batch_prefix,
+			errorCreateTitle: t.app.events_error_create_title,
+			errorTimeoutBody: t.app.events_error_timeout_body,
+			errorRetryLabel: t.app.events_error_retry_label,
+			errorPartialPrefix: t.app.events_error_partial_prefix,
+			successCreateTitle: t.app.events_success_create_title,
+			successCreateSingleBody: t.app.events_success_create_single_body,
+			successCreateBatchPrefix: t.app.events_success_create_batch_prefix,
+			successCreateSuffix: t.app.events_success_create_suffix,
+			successCloseLabel: t.app.events_success_close_label,
+		}}
+	/>
+</Layout>

@@ -4,14 +4,28 @@ import type {
 	AddOrganizationMemberRequest,
 	ApplyOrganizationMemberRequest,
 	CreateCharacterRequest,
+	CreateAssetRequest,
+	CreateLedgerAllocationRequest,
+	CreateLedgerBatchClaimsRequest,
+	CreateLedgerClaimRequest,
+	CreateLedgerEventRequest,
+	CreateLedgerSettlementRequest,
+	QueryCharacterLedgerDashboardSummariesRequest,
 	CreateOrganizationRequest,
 	ForgotPasswordRequest,
 	InviteOrganizationMemberRequest,
 	LoginRequest,
+	MergeAssetRequest,
 	RegisterRequest,
 	ResetPasswordRequest,
+	UpdateUserVanityRequest,
+	UpdateLedgerAllocationStatusRequest,
+	UpdateLedgerClaimStatusRequest,
+	UpdateLedgerEventStatusRequest,
+	UpdateLedgerSettlementStatusRequest,
 	UpdateDisplayNameRequest,
 	UpdateOrganizationRequest,
+	UpdateOrganizationVanityRequest,
 } from '../openapi/generated/schema';
 
 export interface ApiAdapterClientOptions {
@@ -24,6 +38,7 @@ export interface ListOrganizationGamesOptions {
 }
 
 export interface ListOrganizationsOptions {
+	displayName?: string;
 	gameId?: number;
 	gameSlug?: string;
 	limit?: number;
@@ -36,6 +51,41 @@ export interface ListMyOrganizationsOptions {
 	offset?: number;
 }
 
+export interface ListOrganizationLedgerEventsOptions {
+	assetId?: number;
+	createdByUserId?: number;
+	eventType?: CreateLedgerEventRequest['eventType'];
+	fromOccurredAt?: string;
+	holderRef?: string;
+	holderType?: CreateLedgerEventRequest['holderType'];
+	limit?: number;
+	offset?: number;
+	sortBy?: 'occurredAt' | 'createdAt' | 'title' | 'updatedAt';
+	sortOrder?: 'asc' | 'desc';
+	status?: 'open' | 'ready_for_settlement' | 'partially_settled' | 'settled' | 'cancelled';
+	statusGroup?: 'unsettled' | 'settleable' | 'settled' | 'cancelled';
+	toOccurredAt?: string;
+}
+
+export interface ListOrganizationLedgerSettlementsOptions {
+	createdByUserId?: number;
+	eventId?: number;
+	feeMode?: CreateLedgerSettlementRequest['feeMode'];
+	fromDecidedAt?: string;
+	limit?: number;
+	offset?: number;
+	sortBy?: 'decidedAt' | 'createdAt' | 'grossAmount' | 'netAmount' | 'updatedAt';
+	sortOrder?: 'asc' | 'desc';
+	status?: 'draft' | 'calculated' | 'paying' | 'paid' | 'cancelled';
+	settlementType?: CreateLedgerSettlementRequest['settlementType'];
+	toDecidedAt?: string;
+	unitAssetId?: number;
+}
+
+export interface GetOrganizationClaimableRecipientDetailOptions {
+	includeSiblingCharacters?: boolean;
+}
+
 export interface ListDisabledUsersOptions {
 	displayName?: string;
 	email?: string;
@@ -43,7 +93,12 @@ export interface ListDisabledUsersOptions {
 	offset?: number;
 }
 
+export type UserReference = string | number;
 export type OrganizationReference = string | number;
+
+function normalizeUserReference(user: UserReference) {
+	return String(user);
+}
 
 function normalizeOrganizationReference(organization: OrganizationReference) {
 	return String(organization);
@@ -76,6 +131,12 @@ export class ApiAdapter {
 		return this.client.patchAuthMe({ body: payload });
 	}
 
+	getPublicUser(user: UserReference) {
+		return this.client.getAuthUsersByUser({
+			pathParams: { user: normalizeUserReference(user) },
+		});
+	}
+
 	logout() {
 		return this.client.postAuthLogout();
 	}
@@ -106,6 +167,26 @@ export class ApiAdapter {
 		});
 	}
 
+	getManagedUser(user: UserReference) {
+		return this.client.getAdminUsersByUser({
+			pathParams: { user: normalizeUserReference(user) },
+		});
+	}
+
+	updateOrganizationVanity(organization: OrganizationReference, payload: UpdateOrganizationVanityRequest) {
+		return this.client.patchAdminOrganizationsByOrganizationVanity({
+			pathParams: { organization: normalizeOrganizationReference(organization) },
+			body: payload,
+		});
+	}
+
+	updateUserVanity(user: UserReference, payload: UpdateUserVanityRequest) {
+		return this.client.patchAdminUsersByUserVanity({
+			pathParams: { user: normalizeUserReference(user) },
+			body: payload,
+		});
+	}
+
 	approveUser(id: number) {
 		return this.client.postAdminUsersByIdApprove({ pathParams: { id } });
 	}
@@ -116,6 +197,13 @@ export class ApiAdapter {
 
 	enableUser(id: number) {
 		return this.client.postAdminUsersByIdEnable({ pathParams: { id } });
+	}
+
+	mergeAsset(assetId: number, payload: MergeAssetRequest) {
+		return this.client.postAdminAssetsByAssetIdMerge({
+			pathParams: { assetId },
+			body: payload,
+		});
 	}
 
 	listOrganizationGames(options: ListOrganizationGamesOptions = {}) {
@@ -267,6 +355,185 @@ export class ApiAdapter {
 
 	getCurrentOrganizationMembers() {
 		return this.client.getOrganizationsCurrentMembers();
+	}
+
+	createOrganizationAsset(organization: OrganizationReference, payload: CreateAssetRequest) {
+		return this.client.postOrganizationsByOrganizationAssets({
+			pathParams: { organization: normalizeOrganizationReference(organization) },
+			body: payload,
+		});
+	}
+
+	listOrganizationLedgerEvents(
+		organization: OrganizationReference,
+		options: ListOrganizationLedgerEventsOptions = {},
+	) {
+		return this.client.getOrganizationsByOrganizationLedgerEvents({
+			pathParams: { organization: normalizeOrganizationReference(organization) },
+			query: options,
+		});
+	}
+
+	getOrganizationLedgerEvent(organization: OrganizationReference, eventId: number) {
+		return this.client.getOrganizationsByOrganizationLedgerEventsByEventId({
+			pathParams: { organization: normalizeOrganizationReference(organization), eventId },
+		});
+	}
+
+	createOrganizationLedgerEvent(organization: OrganizationReference, payload: CreateLedgerEventRequest) {
+		return this.client.postOrganizationsByOrganizationLedgerEvents({
+			pathParams: { organization: normalizeOrganizationReference(organization) },
+			body: payload,
+		});
+	}
+
+	updateOrganizationLedgerEventStatus(
+		organization: OrganizationReference,
+		eventId: number,
+		payload: UpdateLedgerEventStatusRequest,
+	) {
+		return this.client.patchOrganizationsByOrganizationLedgerEventsByEventIdStatus({
+			pathParams: { organization: normalizeOrganizationReference(organization), eventId },
+			body: payload,
+		});
+	}
+
+	listOrganizationLedgerSettlements(
+		organization: OrganizationReference,
+		options: ListOrganizationLedgerSettlementsOptions = {},
+	) {
+		return this.client.getOrganizationsByOrganizationLedgerSettlements({
+			pathParams: { organization: normalizeOrganizationReference(organization) },
+			query: options,
+		});
+	}
+
+	getOrganizationLedgerSettlementDefaults(
+		organization: OrganizationReference,
+		options: { gameId?: number } = {},
+	) {
+		return this.client.getOrganizationsByOrganizationLedgerSettlementDefaults({
+			pathParams: { organization: normalizeOrganizationReference(organization) },
+			query: options,
+		});
+	}
+
+	createOrganizationLedgerSettlement(
+		organization: OrganizationReference,
+		payload: CreateLedgerSettlementRequest,
+	) {
+		return this.client.postOrganizationsByOrganizationLedgerSettlements({
+			pathParams: { organization: normalizeOrganizationReference(organization) },
+			body: payload,
+		});
+	}
+
+	updateOrganizationLedgerSettlementStatus(
+		organization: OrganizationReference,
+		settlementId: number,
+		payload: UpdateLedgerSettlementStatusRequest,
+	) {
+		return this.client.patchOrganizationsByOrganizationLedgerSettlementsBySettlementIdStatus({
+			pathParams: { organization: normalizeOrganizationReference(organization), settlementId },
+			body: payload,
+		});
+	}
+
+	listOrganizationClaimableRecipients(organization: OrganizationReference) {
+		return this.client.getOrganizationsByOrganizationLedgerClaimableRecipients({
+			pathParams: { organization: normalizeOrganizationReference(organization) },
+		});
+	}
+
+	getOrganizationClaimableRecipientDetail(
+		organization: OrganizationReference,
+		characterId: number,
+		options: GetOrganizationClaimableRecipientDetailOptions = {},
+	) {
+		return this.client.getOrganizationsByOrganizationLedgerClaimableRecipientsByCharacterId({
+			pathParams: {
+				organization: normalizeOrganizationReference(organization),
+				characterId,
+			},
+			query: options,
+		});
+	}
+
+	getOrganizationLedgerDashboardSummary(organization: OrganizationReference) {
+		return this.client.getOrganizationsByOrganizationLedgerDashboardSummary({
+			pathParams: { organization: normalizeOrganizationReference(organization) },
+		});
+	}
+
+	queryOrganizationCharacterLedgerDashboardSummaries(
+		organization: OrganizationReference,
+		payload: QueryCharacterLedgerDashboardSummariesRequest,
+	) {
+		return this.client.postOrganizationsByOrganizationLedgerDashboardCharacterSummariesQuery({
+			pathParams: { organization: normalizeOrganizationReference(organization) },
+			body: payload,
+		});
+	}
+
+	getOrganizationCharacterLedgerDashboardDetail(
+		organization: OrganizationReference,
+		characterId: number,
+	) {
+		return this.client.getOrganizationsByOrganizationLedgerDashboardCharactersByCharacterId({
+			pathParams: {
+				organization: normalizeOrganizationReference(organization),
+				characterId,
+			},
+		});
+	}
+
+	createOrganizationLedgerBatchClaims(
+		organization: OrganizationReference,
+		payload: CreateLedgerBatchClaimsRequest,
+	) {
+		return this.client.postOrganizationsByOrganizationLedgerClaimsBatch({
+			pathParams: { organization: normalizeOrganizationReference(organization) },
+			body: payload,
+		});
+	}
+
+	createOrganizationLedgerAllocation(
+		organization: OrganizationReference,
+		payload: CreateLedgerAllocationRequest,
+	) {
+		return this.client.postOrganizationsByOrganizationLedgerAllocations({
+			pathParams: { organization: normalizeOrganizationReference(organization) },
+			body: payload,
+		});
+	}
+
+	updateOrganizationLedgerAllocationStatus(
+		organization: OrganizationReference,
+		allocationId: number,
+		payload: UpdateLedgerAllocationStatusRequest,
+	) {
+		return this.client.patchOrganizationsByOrganizationLedgerAllocationsByAllocationIdStatus({
+			pathParams: { organization: normalizeOrganizationReference(organization), allocationId },
+			body: payload,
+		});
+	}
+
+	createOrganizationLedgerClaim(organization: OrganizationReference, payload: CreateLedgerClaimRequest) {
+		return this.client.postOrganizationsByOrganizationLedgerClaims({
+			pathParams: { organization: normalizeOrganizationReference(organization) },
+			body: payload,
+		});
+	}
+
+	updateOrganizationLedgerClaimStatus(
+		organization: OrganizationReference,
+		claimId: number,
+		payload: UpdateLedgerClaimStatusRequest,
+	) {
+		return this.client.patchOrganizationsByOrganizationLedgerClaimsByClaimIdStatus({
+			pathParams: { organization: normalizeOrganizationReference(organization), claimId },
+			body: payload,
+		});
 	}
 
 	getMyDashboard() {

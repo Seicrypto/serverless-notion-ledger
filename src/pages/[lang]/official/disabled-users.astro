@@ -1,0 +1,63 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+import DisabledUsersTable from '../../../components/features/official/DisabledUsersTable.svelte';
+import '../../../styles/app-pages.css';
+import { getI18n, getLangFromUrl } from '../../../libs/i18n';
+import { buildLayoutLabels } from '../../../libs/i18n/layoutLabels';
+export { getStaticPaths } from '../../../libs/static/staticPaths';
+
+const lang = getLangFromUrl(Astro.url);
+const t = getI18n(lang);
+---
+
+<Layout
+	title={`${t.app.official_disabled_users_title} | ${t.common.product_name}`}
+	description={t.app.official_disabled_users_intro}
+	productName={t.common.product_name}
+	lang={lang}
+	currentPath={`${Astro.url.pathname}${Astro.url.search}`}
+	labels={buildLayoutLabels(t)}
+>
+	<Fragment slot="head">
+		<meta name="robots" content="noindex, nofollow, noarchive" />
+	</Fragment>
+
+	<DisabledUsersTable
+		client:load
+		lang={lang}
+		labels={{
+			eyebrow: t.app.official_overview_disabled_users_label,
+			title: t.app.official_disabled_users_title,
+			intro: t.app.official_disabled_users_intro,
+			nameLabel: t.app.official_disabled_users_name_label,
+			emailLabel: t.app.official_disabled_users_email_label,
+			approveLabel: t.app.official_disabled_users_approve_label,
+			backLabel: t.app.official_disabled_users_back_label,
+			loadingLabel: t.app.official_gate_loading_label,
+			loginRequiredTitle: t.app.official_gate_login_required_title,
+			loginRequiredBody: t.app.official_gate_login_required_body,
+			staffOnlyTitle: t.app.official_gate_denied_title,
+			staffOnlyBody: t.app.official_gate_denied_body,
+			loginLabel: t.app.action_login,
+			homeLabel: t.app.action_back_home,
+			pendingTitle: t.app.official_disabled_users_pending_title,
+			pendingBody: t.app.official_disabled_users_pending_body,
+			successTitle: t.app.official_disabled_users_success_title,
+			successBody: t.app.official_disabled_users_success_body,
+			errorTitle: t.app.official_disabled_users_error_title,
+			errorBody: t.app.official_disabled_users_error_body,
+			confirmLabel: t.app.me_profile_confirm_label,
+			emptyTitle: t.app.official_disabled_users_empty_title,
+			searchFieldLabel: t.app.official_disabled_users_search_field_label,
+			searchInputLabel: t.app.official_disabled_users_search_input_label,
+			searchPlaceholderDisplayName: t.app.official_disabled_users_search_placeholder_display_name,
+			searchPlaceholderEmail: t.app.official_disabled_users_search_placeholder_email,
+			searchDisplayNameOption: t.app.official_disabled_users_search_display_name_option,
+			searchEmailOption: t.app.official_disabled_users_search_email_option,
+			searchSubmitLabel: t.app.official_disabled_users_search_submit_label,
+			searchClearLabel: t.app.official_disabled_users_search_clear_label,
+			searchValidationEmail: t.app.official_disabled_users_search_validation_email,
+			tableActionLabel: t.app.official_disabled_users_table_action_label,
+		}}
+	/>
+</Layout>
