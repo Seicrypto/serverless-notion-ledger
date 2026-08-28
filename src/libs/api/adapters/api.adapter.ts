@@ -10,6 +10,7 @@ import type {
 	CreateLedgerClaimRequest,
 	CreateLedgerEventRequest,
 	CreateLedgerSettlementRequest,
+	QueryCharacterLedgerDashboardSummariesRequest,
 	CreateOrganizationRequest,
 	ForgotPasswordRequest,
 	InviteOrganizationMemberRequest,
@@ -455,6 +456,34 @@ export class ApiAdapter {
 				characterId,
 			},
 			query: options,
+		});
+	}
+
+	getOrganizationLedgerDashboardSummary(organization: OrganizationReference) {
+		return this.client.getOrganizationsByOrganizationLedgerDashboardSummary({
+			pathParams: { organization: normalizeOrganizationReference(organization) },
+		});
+	}
+
+	queryOrganizationCharacterLedgerDashboardSummaries(
+		organization: OrganizationReference,
+		payload: QueryCharacterLedgerDashboardSummariesRequest,
+	) {
+		return this.client.postOrganizationsByOrganizationLedgerDashboardCharacterSummariesQuery({
+			pathParams: { organization: normalizeOrganizationReference(organization) },
+			body: payload,
+		});
+	}
+
+	getOrganizationCharacterLedgerDashboardDetail(
+		organization: OrganizationReference,
+		characterId: number,
+	) {
+		return this.client.getOrganizationsByOrganizationLedgerDashboardCharactersByCharacterId({
+			pathParams: {
+				organization: normalizeOrganizationReference(organization),
+				characterId,
+			},
 		});
 	}
 

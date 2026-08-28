@@ -79,6 +79,15 @@ import type {
 	AssetDuplicateCandidate,
 	CreateAssetOperationalConflictResponse,
 	CreateAssetRequest,
+	OrganizationLedgerDashboardSummaryResponse,
+	OrganizationLedgerDashboardRevenueBreakdown,
+	CharacterLedgerDashboardSummaryResponse,
+	CharacterLedgerDashboardSummaryItem,
+	QueryCharacterLedgerDashboardSummariesRequest,
+	CharacterLedgerDashboardDetailResponse,
+	LedgerDashboardDetailGroup,
+	LedgerDashboardDetailSettlement,
+	LedgerDashboardClaimStatus,
 	LedgerEventListResponse,
 	LedgerEvent,
 	LedgerPagination,
@@ -160,6 +169,9 @@ export const operationPaths = {
 	getOrganizationsCurrent: "/organizations/current",
 	getOrganizationsCurrentMembers: "/organizations/current/members",
 	postOrganizationsByOrganizationAssets: "/organizations/{organization}/assets",
+	getOrganizationsByOrganizationLedgerDashboardSummary: "/organizations/{organization}/ledger/dashboard/summary",
+	postOrganizationsByOrganizationLedgerDashboardCharacterSummariesQuery: "/organizations/{organization}/ledger/dashboard/character-summaries/query",
+	getOrganizationsByOrganizationLedgerDashboardCharactersByCharacterId: "/organizations/{organization}/ledger/dashboard/characters/{characterId}",
 	getOrganizationsByOrganizationLedgerEvents: "/organizations/{organization}/ledger/events",
 	postOrganizationsByOrganizationLedgerEvents: "/organizations/{organization}/ledger/events",
 	getOrganizationsByOrganizationLedgerEventsByEventId: "/organizations/{organization}/ledger/events/{eventId}",
@@ -228,6 +240,9 @@ export type ApiOperations = {
 	getOrganizationsCurrent: { response: void; };
 	getOrganizationsCurrentMembers: { response: void; };
 	postOrganizationsByOrganizationAssets: { pathParams: { "organization": string; }; body: CreateAssetRequest; response: CreateAssetResponse; };
+	getOrganizationsByOrganizationLedgerDashboardSummary: { pathParams: { "organization": string; }; response: OrganizationLedgerDashboardSummaryResponse; };
+	postOrganizationsByOrganizationLedgerDashboardCharacterSummariesQuery: { pathParams: { "organization": string; }; body: QueryCharacterLedgerDashboardSummariesRequest; response: CharacterLedgerDashboardSummaryResponse; };
+	getOrganizationsByOrganizationLedgerDashboardCharactersByCharacterId: { pathParams: { "characterId": number; "organization": string; }; response: CharacterLedgerDashboardDetailResponse; };
 	getOrganizationsByOrganizationLedgerEvents: { pathParams: { "organization": string; }; query: { "assetId"?: number; "createdByUserId"?: number; "eventType"?: "loot" | "raid" | "activity" | "bonus" | "salary" | "guild_event" | "other"; "fromOccurredAt"?: string; "holderRef"?: string; "holderType"?: "character" | "org_treasury" | "market" | "external" | "custom"; "limit"?: number; "offset"?: number | unknown; "sortBy"?: "occurredAt" | "createdAt" | "title" | "updatedAt"; "sortOrder"?: "asc" | "desc"; "status"?: "open" | "ready_for_settlement" | "partially_settled" | "settled" | "cancelled"; "statusGroup"?: "unsettled" | "settleable" | "settled" | "cancelled"; "toOccurredAt"?: string; }; response: LedgerEventListResponse; };
 	postOrganizationsByOrganizationLedgerEvents: { pathParams: { "organization": string; }; body: CreateLedgerEventRequest; response: LedgerEventResponse; };
 	getOrganizationsByOrganizationLedgerEventsByEventId: { pathParams: { "eventId": number; "organization": string; }; response: LedgerEventResponse; };
@@ -1122,6 +1137,57 @@ export class OpenApiClient {
 				...options.headers,
 			},
 			body,
+		});
+	}
+
+	/**
+	 * GET /organizations/{organization}/ledger/dashboard/summary
+	 */
+	async getOrganizationsByOrganizationLedgerDashboardSummary(options: RequestOptions<ApiOperations['getOrganizationsByOrganizationLedgerDashboardSummary']> = {}): Promise<ApiOperations['getOrganizationsByOrganizationLedgerDashboardSummary']['response']> {
+		return this.request<ApiOperations['getOrganizationsByOrganizationLedgerDashboardSummary']['response']>({
+			method: "GET",
+			path: operationPaths.getOrganizationsByOrganizationLedgerDashboardSummary,
+			pathParams: options.pathParams,
+			query: options.query,
+			headers: {
+				...options.headers,
+			},
+			body: undefined,
+		});
+	}
+
+	/**
+	 * POST /organizations/{organization}/ledger/dashboard/character-summaries/query
+	 */
+	async postOrganizationsByOrganizationLedgerDashboardCharacterSummariesQuery(options: RequestOptions<ApiOperations['postOrganizationsByOrganizationLedgerDashboardCharacterSummariesQuery']> = {}): Promise<ApiOperations['postOrganizationsByOrganizationLedgerDashboardCharacterSummariesQuery']['response']> {
+		const body = options.body === undefined ? undefined : JSON.stringify(options.body);
+
+		return this.request<ApiOperations['postOrganizationsByOrganizationLedgerDashboardCharacterSummariesQuery']['response']>({
+			method: "POST",
+			path: operationPaths.postOrganizationsByOrganizationLedgerDashboardCharacterSummariesQuery,
+			pathParams: options.pathParams,
+			query: options.query,
+			headers: {
+			...(options.body === undefined ? {} : { 'content-type': 'application/json' }),
+				...options.headers,
+			},
+			body,
+		});
+	}
+
+	/**
+	 * GET /organizations/{organization}/ledger/dashboard/characters/{characterId}
+	 */
+	async getOrganizationsByOrganizationLedgerDashboardCharactersByCharacterId(options: RequestOptions<ApiOperations['getOrganizationsByOrganizationLedgerDashboardCharactersByCharacterId']> = {}): Promise<ApiOperations['getOrganizationsByOrganizationLedgerDashboardCharactersByCharacterId']['response']> {
+		return this.request<ApiOperations['getOrganizationsByOrganizationLedgerDashboardCharactersByCharacterId']['response']>({
+			method: "GET",
+			path: operationPaths.getOrganizationsByOrganizationLedgerDashboardCharactersByCharacterId,
+			pathParams: options.pathParams,
+			query: options.query,
+			headers: {
+				...options.headers,
+			},
+			body: undefined,
 		});
 	}
 

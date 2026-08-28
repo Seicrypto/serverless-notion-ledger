@@ -157,6 +157,24 @@ export type CreateAssetOperationalConflictResponse = { "code": string; "error": 
 
 export type CreateAssetRequest = { "assetType"?: "item" | "currency" | "ticket" | "reward" | "service" | "other"; "iconUrl"?: string | unknown; "metadataJson"?: string | unknown; "name": string; "rarityLabel"?: string | unknown; };
 
+export type OrganizationLedgerDashboardSummaryResponse = { "generatedAt": string; "organization": { "id": number; "name": string; "slug": string; }; "summary": { "disbursementInProgressCount": number; "disbursementNotStartedCount": number; "revenueUnitBreakdown": Array<OrganizationLedgerDashboardRevenueBreakdown>; "settlementCount": number; "unsettledEventCount": number; }; };
+
+export type OrganizationLedgerDashboardRevenueBreakdown = { "grossAmountTotal": number; "netAmountTotal": number; "settlementCount": number; "unitAssetId": number | unknown; "unitAssetName": string | unknown; };
+
+export type CharacterLedgerDashboardSummaryResponse = { "generatedAt": string; "summaries": Array<CharacterLedgerDashboardSummaryItem>; };
+
+export type CharacterLedgerDashboardSummaryItem = { "characterId": number; "characterName": string; "lastActivityAt": string | unknown; "payableSettlementCount": number; "payableUnitBreakdown": Array<{ "amountTotal": number; "settlementCount": number; "unitAssetId": number | unknown; "unitAssetName": string | unknown; }>; "pendingClaimCount": number; "receivableSettlementCount": number; "receivableUnitBreakdown": Array<{ "amountTotal": number; "settlementCount": number; "unitAssetId": number | unknown; "unitAssetName": string | unknown; }>; };
+
+export type QueryCharacterLedgerDashboardSummariesRequest = { "characterIds": Array<number>; };
+
+export type CharacterLedgerDashboardDetailResponse = { "character": { "id": number; "name": string; }; "generatedAt": string; "payableGroups": Array<LedgerDashboardDetailGroup>; "receivableGroups": Array<LedgerDashboardDetailGroup>; };
+
+export type LedgerDashboardDetailGroup = { "counterpartyId": number | unknown; "counterpartyLabel": string; "counterpartyType": "character" | "org_treasury" | "external" | "custom"; "settlements": Array<LedgerDashboardDetailSettlement>; "unitBreakdown": Array<{ "amountTotal": number; "settlementCount": number; "unitAssetId": number | unknown; "unitAssetName": string | unknown; }>; };
+
+export type LedgerDashboardDetailSettlement = { "amount": number; "claimStatus": LedgerDashboardClaimStatus; "decidedAt": string; "eventId": number | unknown; "eventTitle": string | unknown; "settlementId": number; "settlementKey": string; "settlementStatus": "draft" | "calculated" | "paying" | "paid" | "cancelled"; "settlementTitle": string; "settlementType": "sale" | "bonus" | "salary" | "reward" | "subsidy" | "adjustment"; "unitAssetId": number | unknown; "unitAssetName": string | unknown; };
+
+export type LedgerDashboardClaimStatus = "none" | "partial" | "claimed" | "confirmed";
+
 export type LedgerEventListResponse = { "events": Array<LedgerEvent>; "pagination": LedgerPagination; };
 
 export type LedgerEvent = { "assetId": number | unknown; "createdAt": string; "createdByUserId": number | unknown; "eventKey": string; "eventType": "loot" | "raid" | "activity" | "bonus" | "salary" | "guild_event" | "other"; "gameId": number | unknown; "holderRef": string | unknown; "holderType": "character" | "org_treasury" | "market" | "external" | "custom"; "id": number; "notes": string | unknown; "occurredAt": string; "organizationId": number; "sourceType": "manual" | "api" | "import"; "status": "open" | "ready_for_settlement" | "partially_settled" | "settled" | "cancelled"; "title": string; "updatedAt": string; };

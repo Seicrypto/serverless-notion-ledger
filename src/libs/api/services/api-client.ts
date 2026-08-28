@@ -56,6 +56,12 @@ export interface ApiClientLike {
 		OpenApiClient['getOrganizationsByOrganizationLedgerClaimableRecipients'];
 	getOrganizationsByOrganizationLedgerClaimableRecipientsByCharacterId:
 		OpenApiClient['getOrganizationsByOrganizationLedgerClaimableRecipientsByCharacterId'];
+	getOrganizationsByOrganizationLedgerDashboardSummary:
+		OpenApiClient['getOrganizationsByOrganizationLedgerDashboardSummary'];
+	postOrganizationsByOrganizationLedgerDashboardCharacterSummariesQuery:
+		OpenApiClient['postOrganizationsByOrganizationLedgerDashboardCharacterSummariesQuery'];
+	getOrganizationsByOrganizationLedgerDashboardCharactersByCharacterId:
+		OpenApiClient['getOrganizationsByOrganizationLedgerDashboardCharactersByCharacterId'];
 	getOrganizationsByOrganizationLedgerSettlements: OpenApiClient['getOrganizationsByOrganizationLedgerSettlements'];
 	patchOrganizationsByOrganizationLedgerEventsByEventIdStatus:
 		OpenApiClient['patchOrganizationsByOrganizationLedgerEventsByEventIdStatus'];

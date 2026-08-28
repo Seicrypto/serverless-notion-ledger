@@ -91,6 +91,12 @@ function createMockClient() {
 			response('getOrganizationsByOrganizationLedgerClaimableRecipients', payload),
 		getOrganizationsByOrganizationLedgerClaimableRecipientsByCharacterId: (payload) =>
 			response('getOrganizationsByOrganizationLedgerClaimableRecipientsByCharacterId', payload),
+		getOrganizationsByOrganizationLedgerDashboardSummary: (payload) =>
+			response('getOrganizationsByOrganizationLedgerDashboardSummary', payload),
+		postOrganizationsByOrganizationLedgerDashboardCharacterSummariesQuery: (payload) =>
+			response('postOrganizationsByOrganizationLedgerDashboardCharacterSummariesQuery', payload),
+		getOrganizationsByOrganizationLedgerDashboardCharactersByCharacterId: (payload) =>
+			response('getOrganizationsByOrganizationLedgerDashboardCharactersByCharacterId', payload),
 		getOrganizationsByOrganizationLedgerSettlements: (payload) =>
 			response('getOrganizationsByOrganizationLedgerSettlements', payload),
 		patchOrganizationsByOrganizationLedgerEventsByEventIdStatus: (payload) =>
@@ -256,6 +262,11 @@ test('ApiAdapter maps organization operations to generated client methods', asyn
 	await adapter.getOrganizationClaimableRecipientDetail('demo-guild', 501, {
 		includeSiblingCharacters: true,
 	});
+	await adapter.getOrganizationLedgerDashboardSummary('demo-guild');
+	await adapter.queryOrganizationCharacterLedgerDashboardSummaries('demo-guild', {
+		characterIds: [501, 502],
+	});
+	await adapter.getOrganizationCharacterLedgerDashboardDetail('demo-guild', 501);
 	await adapter.createOrganizationLedgerSettlement('demo-guild', {
 		title: 'Raid Sale',
 		decidedAt: '2026-08-27T12:00:00.000Z',
@@ -457,6 +468,25 @@ test('ApiAdapter maps organization operations to generated client methods', asyn
 			payload: {
 				pathParams: { organization: 'demo-guild', characterId: 501 },
 				query: { includeSiblingCharacters: true },
+			},
+		},
+		{
+			method: 'getOrganizationsByOrganizationLedgerDashboardSummary',
+			payload: {
+				pathParams: { organization: 'demo-guild' },
+			},
+		},
+		{
+			method: 'postOrganizationsByOrganizationLedgerDashboardCharacterSummariesQuery',
+			payload: {
+				pathParams: { organization: 'demo-guild' },
+				body: { characterIds: [501, 502] },
+			},
+		},
+		{
+			method: 'getOrganizationsByOrganizationLedgerDashboardCharactersByCharacterId',
+			payload: {
+				pathParams: { organization: 'demo-guild', characterId: 501 },
 			},
 		},
 		{
