@@ -17,7 +17,8 @@
 		emptyBody: string;
 		viewOrgsLabel: string;
 		createOrgLabel: string;
-		openOrgLabel: string;
+		openOrgManageLabel: string;
+		openOrgDashboardLabel: string;
 		memberCountLabel: string;
 		characterCountLabel: string;
 		supportedOrgLabel: string;
@@ -127,8 +128,18 @@
 				{#each organizations as organization}
 					<OrganizationCard
 						organization={organization}
-						href={`/${lang}/orgs/manage?orgVanity=${encodeURIComponent(organization.slug)}`}
-						actionLabel={labels.openOrgLabel}
+						actions={[
+							{
+								label: labels.openOrgDashboardLabel,
+								href: `/${lang}/orgs/dashboard?orgVanity=${encodeURIComponent(organization.slug)}`,
+								tone: 'primary',
+							},
+							{
+								label: labels.openOrgManageLabel,
+								href: `/${lang}/orgs/manage?orgVanity=${encodeURIComponent(organization.slug)}`,
+								tone: 'secondary',
+							},
+						]}
 						labels={{
 							members: labels.memberCountLabel,
 							characters: labels.characterCountLabel,
