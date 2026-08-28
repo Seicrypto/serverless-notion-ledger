@@ -128,6 +128,7 @@
 
 	export let lang: string;
 	export let organization: string | null = null;
+	export let quickCreateId: string | null = null;
 	export let labels: Labels;
 
 	let games: GameOption[] = [];
@@ -458,6 +459,13 @@
 	onMount(() => {
 		occurredAt = toLocalDateTimeValue(new Date());
 		refreshRecentEntries();
+		if (quickCreateId) {
+			selectedRecentId = quickCreateId;
+			const entry = getSelectedRecentEntry();
+			if (entry) {
+				applyRecentEntry(entry);
+			}
+		}
 		void loadGames();
 	});
 </script>

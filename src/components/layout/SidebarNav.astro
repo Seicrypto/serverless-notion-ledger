@@ -2,6 +2,7 @@
 interface NavItem {
 	label: string;
 	href: string;
+	tone?: 'default' | 'ledger';
 }
 
 interface Props {
@@ -32,7 +33,7 @@ const { title, items, closeLabel, officialLabel, officialHref, statusLabel, stat
 
 		<nav class="sidebar-nav" aria-label={title}>
 			{items.map((item) => (
-				<a class="sidebar-link" href={item.href} data-sidebar-link>
+				<a class:list={['sidebar-link', item.tone === 'ledger' && 'sidebar-link-ledger']} href={item.href} data-sidebar-link>
 					{item.label}
 				</a>
 			))}

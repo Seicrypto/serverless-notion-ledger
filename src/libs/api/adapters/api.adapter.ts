@@ -6,6 +6,7 @@ import type {
 	CreateCharacterRequest,
 	CreateAssetRequest,
 	CreateLedgerAllocationRequest,
+	CreateLedgerBatchClaimsRequest,
 	CreateLedgerClaimRequest,
 	CreateLedgerEventRequest,
 	CreateLedgerSettlementRequest,
@@ -78,6 +79,10 @@ export interface ListOrganizationLedgerSettlementsOptions {
 	settlementType?: CreateLedgerSettlementRequest['settlementType'];
 	toDecidedAt?: string;
 	unitAssetId?: number;
+}
+
+export interface GetOrganizationClaimableRecipientDetailOptions {
+	includeSiblingCharacters?: boolean;
 }
 
 export interface ListDisabledUsersOptions {
@@ -429,6 +434,36 @@ export class ApiAdapter {
 	) {
 		return this.client.patchOrganizationsByOrganizationLedgerSettlementsBySettlementIdStatus({
 			pathParams: { organization: normalizeOrganizationReference(organization), settlementId },
+			body: payload,
+		});
+	}
+
+	listOrganizationClaimableRecipients(organization: OrganizationReference) {
+		return this.client.getOrganizationsByOrganizationLedgerClaimableRecipients({
+			pathParams: { organization: normalizeOrganizationReference(organization) },
+		});
+	}
+
+	getOrganizationClaimableRecipientDetail(
+		organization: OrganizationReference,
+		characterId: number,
+		options: GetOrganizationClaimableRecipientDetailOptions = {},
+	) {
+		return this.client.getOrganizationsByOrganizationLedgerClaimableRecipientsByCharacterId({
+			pathParams: {
+				organization: normalizeOrganizationReference(organization),
+				characterId,
+			},
+			query: options,
+		});
+	}
+
+	createOrganizationLedgerBatchClaims(
+		organization: OrganizationReference,
+		payload: CreateLedgerBatchClaimsRequest,
+	) {
+		return this.client.postOrganizationsByOrganizationLedgerClaimsBatch({
+			pathParams: { organization: normalizeOrganizationReference(organization) },
 			body: payload,
 		});
 	}

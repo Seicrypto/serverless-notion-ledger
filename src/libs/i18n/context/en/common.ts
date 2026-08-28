@@ -19,7 +19,7 @@ export const common = {
 	open_navigation: 'Open navigation',
 	close_navigation: 'Close navigation',
 	navigation: 'Navigation',
-	nav_overview: 'Overview',
+	nav_overview: 'Create ledger',
 	official_dashboard: 'Official dashboard',
 	user_status: 'User status',
 	guest: 'Guest',

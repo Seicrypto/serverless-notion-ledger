@@ -19,7 +19,7 @@ export const common = {
 	open_navigation: '開啟導覽',
 	close_navigation: '關閉導覽',
 	navigation: 'Navigation',
-	nav_overview: '首頁總覽',
+	nav_overview: '建立流程',
 	official_dashboard: '官方後台',
 	user_status: '使用者狀態',
 	guest: 'Guest',

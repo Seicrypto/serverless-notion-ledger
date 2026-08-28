@@ -83,21 +83,32 @@ import type {
 	LedgerEvent,
 	LedgerPagination,
 	LedgerEventResponse,
+	LedgerClaimableRecipientSummaryListResponse,
+	LedgerClaimableRecipientSummary,
+	LedgerClaimableUnitBreakdown,
+	LedgerClaimableRecipientDetailResponse,
+	LedgerClaimableRecipientAllocation,
 	CreateLedgerEventRequest,
 	UpdateLedgerEventStatusRequest,
 	LedgerSettlementListResponse,
 	LedgerSettlement,
 	LedgerSettlementDefaultsResponse,
 	LedgerSettlementDefaultUnit,
+	LedgerBatchClaimsResponse,
+	LedgerSettlementClaim,
+	CreateLedgerBatchClaimsRequest,
+	LedgerBatchClaimItemRequest,
+	LedgerSettlementDisbursementResponse,
+	LedgerSettlementAllocation,
+	CreateSettlementDisbursementRequest,
+	LedgerDisbursementItemRequest,
 	LedgerSettlementResponse,
 	CreateLedgerSettlementRequest,
 	UpdateLedgerSettlementStatusRequest,
 	LedgerAllocationResponse,
-	LedgerSettlementAllocation,
 	CreateLedgerAllocationRequest,
 	UpdateLedgerAllocationStatusRequest,
 	LedgerClaimResponse,
-	LedgerSettlementClaim,
 	CreateLedgerClaimRequest,
 	UpdateLedgerClaimStatusRequest,
 } from './schema';
@@ -152,10 +163,14 @@ export const operationPaths = {
 	getOrganizationsByOrganizationLedgerEvents: "/organizations/{organization}/ledger/events",
 	postOrganizationsByOrganizationLedgerEvents: "/organizations/{organization}/ledger/events",
 	getOrganizationsByOrganizationLedgerEventsByEventId: "/organizations/{organization}/ledger/events/{eventId}",
+	getOrganizationsByOrganizationLedgerClaimableRecipients: "/organizations/{organization}/ledger/claimable-recipients",
+	getOrganizationsByOrganizationLedgerClaimableRecipientsByCharacterId: "/organizations/{organization}/ledger/claimable-recipients/{characterId}",
 	patchOrganizationsByOrganizationLedgerEventsByEventIdStatus: "/organizations/{organization}/ledger/events/{eventId}/status",
 	getOrganizationsByOrganizationLedgerSettlements: "/organizations/{organization}/ledger/settlements",
 	postOrganizationsByOrganizationLedgerSettlements: "/organizations/{organization}/ledger/settlements",
 	getOrganizationsByOrganizationLedgerSettlementDefaults: "/organizations/{organization}/ledger/settlement-defaults",
+	postOrganizationsByOrganizationLedgerClaimsBatch: "/organizations/{organization}/ledger/claims/batch",
+	postOrganizationsByOrganizationLedgerSettlementsBySettlementIdDisburse: "/organizations/{organization}/ledger/settlements/{settlementId}/disburse",
 	patchOrganizationsByOrganizationLedgerSettlementsBySettlementIdStatus: "/organizations/{organization}/ledger/settlements/{settlementId}/status",
 	postOrganizationsByOrganizationLedgerAllocations: "/organizations/{organization}/ledger/allocations",
 	patchOrganizationsByOrganizationLedgerAllocationsByAllocationIdStatus: "/organizations/{organization}/ledger/allocations/{allocationId}/status",
@@ -216,10 +231,14 @@ export type ApiOperations = {
 	getOrganizationsByOrganizationLedgerEvents: { pathParams: { "organization": string; }; query: { "assetId"?: number; "createdByUserId"?: number; "eventType"?: "loot" | "raid" | "activity" | "bonus" | "salary" | "guild_event" | "other"; "fromOccurredAt"?: string; "holderRef"?: string; "holderType"?: "character" | "org_treasury" | "market" | "external" | "custom"; "limit"?: number; "offset"?: number | unknown; "sortBy"?: "occurredAt" | "createdAt" | "title" | "updatedAt"; "sortOrder"?: "asc" | "desc"; "status"?: "open" | "ready_for_settlement" | "partially_settled" | "settled" | "cancelled"; "statusGroup"?: "unsettled" | "settleable" | "settled" | "cancelled"; "toOccurredAt"?: string; }; response: LedgerEventListResponse; };
 	postOrganizationsByOrganizationLedgerEvents: { pathParams: { "organization": string; }; body: CreateLedgerEventRequest; response: LedgerEventResponse; };
 	getOrganizationsByOrganizationLedgerEventsByEventId: { pathParams: { "eventId": number; "organization": string; }; response: LedgerEventResponse; };
+	getOrganizationsByOrganizationLedgerClaimableRecipients: { pathParams: { "organization": string; }; response: LedgerClaimableRecipientSummaryListResponse; };
+	getOrganizationsByOrganizationLedgerClaimableRecipientsByCharacterId: { pathParams: { "organization": string; "characterId": number; }; query: { "includeSiblingCharacters"?: boolean | unknown; }; response: LedgerClaimableRecipientDetailResponse; };
 	patchOrganizationsByOrganizationLedgerEventsByEventIdStatus: { pathParams: { "eventId": number; "organization": string; }; body: UpdateLedgerEventStatusRequest; response: LedgerEventResponse; };
 	getOrganizationsByOrganizationLedgerSettlements: { pathParams: { "organization": string; }; query: { "createdByUserId"?: number; "eventId"?: number; "feeMode"?: "none" | "percent" | "fixed" | "rule"; "fromDecidedAt"?: string; "limit"?: number; "offset"?: number | unknown; "sortBy"?: "decidedAt" | "createdAt" | "grossAmount" | "netAmount" | "updatedAt"; "sortOrder"?: "asc" | "desc"; "status"?: "draft" | "calculated" | "paying" | "paid" | "cancelled"; "settlementType"?: "sale" | "bonus" | "salary" | "reward" | "subsidy" | "adjustment"; "toDecidedAt"?: string; "unitAssetId"?: number; }; response: LedgerSettlementListResponse; };
 	postOrganizationsByOrganizationLedgerSettlements: { pathParams: { "organization": string; }; body: CreateLedgerSettlementRequest; response: LedgerSettlementResponse; };
 	getOrganizationsByOrganizationLedgerSettlementDefaults: { pathParams: { "organization": string; }; query: { "gameId"?: number; }; response: LedgerSettlementDefaultsResponse; };
+	postOrganizationsByOrganizationLedgerClaimsBatch: { pathParams: { "organization": string; }; body: CreateLedgerBatchClaimsRequest; response: LedgerBatchClaimsResponse; };
+	postOrganizationsByOrganizationLedgerSettlementsBySettlementIdDisburse: { pathParams: { "organization": string; "settlementId": number; }; body: CreateSettlementDisbursementRequest; response: LedgerSettlementDisbursementResponse; };
 	patchOrganizationsByOrganizationLedgerSettlementsBySettlementIdStatus: { pathParams: { "organization": string; "settlementId": number; }; body: UpdateLedgerSettlementStatusRequest; response: LedgerSettlementResponse; };
 	postOrganizationsByOrganizationLedgerAllocations: { pathParams: { "organization": string; }; body: CreateLedgerAllocationRequest; response: LedgerAllocationResponse; };
 	patchOrganizationsByOrganizationLedgerAllocationsByAllocationIdStatus: { pathParams: { "allocationId": number; "organization": string; }; body: UpdateLedgerAllocationStatusRequest; response: LedgerAllocationResponse; };
@@ -1158,6 +1177,38 @@ export class OpenApiClient {
 	}
 
 	/**
+	 * GET /organizations/{organization}/ledger/claimable-recipients
+	 */
+	async getOrganizationsByOrganizationLedgerClaimableRecipients(options: RequestOptions<ApiOperations['getOrganizationsByOrganizationLedgerClaimableRecipients']> = {}): Promise<ApiOperations['getOrganizationsByOrganizationLedgerClaimableRecipients']['response']> {
+		return this.request<ApiOperations['getOrganizationsByOrganizationLedgerClaimableRecipients']['response']>({
+			method: "GET",
+			path: operationPaths.getOrganizationsByOrganizationLedgerClaimableRecipients,
+			pathParams: options.pathParams,
+			query: options.query,
+			headers: {
+				...options.headers,
+			},
+			body: undefined,
+		});
+	}
+
+	/**
+	 * GET /organizations/{organization}/ledger/claimable-recipients/{characterId}
+	 */
+	async getOrganizationsByOrganizationLedgerClaimableRecipientsByCharacterId(options: RequestOptions<ApiOperations['getOrganizationsByOrganizationLedgerClaimableRecipientsByCharacterId']> = {}): Promise<ApiOperations['getOrganizationsByOrganizationLedgerClaimableRecipientsByCharacterId']['response']> {
+		return this.request<ApiOperations['getOrganizationsByOrganizationLedgerClaimableRecipientsByCharacterId']['response']>({
+			method: "GET",
+			path: operationPaths.getOrganizationsByOrganizationLedgerClaimableRecipientsByCharacterId,
+			pathParams: options.pathParams,
+			query: options.query,
+			headers: {
+				...options.headers,
+			},
+			body: undefined,
+		});
+	}
+
+	/**
 	 * PATCH /organizations/{organization}/ledger/events/{eventId}/status
 	 */
 	async patchOrganizationsByOrganizationLedgerEventsByEventIdStatus(options: RequestOptions<ApiOperations['patchOrganizationsByOrganizationLedgerEventsByEventIdStatus']> = {}): Promise<ApiOperations['patchOrganizationsByOrganizationLedgerEventsByEventIdStatus']['response']> {
@@ -1224,6 +1275,44 @@ export class OpenApiClient {
 				...options.headers,
 			},
 			body: undefined,
+		});
+	}
+
+	/**
+	 * POST /organizations/{organization}/ledger/claims/batch
+	 */
+	async postOrganizationsByOrganizationLedgerClaimsBatch(options: RequestOptions<ApiOperations['postOrganizationsByOrganizationLedgerClaimsBatch']> = {}): Promise<ApiOperations['postOrganizationsByOrganizationLedgerClaimsBatch']['response']> {
+		const body = options.body === undefined ? undefined : JSON.stringify(options.body);
+
+		return this.request<ApiOperations['postOrganizationsByOrganizationLedgerClaimsBatch']['response']>({
+			method: "POST",
+			path: operationPaths.postOrganizationsByOrganizationLedgerClaimsBatch,
+			pathParams: options.pathParams,
+			query: options.query,
+			headers: {
+			...(options.body === undefined ? {} : { 'content-type': 'application/json' }),
+				...options.headers,
+			},
+			body,
+		});
+	}
+
+	/**
+	 * POST /organizations/{organization}/ledger/settlements/{settlementId}/disburse
+	 */
+	async postOrganizationsByOrganizationLedgerSettlementsBySettlementIdDisburse(options: RequestOptions<ApiOperations['postOrganizationsByOrganizationLedgerSettlementsBySettlementIdDisburse']> = {}): Promise<ApiOperations['postOrganizationsByOrganizationLedgerSettlementsBySettlementIdDisburse']['response']> {
+		const body = options.body === undefined ? undefined : JSON.stringify(options.body);
+
+		return this.request<ApiOperations['postOrganizationsByOrganizationLedgerSettlementsBySettlementIdDisburse']['response']>({
+			method: "POST",
+			path: operationPaths.postOrganizationsByOrganizationLedgerSettlementsBySettlementIdDisburse,
+			pathParams: options.pathParams,
+			query: options.query,
+			headers: {
+			...(options.body === undefined ? {} : { 'content-type': 'application/json' }),
+				...options.headers,
+			},
+			body,
 		});
 	}
 

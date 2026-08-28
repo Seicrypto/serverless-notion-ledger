@@ -9,6 +9,7 @@ export { getStaticPaths } from '../../../../libs/static/staticPaths';
 const lang = getLangFromUrl(Astro.url);
 const t = getI18n(lang);
 const orgVanity = Astro.url.searchParams.get('orgVanity') ?? Astro.url.searchParams.get('org');
+const quickCreateId = Astro.url.searchParams.get('quickCreateId');
 ---
 
 <Layout
@@ -23,6 +24,7 @@ const orgVanity = Astro.url.searchParams.get('orgVanity') ?? Astro.url.searchPar
 		client:load
 		lang={lang}
 		organization={orgVanity}
+		quickCreateId={quickCreateId}
 		labels={{
 			eyebrow: t.common.nav_events,
 			title: t.app.events_title,

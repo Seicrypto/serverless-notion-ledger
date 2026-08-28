@@ -1,0 +1,65 @@
+---
+import Layout from '../../../../layouts/Layout.astro';
+import LedgerWorkflowHub from '../../../../components/features/ledger/LedgerWorkflowHub.svelte';
+import '../../../../styles/app-pages.css';
+import { getI18n, getLangFromUrl } from '../../../../libs/i18n';
+import { buildLayoutLabels } from '../../../../libs/i18n/layoutLabels';
+export { getStaticPaths } from '../../../../libs/static/staticPaths';
+
+const lang = getLangFromUrl(Astro.url);
+const t = getI18n(lang);
+const orgVanity = Astro.url.searchParams.get('orgVanity') ?? Astro.url.searchParams.get('org');
+---
+
+<Layout
+	title={`${t.app.ledger_hub_title} | ${t.common.product_name}`}
+	description={t.app.ledger_hub_intro}
+	productName={t.common.product_name}
+	lang={lang}
+	currentPath={`${Astro.url.pathname}${Astro.url.search}`}
+	labels={buildLayoutLabels(t)}
+>
+	<LedgerWorkflowHub
+		client:load
+		lang={lang}
+		initialOrganization={orgVanity}
+		labels={{
+			eyebrow: t.common.nav_overview,
+			title: t.app.ledger_hub_title,
+			intro: t.app.ledger_hub_intro,
+			authRequiredTitle: t.app.ledger_hub_auth_required_title,
+			authRequiredBody: t.app.ledger_hub_auth_required_body,
+			loginLabel: t.common.login,
+			homeLabel: t.common.nav_home,
+			loadErrorTitle: t.app.ledger_hub_load_error_title,
+			noOrganizationsTitle: t.app.ledger_hub_no_organizations_title,
+			noOrganizationsBody: t.app.ledger_hub_no_organizations_body,
+			findOrganizationsLabel: t.app.ledger_hub_find_organizations_label,
+			organizationLabel: t.app.ledger_hub_organization_label,
+			organizationHint: t.app.ledger_hub_organization_hint,
+			organizationStatsMembers: t.app.ledger_hub_organization_stats_members,
+			organizationStatsCharacters: t.app.ledger_hub_organization_stats_characters,
+			eventCardEyebrow: t.app.ledger_hub_event_eyebrow,
+			eventCardTitle: t.app.ledger_hub_event_title,
+			eventCardBody: t.app.ledger_hub_event_body,
+			eventCreateLabel: t.app.ledger_hub_event_create_label,
+			eventDuplicateLabel: t.app.ledger_hub_event_duplicate_label,
+			eventDuplicateEmpty: t.app.ledger_hub_event_duplicate_empty,
+			eventDuplicateSelectLabel: t.app.ledger_hub_event_duplicate_select_label,
+			eventDuplicateMetaPrefix: t.app.ledger_hub_event_duplicate_meta_prefix,
+			settlementCardEyebrow: t.app.ledger_hub_settlement_eyebrow,
+			settlementCardTitle: t.app.ledger_hub_settlement_title,
+			settlementCardBody: t.app.ledger_hub_settlement_body,
+			settlementCreateLabel: t.app.ledger_hub_settlement_create_label,
+			settlementQuickLabel: t.app.ledger_hub_settlement_quick_label,
+			settlementQuickEmpty: t.app.ledger_hub_settlement_quick_empty,
+			settlementQuickSelectLabel: t.app.ledger_hub_settlement_quick_select_label,
+			settlementLoadingLabel: t.app.ledger_hub_settlement_loading_label,
+			claimCardEyebrow: t.app.ledger_hub_claim_eyebrow,
+			claimCardTitle: t.app.ledger_hub_claim_title,
+			claimCardBody: t.app.ledger_hub_claim_body,
+			claimOpenLabel: t.app.ledger_hub_claim_open_label,
+			yesterdayPrefix: t.app.ledger_hub_yesterday_prefix,
+		}}
+	/>
+</Layout>

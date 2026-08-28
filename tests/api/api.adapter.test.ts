@@ -87,6 +87,10 @@ function createMockClient() {
 			response('postOrganizationsByOrganizationLedgerEvents', payload),
 		getOrganizationsByOrganizationLedgerEventsByEventId: (payload) =>
 			response('getOrganizationsByOrganizationLedgerEventsByEventId', payload),
+		getOrganizationsByOrganizationLedgerClaimableRecipients: (payload) =>
+			response('getOrganizationsByOrganizationLedgerClaimableRecipients', payload),
+		getOrganizationsByOrganizationLedgerClaimableRecipientsByCharacterId: (payload) =>
+			response('getOrganizationsByOrganizationLedgerClaimableRecipientsByCharacterId', payload),
 		getOrganizationsByOrganizationLedgerSettlements: (payload) =>
 			response('getOrganizationsByOrganizationLedgerSettlements', payload),
 		patchOrganizationsByOrganizationLedgerEventsByEventIdStatus: (payload) =>
@@ -95,6 +99,10 @@ function createMockClient() {
 			response('postOrganizationsByOrganizationLedgerSettlements', payload),
 		getOrganizationsByOrganizationLedgerSettlementDefaults: (payload) =>
 			response('getOrganizationsByOrganizationLedgerSettlementDefaults', payload),
+		postOrganizationsByOrganizationLedgerClaimsBatch: (payload) =>
+			response('postOrganizationsByOrganizationLedgerClaimsBatch', payload),
+		postOrganizationsByOrganizationLedgerSettlementsBySettlementIdDisburse: (payload) =>
+			response('postOrganizationsByOrganizationLedgerSettlementsBySettlementIdDisburse', payload),
 		patchOrganizationsByOrganizationLedgerSettlementsBySettlementIdStatus: (payload) =>
 			response('patchOrganizationsByOrganizationLedgerSettlementsBySettlementIdStatus', payload),
 		postOrganizationsByOrganizationLedgerAllocations: (payload) =>
@@ -244,6 +252,10 @@ test('ApiAdapter maps organization operations to generated client methods', asyn
 		sortOrder: 'desc',
 	});
 	await adapter.getOrganizationLedgerSettlementDefaults('demo-guild', { gameId: 100 });
+	await adapter.listOrganizationClaimableRecipients('demo-guild');
+	await adapter.getOrganizationClaimableRecipientDetail('demo-guild', 501, {
+		includeSiblingCharacters: true,
+	});
 	await adapter.createOrganizationLedgerSettlement('demo-guild', {
 		title: 'Raid Sale',
 		decidedAt: '2026-08-27T12:00:00.000Z',
@@ -260,6 +272,11 @@ test('ApiAdapter maps organization operations to generated client methods', asyn
 		settlementAllocationId: 103,
 		amount: 450,
 		claimedAt: '2026-08-27T12:00:00.000Z',
+	});
+	await adapter.createOrganizationLedgerBatchClaims('demo-guild', {
+		claimedAt: '2026-08-27T12:00:00.000Z',
+		items: [{ settlementAllocationId: 103, amount: 450, claimedByCharacterId: 501 }],
+		method: 'trade',
 	});
 	await adapter.updateOrganizationLedgerClaimStatus('demo-guild', 104, { status: 'confirmed' });
 
@@ -430,6 +447,19 @@ test('ApiAdapter maps organization operations to generated client methods', asyn
 			},
 		},
 		{
+			method: 'getOrganizationsByOrganizationLedgerClaimableRecipients',
+			payload: {
+				pathParams: { organization: 'demo-guild' },
+			},
+		},
+		{
+			method: 'getOrganizationsByOrganizationLedgerClaimableRecipientsByCharacterId',
+			payload: {
+				pathParams: { organization: 'demo-guild', characterId: 501 },
+				query: { includeSiblingCharacters: true },
+			},
+		},
+		{
 			method: 'postOrganizationsByOrganizationLedgerSettlements',
 			payload: {
 				pathParams: { organization: 'demo-guild' },
@@ -470,6 +500,17 @@ test('ApiAdapter maps organization operations to generated client methods', asyn
 					settlementAllocationId: 103,
 					amount: 450,
 					claimedAt: '2026-08-27T12:00:00.000Z',
+				},
+			},
+		},
+		{
+			method: 'postOrganizationsByOrganizationLedgerClaimsBatch',
+			payload: {
+				pathParams: { organization: 'demo-guild' },
+				body: {
+					claimedAt: '2026-08-27T12:00:00.000Z',
+					items: [{ settlementAllocationId: 103, amount: 450, claimedByCharacterId: 501 }],
+					method: 'trade',
 				},
 			},
 		},

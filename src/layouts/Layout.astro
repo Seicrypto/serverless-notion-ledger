@@ -70,7 +70,7 @@ const {
 } = Astro.props;
 
 const navItems = [
-	{ label: labels.navOverview, href: `/${lang}/` },
+	{ label: labels.navOverview, href: `/${lang}/orgs/ledger`, tone: 'ledger' as const },
 	{ label: labels.navMy, href: `/${lang}/me` },
 	{ label: labels.navEvents, href: `/${lang}/orgs/events` },
 	{ label: labels.navOrgs, href: `/${lang}/orgs` },
