@@ -1,0 +1,110 @@
+---
+import Layout from '../../../../layouts/Layout.astro';
+import SettlementCreationWorkspace from '../../../../components/features/settlements/SettlementCreationWorkspace.svelte';
+import '../../../../styles/app-pages.css';
+import { getI18n, getLangFromUrl } from '../../../../libs/i18n';
+import { buildLayoutLabels } from '../../../../libs/i18n/layoutLabels';
+export { getStaticPaths } from '../../../../libs/static/staticPaths';
+
+const lang = getLangFromUrl(Astro.url);
+const t = getI18n(lang);
+const orgVanity = Astro.url.searchParams.get('orgVanity') ?? Astro.url.searchParams.get('org');
+const eventIdParam = Astro.url.searchParams.get('eventId');
+const eventId = eventIdParam ? Number(eventIdParam) : null;
+---
+
+<Layout
+	title={`${t.app.settlements_title} | ${t.common.product_name}`}
+	description={t.app.settlements_intro}
+	productName={t.common.product_name}
+	lang={lang}
+	currentPath={`${Astro.url.pathname}${Astro.url.search}`}
+	labels={buildLayoutLabels(t)}
+>
+	<SettlementCreationWorkspace
+		client:load
+		organization={orgVanity}
+		eventId={eventId !== null && Number.isInteger(eventId) && eventId > 0 ? eventId : null}
+		labels={{
+			eyebrow: t.app.settlements_title,
+			title: t.app.settlements_title,
+			intro: t.app.settlements_intro,
+			orgRequiredTitle: t.app.settlements_org_required_title,
+			orgRequiredBody: t.app.settlements_org_required_body,
+			eventSectionTitle: t.app.settlements_event_section_title,
+			eventSectionBody: t.app.settlements_event_section_body,
+			eventSelectLabel: t.app.settlements_event_select_label,
+			eventLoadingLabel: t.app.settlements_event_loading_label,
+			eventEmptyTitle: t.app.settlements_event_empty_title,
+			eventEmptyBody: t.app.settlements_event_empty_body,
+			eventRefreshLabel: t.app.settlements_event_refresh_label,
+			eventSummaryTitle: t.app.settlements_event_summary_title,
+			eventSummaryStatusLabel: t.app.settlements_event_summary_status_label,
+			eventSummaryOccurredAtLabel: t.app.settlements_event_summary_occurred_at_label,
+			eventSummaryAssetLabel: t.app.settlements_event_summary_asset_label,
+			eventSummaryHolderLabel: t.app.settlements_event_summary_holder_label,
+			eventSummaryGameLabel: t.app.settlements_event_summary_game_label,
+			defaultsTitle: t.app.settlements_defaults_title,
+			defaultsBody: t.app.settlements_defaults_body,
+			defaultsLoadingLabel: t.app.settlements_defaults_loading_label,
+			defaultsGameLabel: t.app.settlements_defaults_game_label,
+			defaultsUnitLabel: t.app.settlements_defaults_unit_label,
+			defaultsFeeModeLabel: t.app.settlements_defaults_fee_mode_label,
+			defaultsAllocationModeLabel: t.app.settlements_defaults_allocation_mode_label,
+			reusePreviousAmountLabel: t.app.settlements_reuse_previous_amount_label,
+			reusePreviousAmountEmpty: t.app.settlements_reuse_previous_amount_empty,
+			formTitleLabel: t.app.settlements_form_title_label,
+			formTitlePlaceholder: t.app.settlements_form_title_placeholder,
+			formDecidedAtLabel: t.app.settlements_form_decided_at_label,
+			formGrossAmountLabel: t.app.settlements_form_gross_amount_label,
+			formNetAmountLabel: t.app.settlements_form_net_amount_label,
+			formFeeModeLabel: t.app.settlements_form_fee_mode_label,
+			formFeePercentLabel: t.app.settlements_form_fee_percent_label,
+			formFeeAmountLabel: t.app.settlements_form_fee_amount_label,
+			formFeeRuleKeyLabel: t.app.settlements_form_fee_rule_key_label,
+			formFeeRuleKeyPlaceholder: t.app.settlements_form_fee_rule_key_placeholder,
+			formUnitAssetIdLabel: t.app.settlements_form_unit_asset_id_label,
+			formPayerTypeLabel: t.app.settlements_form_payer_type_label,
+			formPayerRefLabel: t.app.settlements_form_payer_ref_label,
+			formPayerRefPlaceholder: t.app.settlements_form_payer_ref_placeholder,
+			formSettlementTypeLabel: t.app.settlements_form_settlement_type_label,
+			formAllocationModeLabel: t.app.settlements_form_allocation_mode_label,
+			formNotesLabel: t.app.settlements_form_notes_label,
+			formNotesPlaceholder: t.app.settlements_form_notes_placeholder,
+			formAutoNetHint: t.app.settlements_form_auto_net_hint,
+			formManualNetHint: t.app.settlements_form_manual_net_hint,
+			formUseAutoNetLabel: t.app.settlements_form_use_auto_net_label,
+			submitLabel: t.app.settlements_form_submit_label,
+			requiredHint: t.app.settlements_required_hint,
+			optionalHint: t.app.settlements_optional_hint,
+			validationRequired: t.app.settlements_validation_required,
+			validationNumber: t.app.settlements_validation_number,
+			validationDate: t.app.settlements_validation_date,
+			settlementTypeSale: t.app.settlements_type_sale,
+			settlementTypeBonus: t.app.settlements_type_bonus,
+			settlementTypeSalary: t.app.settlements_type_salary,
+			settlementTypeReward: t.app.settlements_type_reward,
+			settlementTypeSubsidy: t.app.settlements_type_subsidy,
+			settlementTypeAdjustment: t.app.settlements_type_adjustment,
+			payerTypeCharacter: t.app.settlements_payer_type_character,
+			payerTypeOrgTreasury: t.app.settlements_payer_type_org_treasury,
+			payerTypeExternal: t.app.settlements_payer_type_external,
+			payerTypeCustom: t.app.settlements_payer_type_custom,
+			allocationModeEqual: t.app.settlements_allocation_mode_equal,
+			allocationModeWeight: t.app.settlements_allocation_mode_weight,
+			allocationModeManual: t.app.settlements_allocation_mode_manual,
+			feeModeNone: t.app.settlements_fee_mode_none,
+			feeModePercent: t.app.settlements_fee_mode_percent,
+			feeModeFixed: t.app.settlements_fee_mode_fixed,
+			feeModeRule: t.app.settlements_fee_mode_rule,
+			loadingCreateTitle: t.app.settlements_loading_create_title,
+			loadingCreateBody: t.app.settlements_loading_create_body,
+			errorCreateTitle: t.app.settlements_error_create_title,
+			errorTimeoutBody: t.app.settlements_error_timeout_body,
+			errorRetryLabel: t.app.settlements_error_retry_label,
+			successCreateTitle: t.app.settlements_success_create_title,
+			successCreateBody: t.app.settlements_success_create_body,
+			successCloseLabel: t.app.settlements_success_close_label,
+		}}
+	/>
+</Layout>

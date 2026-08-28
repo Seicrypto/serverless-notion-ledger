@@ -49,6 +49,37 @@ export interface ListMyOrganizationsOptions {
 	offset?: number;
 }
 
+export interface ListOrganizationLedgerEventsOptions {
+	assetId?: number;
+	createdByUserId?: number;
+	eventType?: CreateLedgerEventRequest['eventType'];
+	fromOccurredAt?: string;
+	holderRef?: string;
+	holderType?: CreateLedgerEventRequest['holderType'];
+	limit?: number;
+	offset?: number;
+	sortBy?: 'occurredAt' | 'createdAt' | 'title' | 'updatedAt';
+	sortOrder?: 'asc' | 'desc';
+	status?: 'open' | 'ready_for_settlement' | 'partially_settled' | 'settled' | 'cancelled';
+	statusGroup?: 'unsettled' | 'settleable' | 'settled' | 'cancelled';
+	toOccurredAt?: string;
+}
+
+export interface ListOrganizationLedgerSettlementsOptions {
+	createdByUserId?: number;
+	eventId?: number;
+	feeMode?: CreateLedgerSettlementRequest['feeMode'];
+	fromDecidedAt?: string;
+	limit?: number;
+	offset?: number;
+	sortBy?: 'decidedAt' | 'createdAt' | 'grossAmount' | 'netAmount' | 'updatedAt';
+	sortOrder?: 'asc' | 'desc';
+	status?: 'draft' | 'calculated' | 'paying' | 'paid' | 'cancelled';
+	settlementType?: CreateLedgerSettlementRequest['settlementType'];
+	toDecidedAt?: string;
+	unitAssetId?: number;
+}
+
 export interface ListDisabledUsersOptions {
 	displayName?: string;
 	email?: string;
@@ -327,6 +358,22 @@ export class ApiAdapter {
 		});
 	}
 
+	listOrganizationLedgerEvents(
+		organization: OrganizationReference,
+		options: ListOrganizationLedgerEventsOptions = {},
+	) {
+		return this.client.getOrganizationsByOrganizationLedgerEvents({
+			pathParams: { organization: normalizeOrganizationReference(organization) },
+			query: options,
+		});
+	}
+
+	getOrganizationLedgerEvent(organization: OrganizationReference, eventId: number) {
+		return this.client.getOrganizationsByOrganizationLedgerEventsByEventId({
+			pathParams: { organization: normalizeOrganizationReference(organization), eventId },
+		});
+	}
+
 	createOrganizationLedgerEvent(organization: OrganizationReference, payload: CreateLedgerEventRequest) {
 		return this.client.postOrganizationsByOrganizationLedgerEvents({
 			pathParams: { organization: normalizeOrganizationReference(organization) },
@@ -342,6 +389,26 @@ export class ApiAdapter {
 		return this.client.patchOrganizationsByOrganizationLedgerEventsByEventIdStatus({
 			pathParams: { organization: normalizeOrganizationReference(organization), eventId },
 			body: payload,
+		});
+	}
+
+	listOrganizationLedgerSettlements(
+		organization: OrganizationReference,
+		options: ListOrganizationLedgerSettlementsOptions = {},
+	) {
+		return this.client.getOrganizationsByOrganizationLedgerSettlements({
+			pathParams: { organization: normalizeOrganizationReference(organization) },
+			query: options,
+		});
+	}
+
+	getOrganizationLedgerSettlementDefaults(
+		organization: OrganizationReference,
+		options: { gameId?: number } = {},
+	) {
+		return this.client.getOrganizationsByOrganizationLedgerSettlementDefaults({
+			pathParams: { organization: normalizeOrganizationReference(organization) },
+			query: options,
 		});
 	}
 

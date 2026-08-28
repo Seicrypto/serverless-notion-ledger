@@ -60,19 +60,20 @@ test('appendRecentEventCreations prepends new payloads and filters by organizati
 });
 
 test('parseRecentEventCreations ignores invalid payloads', () => {
+	const freshCreatedAt = new Date().toISOString();
 	const result = parseRecentEventCreations(
 		JSON.stringify([
 			{
 				id: 'demo:1',
 				organization: 'demo-guild',
-				createdAt: '2026-08-27T10:00:00.000Z',
-				payload: { title: 'Valid', occurredAt: '2026-08-27T10:00:00.000Z' },
+				createdAt: freshCreatedAt,
+				payload: { title: 'Valid', occurredAt: freshCreatedAt },
 			},
 			{
 				id: 2,
 				organization: 'demo-guild',
-				createdAt: '2026-08-27T10:00:00.000Z',
-				payload: { title: 'Broken', occurredAt: '2026-08-27T10:00:00.000Z' },
+				createdAt: freshCreatedAt,
+				payload: { title: 'Broken', occurredAt: freshCreatedAt },
 			},
 		]),
 	);

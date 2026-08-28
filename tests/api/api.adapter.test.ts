@@ -81,12 +81,20 @@ function createMockClient() {
 		getOrganizationsCurrentMembers: () => response('getOrganizationsCurrentMembers'),
 		postOrganizationsByOrganizationAssets: (payload) =>
 			response('postOrganizationsByOrganizationAssets', payload),
+		getOrganizationsByOrganizationLedgerEvents: (payload) =>
+			response('getOrganizationsByOrganizationLedgerEvents', payload),
 		postOrganizationsByOrganizationLedgerEvents: (payload) =>
 			response('postOrganizationsByOrganizationLedgerEvents', payload),
+		getOrganizationsByOrganizationLedgerEventsByEventId: (payload) =>
+			response('getOrganizationsByOrganizationLedgerEventsByEventId', payload),
+		getOrganizationsByOrganizationLedgerSettlements: (payload) =>
+			response('getOrganizationsByOrganizationLedgerSettlements', payload),
 		patchOrganizationsByOrganizationLedgerEventsByEventIdStatus: (payload) =>
 			response('patchOrganizationsByOrganizationLedgerEventsByEventIdStatus', payload),
 		postOrganizationsByOrganizationLedgerSettlements: (payload) =>
 			response('postOrganizationsByOrganizationLedgerSettlements', payload),
+		getOrganizationsByOrganizationLedgerSettlementDefaults: (payload) =>
+			response('getOrganizationsByOrganizationLedgerSettlementDefaults', payload),
 		patchOrganizationsByOrganizationLedgerSettlementsBySettlementIdStatus: (payload) =>
 			response('patchOrganizationsByOrganizationLedgerSettlementsBySettlementIdStatus', payload),
 		postOrganizationsByOrganizationLedgerAllocations: (payload) =>
@@ -217,11 +225,25 @@ test('ApiAdapter maps organization operations to generated client methods', asyn
 	await adapter.declineOrganizationInvite('demo-guild', 93);
 	await adapter.deleteOrganization('demo-guild');
 	await adapter.createOrganizationAsset('demo-guild', { name: 'Epic Sword', assetType: 'item' });
+	await adapter.listOrganizationLedgerEvents('demo-guild', {
+		statusGroup: 'settleable',
+		limit: 20,
+		sortBy: 'occurredAt',
+		sortOrder: 'desc',
+	});
+	await adapter.getOrganizationLedgerEvent('demo-guild', 101);
 	await adapter.createOrganizationLedgerEvent('demo-guild', {
 		title: 'Weekly Raid',
 		occurredAt: '2026-08-27T12:00:00.000Z',
 	});
 	await adapter.updateOrganizationLedgerEventStatus('demo-guild', 101, { status: 'cancelled' });
+	await adapter.listOrganizationLedgerSettlements('demo-guild', {
+		status: 'draft',
+		limit: 10,
+		sortBy: 'createdAt',
+		sortOrder: 'desc',
+	});
+	await adapter.getOrganizationLedgerSettlementDefaults('demo-guild', { gameId: 100 });
 	await adapter.createOrganizationLedgerSettlement('demo-guild', {
 		title: 'Raid Sale',
 		decidedAt: '2026-08-27T12:00:00.000Z',
@@ -362,6 +384,24 @@ test('ApiAdapter maps organization operations to generated client methods', asyn
 			},
 		},
 		{
+			method: 'getOrganizationsByOrganizationLedgerEvents',
+			payload: {
+				pathParams: { organization: 'demo-guild' },
+				query: {
+					statusGroup: 'settleable',
+					limit: 20,
+					sortBy: 'occurredAt',
+					sortOrder: 'desc',
+				},
+			},
+		},
+		{
+			method: 'getOrganizationsByOrganizationLedgerEventsByEventId',
+			payload: {
+				pathParams: { organization: 'demo-guild', eventId: 101 },
+			},
+		},
+		{
 			method: 'postOrganizationsByOrganizationLedgerEvents',
 			payload: {
 				pathParams: { organization: 'demo-guild' },
@@ -373,6 +413,20 @@ test('ApiAdapter maps organization operations to generated client methods', asyn
 			payload: {
 				pathParams: { organization: 'demo-guild', eventId: 101 },
 				body: { status: 'cancelled' },
+			},
+		},
+		{
+			method: 'getOrganizationsByOrganizationLedgerSettlements',
+			payload: {
+				pathParams: { organization: 'demo-guild' },
+				query: { status: 'draft', limit: 10, sortBy: 'createdAt', sortOrder: 'desc' },
+			},
+		},
+		{
+			method: 'getOrganizationsByOrganizationLedgerSettlementDefaults',
+			payload: {
+				pathParams: { organization: 'demo-guild' },
+				query: { gameId: 100 },
 			},
 		},
 		{

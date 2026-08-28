@@ -48,10 +48,16 @@ export interface ApiClientLike {
 	getOrganizationsCurrent: OpenApiClient['getOrganizationsCurrent'];
 	getOrganizationsCurrentMembers: OpenApiClient['getOrganizationsCurrentMembers'];
 	postOrganizationsByOrganizationAssets: OpenApiClient['postOrganizationsByOrganizationAssets'];
+	getOrganizationsByOrganizationLedgerEvents: OpenApiClient['getOrganizationsByOrganizationLedgerEvents'];
 	postOrganizationsByOrganizationLedgerEvents: OpenApiClient['postOrganizationsByOrganizationLedgerEvents'];
+	getOrganizationsByOrganizationLedgerEventsByEventId:
+		OpenApiClient['getOrganizationsByOrganizationLedgerEventsByEventId'];
+	getOrganizationsByOrganizationLedgerSettlements: OpenApiClient['getOrganizationsByOrganizationLedgerSettlements'];
 	patchOrganizationsByOrganizationLedgerEventsByEventIdStatus:
 		OpenApiClient['patchOrganizationsByOrganizationLedgerEventsByEventIdStatus'];
 	postOrganizationsByOrganizationLedgerSettlements: OpenApiClient['postOrganizationsByOrganizationLedgerSettlements'];
+	getOrganizationsByOrganizationLedgerSettlementDefaults:
+		OpenApiClient['getOrganizationsByOrganizationLedgerSettlementDefaults'];
 	patchOrganizationsByOrganizationLedgerSettlementsBySettlementIdStatus:
 		OpenApiClient['patchOrganizationsByOrganizationLedgerSettlementsBySettlementIdStatus'];
 	postOrganizationsByOrganizationLedgerAllocations: OpenApiClient['postOrganizationsByOrganizationLedgerAllocations'];
