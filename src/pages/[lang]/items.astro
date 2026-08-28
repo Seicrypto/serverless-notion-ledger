@@ -10,7 +10,7 @@ export { getStaticPaths } from '../../libs/static/staticPaths';
 
 const lang = getLangFromUrl(Astro.url);
 const t = getI18n(lang);
-const orgSlug = Astro.url.searchParams.get('org');
+const orgSlug = Astro.url.searchParams.get('orgVanity') ?? Astro.url.searchParams.get('org');
 ---
 
 <Layout

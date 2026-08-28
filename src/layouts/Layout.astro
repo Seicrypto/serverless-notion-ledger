@@ -27,6 +27,7 @@ interface Props {
 		navigation: string;
 		navOverview: string;
 		navMy: string;
+		navEvents: string;
 		navOrgs: string;
 		officialDashboard: string;
 		userStatus: string;
@@ -57,6 +58,7 @@ const {
 		navigation: 'Navigation',
 		navOverview: 'Overview',
 		navMy: 'My pages',
+		navEvents: 'Events',
 		navOrgs: 'Organizations',
 		officialDashboard: 'Official dashboard',
 		userStatus: 'User status',
@@ -68,8 +70,9 @@ const {
 } = Astro.props;
 
 const navItems = [
-	{ label: labels.navOverview, href: `/${lang}/` },
+	{ label: labels.navOverview, href: `/${lang}/orgs/ledger`, tone: 'ledger' as const },
 	{ label: labels.navMy, href: `/${lang}/me` },
+	{ label: labels.navEvents, href: `/${lang}/orgs/events` },
 	{ label: labels.navOrgs, href: `/${lang}/orgs` },
 ];
 ---

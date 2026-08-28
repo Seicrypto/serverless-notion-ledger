@@ -1,0 +1,75 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+import OrganizationDashboardWorkspace from '../../../components/features/dashboard/OrganizationDashboardWorkspace.svelte';
+import '../../../styles/app-pages.css';
+import { getI18n, getLangFromUrl } from '../../../libs/i18n';
+import { buildLayoutLabels } from '../../../libs/i18n/layoutLabels';
+export { getStaticPaths } from '../../../libs/static/staticPaths';
+
+const lang = getLangFromUrl(Astro.url);
+const t = getI18n(lang);
+const orgVanity = Astro.url.searchParams.get('orgVanity') ?? Astro.url.searchParams.get('org');
+---
+
+<Layout
+	title={`${t.app.dashboard_title} | ${t.common.product_name}`}
+	description={t.app.dashboard_intro}
+	productName={t.common.product_name}
+	lang={lang}
+	currentPath={`${Astro.url.pathname}${Astro.url.search}`}
+	labels={buildLayoutLabels(t)}
+>
+	<OrganizationDashboardWorkspace
+		client:load
+		lang={lang}
+		organization={orgVanity}
+		labels={{
+			eyebrow: t.app.dashboard_title,
+			title: t.app.dashboard_title,
+			intro: t.app.dashboard_intro,
+			authRequiredTitle: t.app.dashboard_auth_required_title,
+			authRequiredBody: t.app.dashboard_auth_required_body,
+			loginLabel: t.common.login,
+			orgRequiredTitle: t.app.dashboard_org_required_title,
+			orgRequiredBody: t.app.dashboard_org_required_body,
+			searchLabel: t.app.dashboard_search_label,
+			searchPlaceholder: t.app.dashboard_search_placeholder,
+			refreshLabel: t.app.dashboard_refresh_label,
+			refreshPendingLabel: t.app.dashboard_refresh_pending_label,
+			searchHint: t.app.dashboard_search_hint,
+			charactersTitle: t.app.dashboard_characters_title,
+			charactersEmptyTitle: t.app.dashboard_characters_empty_title,
+			charactersEmptyBody: t.app.dashboard_characters_empty_body,
+			loadingLabel: t.app.dashboard_loading_label,
+			errorTitle: t.app.dashboard_error_title,
+			pageLabel: t.app.dashboard_page_label,
+			prevLabel: t.app.dashboard_prev_label,
+			nextLabel: t.app.dashboard_next_label,
+			overviewTitle: t.app.dashboard_overview_title,
+			revenueLabel: t.app.dashboard_revenue_label,
+			settlementCountLabel: t.app.dashboard_settlement_count_label,
+			unsettledEventCountLabel: t.app.dashboard_unsettled_event_count_label,
+			disbursementStatusLabel: t.app.dashboard_disbursement_status_label,
+			disbursementInProgressLabel: t.app.dashboard_disbursement_in_progress_label,
+			disbursementNotStartedLabel: t.app.dashboard_disbursement_not_started_label,
+			lastUpdatedLabel: t.app.dashboard_last_updated_label,
+			receivableLabel: t.app.dashboard_receivable_label,
+			payableLabel: t.app.dashboard_payable_label,
+			pendingClaimCountLabel: t.app.dashboard_pending_claim_count_label,
+			lastActivityLabel: t.app.dashboard_last_activity_label,
+			openDetailLabel: t.app.dashboard_open_detail_label,
+			noBreakdownLabel: t.app.dashboard_no_breakdown_label,
+			detailTitlePrefix: t.app.dashboard_detail_title_prefix,
+			detailCloseLabel: t.app.dashboard_detail_close_label,
+			detailReceivableLabel: t.app.dashboard_detail_receivable_label,
+			detailPayableLabel: t.app.dashboard_detail_payable_label,
+			detailTotalLabel: t.app.dashboard_detail_total_label,
+			detailSettlementCountLabel: t.app.dashboard_detail_settlement_count_label,
+			detailNoDataLabel: t.app.dashboard_detail_no_data_label,
+			detailSettlementLabel: t.app.dashboard_detail_settlement_label,
+			detailEventLabel: t.app.dashboard_detail_event_label,
+			detailClaimStatusLabel: t.app.dashboard_detail_claim_status_label,
+			detailDecidedAtLabel: t.app.dashboard_detail_decided_at_label,
+		}}
+	/>
+</Layout>

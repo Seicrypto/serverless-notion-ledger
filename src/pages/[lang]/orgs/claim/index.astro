@@ -1,0 +1,82 @@
+---
+import Layout from '../../../../layouts/Layout.astro';
+import ClaimDisbursementWorkspace from '../../../../components/features/claims/ClaimDisbursementWorkspace.svelte';
+import '../../../../styles/app-pages.css';
+import { getI18n, getLangFromUrl } from '../../../../libs/i18n';
+import { buildLayoutLabels } from '../../../../libs/i18n/layoutLabels';
+export { getStaticPaths } from '../../../../libs/static/staticPaths';
+
+const lang = getLangFromUrl(Astro.url);
+const t = getI18n(lang);
+const orgVanity = Astro.url.searchParams.get('orgVanity') ?? Astro.url.searchParams.get('org');
+---
+
+<Layout
+	title={`${t.app.claim_title} | ${t.common.product_name}`}
+	description={t.app.claim_intro}
+	productName={t.common.product_name}
+	lang={lang}
+	currentPath={`${Astro.url.pathname}${Astro.url.search}`}
+	labels={buildLayoutLabels(t)}
+>
+	<ClaimDisbursementWorkspace
+		client:load
+		organization={orgVanity}
+		labels={{
+			eyebrow: t.app.claim_title,
+			title: t.app.claim_title,
+			intro: t.app.claim_intro,
+			orgRequiredTitle: t.app.claim_org_required_title,
+			orgRequiredBody: t.app.claim_org_required_body,
+			recipientsTitle: t.app.claim_recipients_title,
+			recipientsBody: t.app.claim_recipients_body,
+			recipientsLoadingLabel: t.app.claim_recipients_loading_label,
+			recipientsRefreshLabel: t.app.claim_recipients_refresh_label,
+			recipientsEmptyTitle: t.app.claim_recipients_empty_title,
+			recipientsEmptyBody: t.app.claim_recipients_empty_body,
+			detailTitle: t.app.claim_detail_title,
+			detailBody: t.app.claim_detail_body,
+			detailLoadingLabel: t.app.claim_detail_loading_label,
+			siblingPromptLabel: t.app.claim_sibling_prompt_label,
+			siblingPromptHint: t.app.claim_sibling_prompt_hint,
+			totalAmountLabel: t.app.claim_total_amount_label,
+			totalAllocationsLabel: t.app.claim_total_allocations_label,
+			unitBreakdownLabel: t.app.claim_unit_breakdown_label,
+			memberLabel: t.app.claim_member_label,
+			noMemberLabel: t.app.claim_no_member_label,
+			allocationsTitle: t.app.claim_allocations_title,
+			selectAllLabel: t.app.claim_select_all_label,
+			clearAllLabel: t.app.claim_clear_all_label,
+			allocationAmountLabel: t.app.claim_allocation_amount_label,
+			allocationSettlementLabel: t.app.claim_allocation_settlement_label,
+			allocationEventLabel: t.app.claim_allocation_event_label,
+			allocationRecipientLabel: t.app.claim_allocation_recipient_label,
+			allocationOccurredAtLabel: t.app.claim_allocation_occurred_at_label,
+			allocationUnitLabel: t.app.claim_allocation_unit_label,
+			formClaimedAtLabel: t.app.claim_form_claimed_at_label,
+			formMethodLabel: t.app.claim_form_method_label,
+			formNotesLabel: t.app.claim_form_notes_label,
+			formNotesPlaceholder: t.app.claim_form_notes_placeholder,
+			formSubmitLabel: t.app.claim_form_submit_label,
+			methodManual: t.app.claim_method_manual,
+			methodInGameMail: t.app.claim_method_in_game_mail,
+			methodTrade: t.app.claim_method_trade,
+			methodBank: t.app.claim_method_bank,
+			methodOther: t.app.claim_method_other,
+			requiredHint: t.app.claim_required_hint,
+			optionalHint: t.app.claim_optional_hint,
+			validationSelection: t.app.claim_validation_selection,
+			validationAmount: t.app.claim_validation_amount,
+			validationDate: t.app.claim_validation_date,
+			loadingSubmitTitle: t.app.claim_loading_submit_title,
+			loadingSubmitBody: t.app.claim_loading_submit_body,
+			errorSubmitTitle: t.app.claim_error_submit_title,
+			errorSubmitTimeoutBody: t.app.claim_error_submit_timeout_body,
+			errorRetryLabel: t.app.claim_error_retry_label,
+			successSubmitTitle: t.app.claim_success_submit_title,
+			successSubmitBody: t.app.claim_success_submit_body,
+			successCloseLabel: t.app.claim_success_close_label,
+			yesterdayPrefix: t.app.claim_yesterday_prefix,
+		}}
+	/>
+</Layout>

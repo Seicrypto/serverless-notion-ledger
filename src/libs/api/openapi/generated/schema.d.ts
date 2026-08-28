@@ -19,6 +19,10 @@ export type LogoutResponse = { "message": string; };
 
 export type AuthMeResponse = { "user": { "displayName": string | unknown; "email": string; "emailVerifiedAt": string | unknown; "id": number; "isStaff": boolean; "staffRole": "admin" | "staff" | null; "status": "pending_verification" | "pending_approval" | "active" | "disabled"; "vanity": string | unknown; }; };
 
+export type PublicUserResponse = { "user": PublicUser; };
+
+export type PublicUser = { "createdAt": string; "displayName": string | unknown; "id": number; "status": "pending_verification" | "pending_approval" | "active" | "disabled"; "vanity": string | unknown; };
+
 export type UpdateDisplayNameResponse = { "email": string; "message": string; "user": { "displayName": string; "id": number; }; };
 
 export type UpdateDisplayNameRequest = { "displayName": string; };
@@ -39,13 +43,27 @@ export type ResetPasswordRequest = { "key": string; "password": string; "token":
 
 export type PendingUsersResponse = { "users": Array<ManagedUser>; };
 
-export type ManagedUser = { "displayName": string | unknown; "email": string; "emailVerifiedAt": string | unknown; "id": number; "status": "pending_verification" | "pending_approval" | "active" | "disabled"; };
+export type ManagedUser = { "displayName": string | unknown; "email": string; "emailVerifiedAt": string | unknown; "id": number; "status": "pending_verification" | "pending_approval" | "active" | "disabled"; "vanity": string | unknown; };
 
 export type DisabledUsersResponse = { "pagination": AdminOffsetPagination; "users": Array<ManagedUser>; };
 
 export type AdminOffsetPagination = { "hasMore": boolean; "limit": number; "offset": number; };
 
 export type ManagedUserResponse = { "message": string; "user": ManagedUser; };
+
+export type ManagedOrganizationResponse = { "message": string; "organization": ManagedOrganization; };
+
+export type ManagedOrganization = { "id": number; "name": string; "slug": string; "vanity": string | unknown; };
+
+export type UpdateOrganizationVanityRequest = { "vanity": string; };
+
+export type UpdateUserVanityRequest = { "vanity": string; };
+
+export type MergeAssetResponse = { "message": string; "sourceAsset": Asset; "targetAsset": Asset; };
+
+export type Asset = { "assetKey": string; "assetType": "item" | "currency" | "ticket" | "reward" | "service" | "other"; "canonicalAssetId": number | unknown; "createdAt": string; "gameId": number; "iconUrl": string | unknown; "id": number; "isDefaultSettlementUnit": boolean; "mergedAt": string | unknown; "metadataJson": string | unknown; "name": string; "normalizedName": string; "organizationId": number | unknown; "rarityLabel": string | unknown; "scope": "global" | "organization"; "status": "candidate" | "org_verified" | "active" | "merged" | "deprecated"; "updatedAt": string; };
+
+export type MergeAssetRequest = { "targetAssetId": number; };
 
 export type GameListResponse = { "games": Array<Game>; };
 
@@ -126,3 +144,97 @@ export type UpdateOrganizationResponse = { "message": string; "organization": Or
 export type UpdateOrganizationRequest = { "description"?: string | unknown; "iconUrl"?: string | unknown; "name"?: string; "slug"?: string; };
 
 export type MessageResponse = { "message": string; };
+
+export type CreateAssetResponse = { "asset": Asset; "message": string; "primaryAlias": AssetAlias; };
+
+export type AssetAlias = { "alias": string; "aliasType": "official" | "localized" | "community" | "nickname" | "legacy"; "assetId": number; "id": number; "isPrimary": boolean; "locale": string | unknown; "normalizedAlias": string; "regionCode": string | unknown; } | { "alias": string; "aliasType": "official" | "localized" | "community" | "nickname" | "legacy"; "assetId": number; "id": number; "isPrimary": boolean; "locale": string | unknown; "normalizedAlias": string; "regionCode": string | unknown; };
+
+export type CreateAssetConflictResponse = { "duplicate": { "exactMatch": AssetDuplicateCandidate; "normalizedName": string; "possibleMatches": Array<AssetDuplicateCandidate>; "recommendedAction": "use_existing" | "confirm_create" | "allow_create"; }; "message": string; };
+
+export type AssetDuplicateCandidate = { "alias": AssetAlias; "asset": Asset; "matchedBy": "canonical_exact" | "alias_exact" | "possible"; } | { "alias": AssetAlias; "asset": Asset; "matchedBy": "canonical_exact" | "alias_exact" | "possible"; };
+
+export type CreateAssetOperationalConflictResponse = { "code": string; "error": string; "requestId": string; };
+
+export type CreateAssetRequest = { "assetType"?: "item" | "currency" | "ticket" | "reward" | "service" | "other"; "iconUrl"?: string | unknown; "metadataJson"?: string | unknown; "name": string; "rarityLabel"?: string | unknown; };
+
+export type OrganizationLedgerDashboardSummaryResponse = { "generatedAt": string; "organization": { "id": number; "name": string; "slug": string; }; "summary": { "disbursementInProgressCount": number; "disbursementNotStartedCount": number; "revenueUnitBreakdown": Array<OrganizationLedgerDashboardRevenueBreakdown>; "settlementCount": number; "unsettledEventCount": number; }; };
+
+export type OrganizationLedgerDashboardRevenueBreakdown = { "grossAmountTotal": number; "netAmountTotal": number; "settlementCount": number; "unitAssetId": number | unknown; "unitAssetName": string | unknown; };
+
+export type CharacterLedgerDashboardSummaryResponse = { "generatedAt": string; "summaries": Array<CharacterLedgerDashboardSummaryItem>; };
+
+export type CharacterLedgerDashboardSummaryItem = { "characterId": number; "characterName": string; "lastActivityAt": string | unknown; "payableSettlementCount": number; "payableUnitBreakdown": Array<{ "amountTotal": number; "settlementCount": number; "unitAssetId": number | unknown; "unitAssetName": string | unknown; }>; "pendingClaimCount": number; "receivableSettlementCount": number; "receivableUnitBreakdown": Array<{ "amountTotal": number; "settlementCount": number; "unitAssetId": number | unknown; "unitAssetName": string | unknown; }>; };
+
+export type QueryCharacterLedgerDashboardSummariesRequest = { "characterIds": Array<number>; };
+
+export type CharacterLedgerDashboardDetailResponse = { "character": { "id": number; "name": string; }; "generatedAt": string; "payableGroups": Array<LedgerDashboardDetailGroup>; "receivableGroups": Array<LedgerDashboardDetailGroup>; };
+
+export type LedgerDashboardDetailGroup = { "counterpartyId": number | unknown; "counterpartyLabel": string; "counterpartyType": "character" | "org_treasury" | "external" | "custom"; "settlements": Array<LedgerDashboardDetailSettlement>; "unitBreakdown": Array<{ "amountTotal": number; "settlementCount": number; "unitAssetId": number | unknown; "unitAssetName": string | unknown; }>; };
+
+export type LedgerDashboardDetailSettlement = { "amount": number; "claimStatus": LedgerDashboardClaimStatus; "decidedAt": string; "eventId": number | unknown; "eventTitle": string | unknown; "settlementId": number; "settlementKey": string; "settlementStatus": "draft" | "calculated" | "paying" | "paid" | "cancelled"; "settlementTitle": string; "settlementType": "sale" | "bonus" | "salary" | "reward" | "subsidy" | "adjustment"; "unitAssetId": number | unknown; "unitAssetName": string | unknown; };
+
+export type LedgerDashboardClaimStatus = "none" | "partial" | "claimed" | "confirmed";
+
+export type LedgerEventListResponse = { "events": Array<LedgerEvent>; "pagination": LedgerPagination; };
+
+export type LedgerEvent = { "assetId": number | unknown; "createdAt": string; "createdByUserId": number | unknown; "eventKey": string; "eventType": "loot" | "raid" | "activity" | "bonus" | "salary" | "guild_event" | "other"; "gameId": number | unknown; "holderRef": string | unknown; "holderType": "character" | "org_treasury" | "market" | "external" | "custom"; "id": number; "notes": string | unknown; "occurredAt": string; "organizationId": number; "sourceType": "manual" | "api" | "import"; "status": "open" | "ready_for_settlement" | "partially_settled" | "settled" | "cancelled"; "title": string; "updatedAt": string; };
+
+export type LedgerPagination = { "hasMore": boolean; "limit": number; "offset": number; };
+
+export type LedgerEventResponse = { "event": LedgerEvent; "message": string; };
+
+export type LedgerClaimableRecipientSummaryListResponse = { "recipients": Array<LedgerClaimableRecipientSummary>; };
+
+export type LedgerClaimableRecipientSummary = { "characterId": number; "characterName": string; "hasSiblingCharactersPending": boolean; "memberDisplayName": string | unknown; "memberUserId": number | unknown; "pendingAllocationCount": number; "pendingClaimAmountTotal": number; "pendingUnitBreakdown": Array<LedgerClaimableUnitBreakdown>; };
+
+export type LedgerClaimableUnitBreakdown = { "allocationCount": number; "amountTotal": number; "unitAssetId": number | unknown; "unitAssetName": string | unknown; };
+
+export type LedgerClaimableRecipientDetailResponse = { "allocations": Array<LedgerClaimableRecipientAllocation>; "recipient": LedgerClaimableRecipientSummary; "siblingCharacters": Array<LedgerClaimableRecipientSummary>; "unitBreakdown": Array<LedgerClaimableUnitBreakdown>; };
+
+export type LedgerClaimableRecipientAllocation = { "allocationId": number; "amount": number; "eventId": number | unknown; "eventKey": string | unknown; "eventOccurredAt": string | unknown; "eventStatus": "open" | "ready_for_settlement" | "partially_settled" | "settled" | "cancelled" | null; "eventTitle": string | unknown; "eventType": "loot" | "raid" | "activity" | "bonus" | "salary" | "guild_event" | "other" | null; "ratio": number | unknown; "settlementDecidedAt": string; "settlementId": number; "settlementKey": string; "settlementStatus": "draft" | "calculated" | "paying" | "paid" | "cancelled"; "settlementTitle": string; "settlementType": "sale" | "bonus" | "salary" | "reward" | "subsidy" | "adjustment"; "unitAssetId": number | unknown; "unitAssetName": string | unknown; "weight": number; };
+
+export type CreateLedgerEventRequest = { "assetId"?: number | unknown; "eventType"?: "loot" | "raid" | "activity" | "bonus" | "salary" | "guild_event" | "other"; "gameId"?: number | unknown; "holderRef"?: string | unknown; "holderType"?: "character" | "org_treasury" | "market" | "external" | "custom"; "notes"?: string | unknown; "occurredAt": string; "sourceType"?: "manual" | "api" | "import"; "title": string; };
+
+export type UpdateLedgerEventStatusRequest = { "status": "ready_for_settlement" | "cancelled"; };
+
+export type LedgerSettlementListResponse = { "pagination": LedgerPagination; "settlements": Array<LedgerSettlement>; };
+
+export type LedgerSettlement = { "allocationMode": "equal" | "weight" | "manual"; "createdAt": string; "createdByUserId": number | unknown; "decidedAt": string; "eventId": number | unknown; "feeAmount": number | unknown; "feeMode": "none" | "percent" | "fixed" | "rule"; "feePercent": number | unknown; "feeRuleKey": string | unknown; "grossAmount": number; "id": number; "netAmount": number; "notes": string | unknown; "organizationId": number; "payerRef": string | unknown; "payerType": "character" | "org_treasury" | "external" | "custom"; "settlementKey": string; "settlementType": "sale" | "bonus" | "salary" | "reward" | "subsidy" | "adjustment"; "status": "draft" | "calculated" | "paying" | "paid" | "cancelled"; "title": string; "unitAssetId": number | unknown; "updatedAt": string; };
+
+export type LedgerSettlementDefaultsResponse = { "defaults": { "defaultAllocationMode": "equal" | "weight" | "manual"; "defaultFeeMode": "none" | "percent" | "fixed" | "rule"; "defaultSettlementUnit": LedgerSettlementDefaultUnit; "supportedAllocationModes": Array<"equal" | "weight" | "manual">; "supportedFeeModes": Array<"none" | "percent" | "fixed" | "rule">; }; "game": { "id": number; "name": string; "organizationDisplayName": string | unknown; "slug": string; "source": "internal" | "steam"; "type": "game" | "activity"; } | { "id": number; "name": string; "organizationDisplayName": string | unknown; "slug": string; "source": "internal" | "steam"; "type": "game" | "activity"; }; };
+
+export type LedgerSettlementDefaultUnit = { "assetKey": string; "assetType": "item" | "currency" | "ticket" | "reward" | "service" | "other"; "id": number; "name": string; "organizationId": number | unknown; "scope": "global" | "organization"; "status": "candidate" | "org_verified" | "active" | "merged" | "deprecated"; } | { "assetKey": string; "assetType": "item" | "currency" | "ticket" | "reward" | "service" | "other"; "id": number; "name": string; "organizationId": number | unknown; "scope": "global" | "organization"; "status": "candidate" | "org_verified" | "active" | "merged" | "deprecated"; };
+
+export type LedgerBatchClaimsResponse = { "allocationsProcessed": number; "claims": Array<LedgerSettlementClaim>; "message": string; "settlementsTouched": number; };
+
+export type LedgerSettlementClaim = { "amount": number; "claimedAt": string; "claimedByCharacterId": number | unknown; "confirmedAt": string | unknown; "confirmedByUserId": number | unknown; "createdAt": string; "id": number; "method": "manual" | "in_game_mail" | "trade" | "bank" | "other"; "notes": string | unknown; "settlementAllocationId": number; "status": "recorded" | "confirmed" | "voided"; "updatedAt": string; "voidedAt": string | unknown; "voidedByUserId": number | unknown; };
+
+export type CreateLedgerBatchClaimsRequest = { "claimedAt": string; "items": Array<LedgerBatchClaimItemRequest>; "method"?: "manual" | "in_game_mail" | "trade" | "bank" | "other"; "notes"?: string | unknown; };
+
+export type LedgerBatchClaimItemRequest = { "amount": number; "claimedByCharacterId"?: number | unknown; "settlementAllocationId": number; };
+
+export type LedgerSettlementDisbursementResponse = { "allocationMode": "created" | "matched"; "allocations": Array<LedgerSettlementAllocation>; "claims": Array<LedgerSettlementClaim>; "message": string; "settlement": LedgerSettlement; "settlementStatusChanged": boolean; };
+
+export type LedgerSettlementAllocation = { "amount": number; "characterId": number | unknown; "createdAt": string; "id": number; "ratio": number | unknown; "settlementId": number; "status": "pending" | "claimed" | "waived" | "cancelled"; "updatedAt": string; "weight": number; };
+
+export type CreateSettlementDisbursementRequest = { "claimedAt": string; "items": Array<LedgerDisbursementItemRequest>; "method"?: "manual" | "in_game_mail" | "trade" | "bank" | "other"; "notes"?: string | unknown; };
+
+export type LedgerDisbursementItemRequest = { "amount": number; "characterId": number; "ratio"?: number | unknown; "weight"?: number; };
+
+export type LedgerSettlementResponse = { "message": string; "settlement": LedgerSettlement; };
+
+export type CreateLedgerSettlementRequest = { "allocationMode"?: "equal" | "weight" | "manual"; "decidedAt": string; "eventId"?: number | unknown; "feeAmount"?: number | unknown; "feeMode"?: "none" | "percent" | "fixed" | "rule"; "feePercent"?: number | unknown; "feeRuleKey"?: string | unknown; "grossAmount": number; "netAmount": number; "notes"?: string | unknown; "payerRef"?: string | unknown; "payerType"?: "character" | "org_treasury" | "external" | "custom"; "settlementType"?: "sale" | "bonus" | "salary" | "reward" | "subsidy" | "adjustment"; "title": string; "unitAssetId"?: number | unknown; };
+
+export type UpdateLedgerSettlementStatusRequest = { "status": "calculated" | "paying" | "paid" | "cancelled"; };
+
+export type LedgerAllocationResponse = { "allocation": LedgerSettlementAllocation; "message": string; };
+
+export type CreateLedgerAllocationRequest = { "amount": number; "characterId"?: number | unknown; "ratio"?: number | unknown; "settlementId": number; "weight"?: number; };
+
+export type UpdateLedgerAllocationStatusRequest = { "status": "waived" | "cancelled"; };
+
+export type LedgerClaimResponse = { "claim": LedgerSettlementClaim; "message": string; };
+
+export type CreateLedgerClaimRequest = { "amount": number; "claimedAt": string; "claimedByCharacterId"?: number | unknown; "method"?: "manual" | "in_game_mail" | "trade" | "bank" | "other"; "notes"?: string | unknown; "settlementAllocationId": number; };
+
+export type UpdateLedgerClaimStatusRequest = { "status": "confirmed" | "voided"; };

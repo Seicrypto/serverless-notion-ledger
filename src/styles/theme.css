@@ -12,6 +12,9 @@
 	--accent-soft: rgba(138, 180, 248, 0.16);
 	--accent-deep: #c2dcff;
 	--success: #7fd6a4;
+	--ledger-accent: #5fb885;
+	--ledger-accent-soft: rgba(95, 184, 133, 0.18);
+	--ledger-accent-deep: #d9f4e4;
 	--shadow: 0 22px 48px rgba(0, 0, 0, 0.28);
 	background:
 		radial-gradient(circle at top left, rgba(138, 180, 248, 0.12), transparent 24%),
