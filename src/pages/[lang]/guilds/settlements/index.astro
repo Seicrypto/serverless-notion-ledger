@@ -12,8 +12,8 @@ const lang = getLangFromUrl(Astro.url);
 const t = getI18n(lang);
 const orgVanity = Astro.url.searchParams.get('orgVanity') ?? Astro.url.searchParams.get('org');
 const createHref = orgVanity
-	? `/${lang}/orgs/settlements/new?orgVanity=${encodeURIComponent(orgVanity)}`
-	: `/${lang}/orgs`;
+	? `/${lang}/guilds/settlements/new?orgVanity=${encodeURIComponent(orgVanity)}`
+	: `/${lang}/guilds`;
 ---
 
 <Layout
@@ -31,7 +31,7 @@ const createHref = orgVanity
 		statusLabel={t.common.user_status}
 		statusValue={t.app.settlements_status}
 		primaryLink={{ label: t.app.settlements_form_submit_label, href: createHref }}
-		secondaryLink={{ label: t.app.action_pick_org, href: `/${lang}/orgs` }}
+		secondaryLink={{ label: t.app.action_pick_org, href: `/${lang}/guilds` }}
 		cards={[
 			{ label: t.app.card_scope_label, title: t.app.card_scope_title, body: t.app.card_scope_body },
 			{ label: t.app.card_data_label, title: t.app.card_data_title, body: t.app.card_data_body },

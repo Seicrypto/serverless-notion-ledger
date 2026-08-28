@@ -119,7 +119,7 @@
 		};
 		dialogPrimaryAction = {
 			label: `${labels.goManageLabelPrefix} ${orgName}`,
-			href: `/${lang}/orgs/manage?orgVanity=${encodeURIComponent(orgVanity ?? orgSlug)}`,
+			href: `/${lang}/guilds/manage?orgVanity=${encodeURIComponent(orgVanity ?? orgSlug)}`,
 		};
 	};
 

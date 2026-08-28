@@ -230,7 +230,7 @@
 			title={labels.title}
 			intro={labels.intro}
 			items={profileItems}
-			footerLink={{ href: `/${lang}/me/orgs`, label: labels.myOrganizationsLabel }}
+			footerLink={{ href: `/${lang}/me/guilds`, label: labels.myOrganizationsLabel }}
 		/>
 
 		{#if editDialogOpen}

@@ -11,7 +11,7 @@ export const common = {
 	nav_home: 'ホーム',
 	nav_my: '自分のページ',
 	nav_events: 'イベント作成',
-	nav_orgs: '組織一覧',
+	nav_orgs: 'ギルドロビー',
 	nav_drops: 'ドロップ明細',
 	mode_light: 'Light',
 	mode_dark: 'Dark',

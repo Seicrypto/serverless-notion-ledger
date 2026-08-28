@@ -115,10 +115,10 @@
 				<h2>{labels.emptyTitle}</h2>
 				<p>{labels.emptyBody}</p>
 				<div class="my-orgs-actions">
-					<a class="my-orgs-action-primary" href={`/${lang}/orgs`}>
+					<a class="my-orgs-action-primary" href={`/${lang}/guilds`}>
 						{labels.viewOrgsLabel}
 					</a>
-					<a class="my-orgs-action-secondary" href={`/${lang}/orgs/new`}>
+					<a class="my-orgs-action-secondary" href={`/${lang}/guilds/new`}>
 						{labels.createOrgLabel}
 					</a>
 				</div>
@@ -131,12 +131,12 @@
 						actions={[
 							{
 								label: labels.openOrgDashboardLabel,
-								href: `/${lang}/orgs/dashboard?orgVanity=${encodeURIComponent(organization.slug)}`,
+								href: `/${lang}/guilds/dashboard?orgVanity=${encodeURIComponent(organization.slug)}`,
 								tone: 'primary',
 							},
 							{
 								label: labels.openOrgManageLabel,
-								href: `/${lang}/orgs/manage?orgVanity=${encodeURIComponent(organization.slug)}`,
+								href: `/${lang}/guilds/manage?orgVanity=${encodeURIComponent(organization.slug)}`,
 								tone: 'secondary',
 							},
 						]}

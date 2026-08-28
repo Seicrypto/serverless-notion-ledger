@@ -86,7 +86,7 @@
 		dialogOpen = true;
 		dialogTitle = labels.noOrganizationsTitle;
 		dialogMessage = labels.noOrganizationsBody;
-		dialogPrimaryAction = { label: labels.findOrganizationsLabel, href: `/${lang}/orgs`, variant: 'primary' };
+		dialogPrimaryAction = { label: labels.findOrganizationsLabel, href: `/${lang}/guilds`, variant: 'primary' };
 		dialogSecondaryAction = { label: labels.homeLabel, href: `/${lang}/`, variant: 'secondary' };
 	}
 
@@ -214,20 +214,20 @@
 	}
 
 	$: selectedOrganizationCard = getSelectedOrganizationCard();
-	$: eventCreateHref = selectedOrganization ? `/${lang}/orgs/events/new?orgVanity=${encodeURIComponent(selectedOrganization)}` : `/${lang}/login`;
+	$: eventCreateHref = selectedOrganization ? `/${lang}/guilds/events/new?orgVanity=${encodeURIComponent(selectedOrganization)}` : `/${lang}/login`;
 	$: eventDuplicateHref =
 		selectedOrganization && selectedRecentEventId
-			? `/${lang}/orgs/events/new?orgVanity=${encodeURIComponent(selectedOrganization)}&quickCreateId=${encodeURIComponent(selectedRecentEventId)}`
+			? `/${lang}/guilds/events/new?orgVanity=${encodeURIComponent(selectedOrganization)}&quickCreateId=${encodeURIComponent(selectedRecentEventId)}`
 			: eventCreateHref;
 	$: settlementCreateHref = selectedOrganization
-		? `/${lang}/orgs/settlements/new?orgVanity=${encodeURIComponent(selectedOrganization)}`
+		? `/${lang}/guilds/settlements/new?orgVanity=${encodeURIComponent(selectedOrganization)}`
 		: `/${lang}/login`;
 	$: settlementQuickHref =
 		selectedOrganization && selectedSettleableEventId
-			? `/${lang}/orgs/settlements/new?orgVanity=${encodeURIComponent(selectedOrganization)}&eventId=${encodeURIComponent(selectedSettleableEventId)}`
+			? `/${lang}/guilds/settlements/new?orgVanity=${encodeURIComponent(selectedOrganization)}&eventId=${encodeURIComponent(selectedSettleableEventId)}`
 			: settlementCreateHref;
 	$: claimHref = selectedOrganization
-		? `/${lang}/orgs/claim?orgVanity=${encodeURIComponent(selectedOrganization)}`
+		? `/${lang}/guilds/claim?orgVanity=${encodeURIComponent(selectedOrganization)}`
 		: `/${lang}/login`;
 
 	onMount(() => {
