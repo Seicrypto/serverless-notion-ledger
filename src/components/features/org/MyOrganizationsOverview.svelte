@@ -17,7 +17,8 @@
 		emptyBody: string;
 		viewOrgsLabel: string;
 		createOrgLabel: string;
-		openOrgLabel: string;
+		openOrgManageLabel: string;
+		openOrgDashboardLabel: string;
 		memberCountLabel: string;
 		characterCountLabel: string;
 		supportedOrgLabel: string;
@@ -34,6 +35,9 @@
 	let organizations: OrganizationCardResponse[] = [];
 	let loading = true;
 	let errorMessage = '';
+
+	const getOrganizationReference = (organization: OrganizationCardResponse) =>
+		organization.vanity?.trim() || String(organization.id);
 
 	const loadOrganizations = async (forceRefresh = false) => {
 		if (!isAuthenticatedSession(session)) {
@@ -114,10 +118,10 @@
 				<h2>{labels.emptyTitle}</h2>
 				<p>{labels.emptyBody}</p>
 				<div class="my-orgs-actions">
-					<a class="my-orgs-action-primary" href={`/${lang}/orgs`}>
+					<a class="my-orgs-action-primary" href={`/${lang}/guilds`}>
 						{labels.viewOrgsLabel}
 					</a>
-					<a class="my-orgs-action-secondary" href={`/${lang}/orgs/new`}>
+					<a class="my-orgs-action-secondary" href={`/${lang}/guilds/new`}>
 						{labels.createOrgLabel}
 					</a>
 				</div>
@@ -127,8 +131,18 @@
 				{#each organizations as organization}
 					<OrganizationCard
 						organization={organization}
-						href={`/${lang}/orgs/manage?orgVanity=${encodeURIComponent(organization.slug)}`}
-						actionLabel={labels.openOrgLabel}
+						actions={[
+							{
+								label: labels.openOrgDashboardLabel,
+								href: `/${lang}/guilds/dashboard?orgVanity=${encodeURIComponent(getOrganizationReference(organization))}`,
+								tone: 'primary',
+							},
+							{
+								label: labels.openOrgManageLabel,
+								href: `/${lang}/guilds/manage?orgVanity=${encodeURIComponent(getOrganizationReference(organization))}`,
+								tone: 'secondary',
+							},
+						]}
 						labels={{
 							members: labels.memberCountLabel,
 							characters: labels.characterCountLabel,

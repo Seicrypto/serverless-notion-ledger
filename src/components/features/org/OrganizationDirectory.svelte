@@ -48,6 +48,10 @@
 	let hasLoadedOnce = false;
 	let errorMessage = '';
 
+	const getOrganizationReference = (
+		organization: ReturnType<typeof mapApiOrganizationCardToOrganizationCardResponse>,
+	) => organization.vanity?.trim() || String(organization.id);
+
 	const getCurrentPage = () => Math.floor(offset / pageSize) + 1;
 
 	const syncUrl = () => {
@@ -209,7 +213,7 @@
 			{#each organizations as organization}
 				<OrganizationCard
 					organization={organization}
-					href={`/${lang}/members?org=${organization.slug}`}
+					href={`/${lang}/members?org=${encodeURIComponent(getOrganizationReference(organization))}`}
 					actionLabel={labels.openOrgLabel}
 					labels={{
 						members: labels.memberCountLabel,

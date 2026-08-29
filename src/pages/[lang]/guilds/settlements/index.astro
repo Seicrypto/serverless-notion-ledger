@@ -12,26 +12,26 @@ const lang = getLangFromUrl(Astro.url);
 const t = getI18n(lang);
 const orgVanity = Astro.url.searchParams.get('orgVanity') ?? Astro.url.searchParams.get('org');
 const createHref = orgVanity
-	? `/${lang}/orgs/events/new?orgVanity=${encodeURIComponent(orgVanity)}`
-	: `/${lang}/orgs`;
+	? `/${lang}/guilds/settlements/new?orgVanity=${encodeURIComponent(orgVanity)}`
+	: `/${lang}/guilds`;
 ---
 
 <Layout
-	title={`${t.app.events_title} | ${t.common.product_name}`}
-	description={t.app.events_intro}
+	title={`${t.app.settlements_title} | ${t.common.product_name}`}
+	description={t.app.settlements_intro}
 	productName={t.common.product_name}
 	lang={lang}
 	currentPath={`${Astro.url.pathname}${Astro.url.search}`}
 	labels={buildLayoutLabels(t)}
 >
 	<AppPage
-		eyebrow={t.common.nav_events}
-		title={t.app.events_title}
-		intro={t.app.events_intro}
+		eyebrow={t.app.settlements_title}
+		title={t.app.settlements_title}
+		intro={t.app.settlements_intro}
 		statusLabel={t.common.user_status}
-		statusValue={t.app.events_status}
-		primaryLink={{ label: t.app.events_form_submit_label, href: createHref }}
-		secondaryLink={{ label: t.app.action_pick_org, href: `/${lang}/orgs` }}
+		statusValue={t.app.settlements_status}
+		primaryLink={{ label: t.app.settlements_form_submit_label, href: createHref }}
+		secondaryLink={{ label: t.app.action_pick_org, href: `/${lang}/guilds` }}
 		cards={[
 			{ label: t.app.card_scope_label, title: t.app.card_scope_title, body: t.app.card_scope_body },
 			{ label: t.app.card_data_label, title: t.app.card_data_title, body: t.app.card_data_body },

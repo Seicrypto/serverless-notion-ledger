@@ -11,7 +11,7 @@ export const common = {
 	nav_home: '首頁',
 	nav_my: '我的頁面',
 	nav_events: '事件建立',
-	nav_orgs: '組織清單',
+	nav_orgs: '公會大廳',
 	nav_drops: '掉落明細',
 	mode_light: 'Light',
 	mode_dark: 'Dark',

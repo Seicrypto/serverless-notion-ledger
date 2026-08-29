@@ -595,7 +595,7 @@
 							</button>
 							<a
 								class="toolbar-secondary toolbar-link"
-								href={`/${lang}/orgs/manage/pending?orgVanity=${encodeURIComponent(orgVanity)}`}
+								href={`/${lang}/guilds/manage/pending?orgVanity=${encodeURIComponent(orgVanity)}`}
 							>
 								{labels.membersPendingLabel}
 							</a>
