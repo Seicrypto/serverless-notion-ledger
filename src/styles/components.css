@@ -418,23 +418,23 @@
 }
 
 :root[data-theme='dark'] .sidebar-link-ledger {
+	border-color: color-mix(in srgb, var(--ledger-accent) 48%, var(--line));
 	background: linear-gradient(
 		135deg,
-		color-mix(in srgb, var(--ledger-accent) 44%, var(--surface-soft)) 0%,
-		color-mix(in srgb, #3b7d59 78%, var(--surface-soft)) 100%
+		color-mix(in srgb, var(--ledger-accent) 78%, white) 0%,
+		color-mix(in srgb, var(--ledger-accent) 54%, var(--surface-soft)) 100%
 	);
-	border-color: color-mix(in srgb, var(--ledger-accent) 56%, var(--line));
-	color: color-mix(in srgb, #eefcf4 86%, var(--text-main));
+	color: color-mix(in srgb, var(--ledger-accent-deep) 86%, var(--text-main));
 	box-shadow:
-		inset 0 1px 0 rgba(255, 255, 255, 0.08),
-		0 18px 34px -26px rgba(22, 101, 52, 0.72);
+		inset 0 1px 0 rgba(255, 255, 255, 0.2),
+		0 18px 34px -26px rgba(22, 101, 52, 0.42);
 }
 
 :root[data-theme='dark'] .sidebar-link-ledger:hover {
 	background: linear-gradient(
 		135deg,
-		color-mix(in srgb, var(--ledger-accent) 52%, var(--surface-soft)) 0%,
-		color-mix(in srgb, #3b7d59 90%, var(--surface-soft)) 100%
+		color-mix(in srgb, var(--ledger-accent) 84%, white) 0%,
+		color-mix(in srgb, var(--ledger-accent) 60%, var(--surface-soft)) 100%
 	);
 	border-color: color-mix(in srgb, var(--ledger-accent) 60%, var(--line));
 }

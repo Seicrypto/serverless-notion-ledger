@@ -2,6 +2,7 @@
 	import { onMount } from 'svelte';
 
 	import OrganizationCard from './OrganizationCard.svelte';
+	import GamePicker from '../../shared/GamePicker.svelte';
 	import { getApiAdapter } from '../../../libs/api/adapters/api.adapter.ts';
 	import { mapApiOrganizationCardToOrganizationCardResponse } from '../../../libs/api/organizations/organization-card.ts';
 	import { getOrganizationReference } from '../../../libs/organizations/reference.ts';
@@ -9,6 +10,9 @@
 	interface GameOption {
 		label: string;
 		value: string;
+		iconUrl?: string | null;
+		officialSiteUrl?: string | null;
+		resolvedIconUrl?: string | null;
 	}
 
 	interface Labels {
@@ -46,8 +50,32 @@
 	let organizations = [] as ReturnType<typeof mapApiOrganizationCardToOrganizationCardResponse>[];
 	let hasMore = false;
 	let loading = false;
+	let gamesLoading = false;
 	let hasLoadedOnce = false;
 	let errorMessage = '';
+
+	const loadGameOptions = async () => {
+		gamesLoading = true;
+
+		try {
+			const response = await getApiAdapter().listPublicGames();
+			const apiOptions = response.games
+				.filter((game) => game.type === 'game' && game.isActive)
+				.map((game) => ({
+					label: game.name,
+					value: game.slug,
+					iconUrl: typeof game.iconUrl === 'string' ? game.iconUrl : null,
+					officialSiteUrl: typeof game.officialSiteUrl === 'string' ? game.officialSiteUrl : null,
+					resolvedIconUrl: typeof game.resolvedIconUrl === 'string' ? game.resolvedIconUrl : null,
+				}));
+
+			if (apiOptions.length > 0) {
+				gameOptions = apiOptions;
+			}
+		} finally {
+			gamesLoading = false;
+		}
+	};
 
 	const getCurrentPage = () => Math.floor(offset / pageSize) + 1;
 
@@ -133,6 +161,7 @@
 
 	onMount(() => {
 		void (async () => {
+			await loadGameOptions();
 			if (!selectedGameSlug && gameOptions[0]) {
 				selectedGameSlug = gameOptions[0].value;
 			}
@@ -151,11 +180,19 @@
 	>
 		<div class="org-search-field">
 			<label for="org-game-filter">{labels.gameLabel}</label>
-			<select id="org-game-filter" bind:value={selectedGameSlug}>
-				{#each gameOptions as option}
-					<option value={option.value}>{option.label}</option>
-				{/each}
-			</select>
+			<GamePicker
+				bind:value={selectedGameSlug}
+				ariaLabel={labels.gameLabel}
+				placeholder={labels.gameLabel}
+				disabled={gamesLoading || gameOptions.length === 0}
+				items={gameOptions.map((option) => ({
+					value: option.value,
+					label: option.label,
+					iconUrl: option.iconUrl,
+					officialSiteUrl: option.officialSiteUrl,
+					resolvedIconUrl: option.resolvedIconUrl,
+				}))}
+			/>
 		</div>
 
 		<div class="org-search-field org-search-field-query">
@@ -278,7 +315,6 @@
 		color: var(--text-soft);
 	}
 
-	.org-search-field select,
 	.org-search-field input {
 		min-height: 48px;
 		padding: 0 16px;

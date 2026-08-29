@@ -34,6 +34,15 @@ import type {
 	MergeAssetResponse,
 	Asset,
 	MergeAssetRequest,
+	OfficialManagedGameResponse,
+	OfficialManagedGame,
+	OfficialUpdateGameMetadataRequest,
+	PublicGameListResponse,
+	PublicGame,
+	PublicGameSearchResponse,
+	PublicGameSearchItem,
+	GamesOffsetPagination,
+	PublicGameDetailResponse,
 	GameListResponse,
 	Game,
 	OrganizationListResponse,
@@ -49,6 +58,8 @@ import type {
 	OrganizationGameSummary,
 	Organization,
 	OrganizationCharactersResponse,
+	OrganizationCharacterWithGame,
+	OrganizationCharacterGame,
 	OrganizationCharacter,
 	OrganizationMembersResponse,
 	OrganizationMember,
@@ -145,6 +156,10 @@ export const operationPaths = {
 	postAdminUsersByIdDisable: "/admin/users/{id}/disable",
 	postAdminUsersByIdEnable: "/admin/users/{id}/enable",
 	postAdminAssetsByAssetIdMerge: "/admin/assets/{assetId}/merge",
+	patchOfficialGamesByGameId: "/official/games/{gameId}",
+	getGames: "/games",
+	getGamesSearch: "/games/search",
+	getGamesByGameId: "/games/{gameId}",
 	getOrganizationsGames: "/organizations/games",
 	getOrganizations: "/organizations",
 	postOrganizations: "/organizations",
@@ -217,6 +232,10 @@ export type ApiOperations = {
 	postAdminUsersByIdDisable: { pathParams: { "id": number; }; response: ManagedUserResponse; };
 	postAdminUsersByIdEnable: { pathParams: { "id": number; }; response: ManagedUserResponse; };
 	postAdminAssetsByAssetIdMerge: { pathParams: { "assetId": number; }; body: MergeAssetRequest; response: MergeAssetResponse; };
+	patchOfficialGamesByGameId: { pathParams: { "gameId": number; }; body: OfficialUpdateGameMetadataRequest; response: OfficialManagedGameResponse; };
+	getGames: { query: { "includeInactive"?: "true" | "false"; }; response: PublicGameListResponse; };
+	getGamesSearch: { query: { "limit"?: number; "name": string; "offset"?: number | unknown; }; response: PublicGameSearchResponse; };
+	getGamesByGameId: { pathParams: { "gameId": number; }; response: PublicGameDetailResponse; };
 	getOrganizationsGames: { query: { "includeInactive"?: "true" | "false"; }; response: GameListResponse; };
 	getOrganizations: { query: { "displayName"?: string; "gameId"?: number; "gameSlug"?: string; "limit"?: number; "offset"?: number | unknown; "q"?: string; }; response: OrganizationListResponse; };
 	postOrganizations: { body: CreateOrganizationRequest; response: CreateOrganizationResponse; };
@@ -719,6 +738,73 @@ export class OpenApiClient {
 				...options.headers,
 			},
 			body,
+		});
+	}
+
+	/**
+	 * PATCH /official/games/{gameId}
+	 */
+	async patchOfficialGamesByGameId(options: RequestOptions<ApiOperations['patchOfficialGamesByGameId']> = {}): Promise<ApiOperations['patchOfficialGamesByGameId']['response']> {
+		const body = options.body === undefined ? undefined : JSON.stringify(options.body);
+
+		return this.request<ApiOperations['patchOfficialGamesByGameId']['response']>({
+			method: "PATCH",
+			path: operationPaths.patchOfficialGamesByGameId,
+			pathParams: options.pathParams,
+			query: options.query,
+			headers: {
+			...(options.body === undefined ? {} : { 'content-type': 'application/json' }),
+				...options.headers,
+			},
+			body,
+		});
+	}
+
+	/**
+	 * GET /games
+	 */
+	async getGames(options: RequestOptions<ApiOperations['getGames']> = {}): Promise<ApiOperations['getGames']['response']> {
+		return this.request<ApiOperations['getGames']['response']>({
+			method: "GET",
+			path: operationPaths.getGames,
+			pathParams: options.pathParams,
+			query: options.query,
+			headers: {
+				...options.headers,
+			},
+			body: undefined,
+		});
+	}
+
+	/**
+	 * GET /games/search
+	 */
+	async getGamesSearch(options: RequestOptions<ApiOperations['getGamesSearch']> = {}): Promise<ApiOperations['getGamesSearch']['response']> {
+		return this.request<ApiOperations['getGamesSearch']['response']>({
+			method: "GET",
+			path: operationPaths.getGamesSearch,
+			pathParams: options.pathParams,
+			query: options.query,
+			headers: {
+				...options.headers,
+			},
+			body: undefined,
+		});
+	}
+
+	/**
+	 * GET /games/{gameId}
+	 */
+	async getGamesByGameId(options: RequestOptions<ApiOperations['getGamesByGameId']> = {}): Promise<ApiOperations['getGamesByGameId']['response']> {
+		return this.request<ApiOperations['getGamesByGameId']['response']>({
+			method: "GET",
+			path: operationPaths.getGamesByGameId,
+			pathParams: options.pathParams,
+			query: options.query,
+			headers: {
+				...options.headers,
+			},
+			body: undefined,
 		});
 	}
 

@@ -2,6 +2,7 @@
 	import { onMount } from 'svelte';
 
 	import AccessNoticeCard from '../shared/AccessNoticeCard.svelte';
+	import GamePicker from '../../shared/GamePicker.svelte';
 	import RequestStatusDialog from './RequestStatusDialog.svelte';
 	import { getApiAdapter } from '../../../libs/api/adapters/api.adapter.ts';
 	import { ensureAuthSession, getErrorMessage, isAuthenticatedSession, subscribeAuthSession, type AuthSession } from '../../../libs/api/auth/session.ts';
@@ -83,6 +84,8 @@
 		charactersAddGameLabel: string;
 		charactersUnknownGameLabel: string;
 		charactersEmptyForGameTitle: string;
+		addGameComingSoonTitle: string;
+		addGameComingSoonBody: string;
 		pendingBadgeLabel: string;
 		currentUserLabel: string;
 		placeholderActionTitle: string;
@@ -266,7 +269,16 @@
 		}
 
 		const matchedGame = organization?.games.find((game) => game.gameId === normalizedGameId);
-		return matchedGame?.name ?? `${labels.charactersUnknownGameLabel} #${normalizedGameId}`;
+		if (matchedGame) {
+			return matchedGame.displayName?.trim() || matchedGame.name;
+		}
+
+		const matchedCharacterGame = characters.find((character) => character.game?.gameId === normalizedGameId)?.game;
+		if (matchedCharacterGame) {
+			return matchedCharacterGame.displayName?.trim() || matchedCharacterGame.name;
+		}
+
+		return `${labels.charactersUnknownGameLabel} #${normalizedGameId}`;
 	};
 
 	$: availableCharacterGameIds = Array.from(
@@ -279,8 +291,18 @@
 	$: availableCharacterGames = availableCharacterGameIds.map((gameId) => ({
 		gameId,
 		name: getGameLabel(gameId),
+		iconUrl: organization?.games.find((game) => game.gameId === gameId)?.iconUrl ?? null,
+		officialSiteUrl: organization?.games.find((game) => game.gameId === gameId)?.officialSiteUrl ?? null,
+		resolvedIconUrl: organization?.games.find((game) => game.gameId === gameId)?.resolvedIconUrl ?? null,
 		primary: organization?.games.some((game) => game.gameId === gameId && game.primary) ?? false,
 	}));
+
+	const openAddGameComingSoon = () => {
+		openStatus('success', labels.addGameComingSoonTitle, labels.addGameComingSoonBody, {
+			label: labels.confirmLabel,
+			onClick: resetStatusDialog,
+		});
+	};
 
 	$: if (activeTab === 'characters' && availableCharacterGames.length > 0 && !selectedCharacterGameId) {
 		selectedCharacterGameId = getPrimaryManageGameId();
@@ -705,26 +727,23 @@
 									<h3>{labels.charactersManageGameLabel}: {getGameLabel(selectedCharacterGameId)}</h3>
 									<p>{labels.charactersGameScopeHint}</p>
 								</div>
-								<div class="org-manage-game-switcher" role="tablist" aria-label={labels.charactersGameScopeLabel}>
-									{#each availableCharacterGames as game}
-										<button
-											type="button"
-											role="tab"
-											aria-selected={selectedCharacterGameId === String(game.gameId) ? 'true' : 'false'}
-											class:active={selectedCharacterGameId === String(game.gameId)}
-											on:click={() => {
-												selectedCharacterGameId = String(game.gameId);
-											}}
-										>
-											<span>{game.name}</span>
-											{#if game.primary}<strong>Primary</strong>{/if}
-										</button>
-									{/each}
-									<button type="button" class="org-manage-game-add-button" on:click={triggerPlaceholderAction}>
-										<span aria-hidden="true">+</span>
-										{labels.charactersAddGameLabel}
-									</button>
-								</div>
+								<GamePicker
+									variant="inline"
+									bind:value={selectedCharacterGameId}
+									ariaLabel={labels.charactersGameScopeLabel}
+									items={availableCharacterGames.map((game) => ({
+										value: String(game.gameId),
+										label: game.name,
+										iconUrl: game.iconUrl,
+										officialSiteUrl: game.officialSiteUrl,
+										resolvedIconUrl: game.resolvedIconUrl,
+										metaLabel: game.primary ? 'Primary' : null,
+									}))}
+									action={{
+										label: labels.charactersAddGameLabel,
+										onClick: openAddGameComingSoon,
+									}}
+								/>
 							</div>
 						{/if}
 						{#if characters.length === 0}
@@ -868,14 +887,22 @@
 						</label>
 						<label class="manage-field">
 							<span>{labels.createCharacterGameLabel}</span>
-							<select bind:value={createCharacterGameId} disabled={availableCharacterGames.length === 0}>
-								<option value="">
-									{availableCharacterGames.length === 0 ? labels.createCharacterGameHint : labels.createCharacterGameLabel}
-								</option>
-								{#each availableCharacterGames as game}
-									<option value={String(game.gameId)}>{game.name}</option>
-								{/each}
-							</select>
+							<GamePicker
+								bind:value={createCharacterGameId}
+								ariaLabel={labels.createCharacterGameLabel}
+								placeholder={availableCharacterGames.length === 0
+									? labels.createCharacterGameHint
+									: labels.createCharacterGameLabel}
+								disabled={availableCharacterGames.length === 0}
+								items={availableCharacterGames.map((game) => ({
+									value: String(game.gameId),
+									label: game.name,
+									iconUrl: game.iconUrl,
+									officialSiteUrl: game.officialSiteUrl,
+									resolvedIconUrl: game.resolvedIconUrl,
+									metaLabel: game.primary ? 'Primary' : null,
+								}))}
+							/>
 							{#if !availableCharacterGames.length}<em>{labels.createCharacterGameHint}</em>{/if}
 						</label>
 						<label class="manage-field">
@@ -1238,6 +1265,22 @@
 		gap: 14px;
 	}
 
+	:root[data-theme='dark'] .org-manage-game-scope {
+		border-color: color-mix(in srgb, var(--ledger-accent) 18%, var(--line));
+		background:
+			radial-gradient(
+				circle at top left,
+				color-mix(in srgb, var(--ledger-accent) 18%, rgba(255, 255, 255, 0.06)) 0%,
+				transparent 52%
+			),
+			linear-gradient(
+				135deg,
+				color-mix(in srgb, var(--surface-strong) 94%, rgba(255, 255, 255, 0.03)) 0%,
+				color-mix(in srgb, var(--surface) 88%, rgba(44, 120, 79, 0.12)) 100%
+			);
+		box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+	}
+
 	.org-manage-game-scope-copy h3,
 	.org-manage-game-scope-copy p {
 		margin: 0;
@@ -1246,6 +1289,7 @@
 	.org-manage-game-scope-copy h3 {
 		margin-top: 6px;
 		font-size: 1.05rem;
+		color: var(--text-main);
 	}
 
 	.org-manage-game-scope-copy p {
@@ -1261,48 +1305,8 @@
 		color: color-mix(in srgb, var(--ledger-accent-deep) 74%, var(--text-soft));
 	}
 
-	.org-manage-game-switcher {
-		gap: 10px;
-	}
-
-	.org-manage-game-switcher button,
-	.org-manage-game-add-button {
-		min-height: 42px;
-		padding: 0 14px;
-		border-radius: 999px;
-		border: 1px solid color-mix(in srgb, var(--line) 88%, white);
-		background: color-mix(in srgb, var(--surface) 86%, white);
-		color: var(--text-main);
-		font: inherit;
-		font-weight: 700;
-		display: inline-flex;
-		align-items: center;
-		gap: 10px;
-		cursor: pointer;
-	}
-
-	.org-manage-game-switcher button.active {
-		border-color: color-mix(in srgb, var(--ledger-accent) 34%, var(--line));
-		background: linear-gradient(
-			135deg,
-			color-mix(in srgb, var(--ledger-accent) 22%, white),
-			color-mix(in srgb, var(--ledger-accent) 10%, var(--surface))
-		);
-		color: color-mix(in srgb, var(--ledger-accent-deep) 88%, var(--text-main));
-	}
-
-	.org-manage-game-switcher strong {
-		padding: 4px 8px;
-		border-radius: 999px;
-		background: rgba(255, 255, 255, 0.6);
-		font-size: 0.72rem;
-		letter-spacing: 0.06em;
-		text-transform: uppercase;
-	}
-
-	.org-manage-game-add-button span {
-		font-size: 1rem;
-		line-height: 1;
+	:root[data-theme='dark'] .org-manage-game-scope-label {
+		color: color-mix(in srgb, var(--ledger-accent) 42%, white);
 	}
 
 	.org-manage-toolbar {

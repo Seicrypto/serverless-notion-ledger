@@ -39,6 +39,16 @@ export interface ListOrganizationGamesOptions {
 	includeInactive?: boolean;
 }
 
+export interface ListPublicGamesOptions {
+	includeInactive?: boolean;
+}
+
+export interface SearchPublicGamesOptions {
+	limit?: number;
+	name: string;
+	offset?: number;
+}
+
 export interface ListOrganizationsOptions {
 	displayName?: string;
 	gameId?: number;
@@ -263,6 +273,33 @@ export class ApiAdapter {
 			query: {
 				includeInactive: options.includeInactive ? 'true' : undefined,
 			},
+		});
+	}
+
+	listPublicGames(options: ListPublicGamesOptions = {}) {
+		return this.client.getGames({
+			query: {
+				includeInactive: options.includeInactive ? 'true' : undefined,
+			},
+		});
+	}
+
+	searchPublicGames(options: SearchPublicGamesOptions) {
+		return this.client.getGamesSearch({
+			query: options,
+		});
+	}
+
+	getPublicGame(gameId: number) {
+		return this.client.getGamesByGameId({
+			pathParams: { gameId },
+		});
+	}
+
+	updateOfficialGameMetadata(gameId: number, payload: OfficialUpdateGameMetadataRequest) {
+		return this.client.patchOfficialGamesByGameId({
+			pathParams: { gameId },
+			body: payload,
 		});
 	}
 
