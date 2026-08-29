@@ -71,7 +71,7 @@ export type Game = { "description": string | unknown; "iconUrl": string | unknow
 
 export type OrganizationListResponse = { "organizations": Array<OrganizationCard>; "pagination": OffsetPagination; };
 
-export type OrganizationCard = { "description": string | unknown; "display": OrganizationCardDisplay; "games": Array<OrganizationCardGame>; "iconUrl": string | unknown; "id": number; "membership": OrganizationCardMembership; "name": string; "slug": string; "stats": OrganizationCardStats; "tags": Array<string>; };
+export type OrganizationCard = { "description": string | unknown; "display": OrganizationCardDisplay; "games": Array<OrganizationCardGame>; "iconUrl": string | unknown; "id": number; "membership": OrganizationCardMembership; "name": string; "slug": string; "stats": OrganizationCardStats; "tags": Array<string>; "vanity": string | unknown; };
 
 export type OrganizationCardDisplay = { "isSupportedOrg": boolean; "maxVisibleGames": number; "maxVisibleTags": number; };
 

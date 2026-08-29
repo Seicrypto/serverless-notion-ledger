@@ -1,4 +1,3 @@
-import { getApiAdapter } from '../adapters/api.adapter.ts';
 import type { MyOrganizationsResponse } from '../openapi/generated/schema';
 import type { OrganizationCardCacheSnapshot } from './organization-card.ts';
 import { mapApiOrganizationCardToOrganizationCardResponse } from './organization-card.ts';
@@ -11,7 +10,9 @@ function isObject(value: unknown): value is Record<string, unknown> {
 	return typeof value === 'object' && value !== null;
 }
 
-export function createMyOrganizationsCacheSnapshot(response: MyOrganizationsResponse): OrganizationCardCacheSnapshot {
+export function createMyOrganizationsCacheSnapshot(
+	response: MyOrganizationsResponse,
+): OrganizationCardCacheSnapshot {
 	const fetchedAt = new Date().toISOString();
 	const expiresAt = new Date(Date.now() + MY_ORGANIZATIONS_CACHE_TTL_MS).toISOString();
 

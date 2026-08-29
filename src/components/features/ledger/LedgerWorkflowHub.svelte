@@ -68,6 +68,14 @@
 	let dialogPrimaryAction: { label: string; href?: string; onClick?: () => void; variant?: 'primary' | 'secondary' } | null = null;
 	let dialogSecondaryAction: { label: string; href?: string; onClick?: () => void; variant?: 'primary' | 'secondary' } | null = null;
 
+	function getOrganizationReference(organization: OrganizationCardResponse) {
+		return organization.vanity?.trim() || String(organization.id);
+	}
+
+	function findOrganizationByReference(reference: string) {
+		return organizations.find((organization) => getOrganizationReference(organization) === reference) ?? null;
+	}
+
 	function closeDialog() {
 		dialogOpen = false;
 		dialogPrimaryAction = null;
@@ -119,7 +127,7 @@
 	}
 
 	function getSelectedOrganizationCard() {
-		return organizations.find((organization) => organization.slug === selectedOrganization) ?? null;
+		return findOrganizationByReference(selectedOrganization);
 	}
 
 	function refreshRecentEvents() {
@@ -171,18 +179,26 @@
 			return;
 		}
 
-		const organizationSet = new Set(organizations.map((organization) => organization.slug));
 		const recentOrganization =
 			typeof window !== 'undefined'
 				? getLatestActiveOrganization(window.localStorage, window.sessionStorage)
 				: null;
 		const preferredOrganization =
 			typeof window !== 'undefined' ? readPreferredOrganization(window.localStorage) : null;
+		const normalizedInitialOrganization = initialOrganization
+			? findOrganizationByReference(initialOrganization)
+			: null;
+		const normalizedRecentOrganization = recentOrganization
+			? findOrganizationByReference(recentOrganization)
+			: null;
+		const normalizedPreferredOrganization = preferredOrganization
+			? findOrganizationByReference(preferredOrganization)
+			: null;
 		const nextOrganization =
-			(initialOrganization && organizationSet.has(initialOrganization) && initialOrganization) ||
-			(recentOrganization && organizationSet.has(recentOrganization) && recentOrganization) ||
-			(preferredOrganization && organizationSet.has(preferredOrganization) && preferredOrganization) ||
-			organizations[0]?.slug ||
+			(normalizedInitialOrganization && getOrganizationReference(normalizedInitialOrganization)) ||
+			(normalizedRecentOrganization && getOrganizationReference(normalizedRecentOrganization)) ||
+			(normalizedPreferredOrganization && getOrganizationReference(normalizedPreferredOrganization)) ||
+			(organizations[0] && getOrganizationReference(organizations[0])) ||
 			'';
 
 		selectedOrganization = nextOrganization;
@@ -281,7 +297,7 @@
 				<span>{labels.organizationLabel}</span>
 				<select bind:value={selectedOrganization} on:change={handleOrganizationChange}>
 					{#each organizations as organization}
-						<option value={organization.slug}>{organization.name}</option>
+						<option value={getOrganizationReference(organization)}>{organization.name}</option>
 					{/each}
 				</select>
 			</label>

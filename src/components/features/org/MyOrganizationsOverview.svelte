@@ -36,6 +36,9 @@
 	let loading = true;
 	let errorMessage = '';
 
+	const getOrganizationReference = (organization: OrganizationCardResponse) =>
+		organization.vanity?.trim() || String(organization.id);
+
 	const loadOrganizations = async (forceRefresh = false) => {
 		if (!isAuthenticatedSession(session)) {
 			loading = false;
@@ -131,12 +134,12 @@
 						actions={[
 							{
 								label: labels.openOrgDashboardLabel,
-								href: `/${lang}/guilds/dashboard?orgVanity=${encodeURIComponent(organization.slug)}`,
+								href: `/${lang}/guilds/dashboard?orgVanity=${encodeURIComponent(getOrganizationReference(organization))}`,
 								tone: 'primary',
 							},
 							{
 								label: labels.openOrgManageLabel,
-								href: `/${lang}/guilds/manage?orgVanity=${encodeURIComponent(organization.slug)}`,
+								href: `/${lang}/guilds/manage?orgVanity=${encodeURIComponent(getOrganizationReference(organization))}`,
 								tone: 'secondary',
 							},
 						]}
