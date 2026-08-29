@@ -113,6 +113,10 @@
 		return value.trim().toLocaleLowerCase();
 	}
 
+	function findCharacterSummary(characterId: number) {
+		return summaries.find((summaryItem) => summaryItem.characterId === characterId) ?? null;
+	}
+
 	$: normalizedQuery = normalizeSearch(query);
 	$: filteredCharacters = normalizedQuery
 		? characters.filter((character) => character.name.toLocaleLowerCase().includes(normalizedQuery))
@@ -409,7 +413,7 @@
 		{:else}
 			<div class="character-card-grid">
 				{#each pagedCharacters as character}
-					{#if summaries.find((summaryItem) => summaryItem.characterId === character.id) as summaryItem}
+					{#if findCharacterSummary(character.id) as summaryItem}
 						<CharacterLedgerSummaryCard
 							summary={summaryItem}
 							labels={{

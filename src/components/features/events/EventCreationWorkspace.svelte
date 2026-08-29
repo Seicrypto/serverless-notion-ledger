@@ -126,7 +126,6 @@
 		{ value: 'custom', labelKey: 'holderTypeCustom' },
 	];
 
-	export let lang: string;
 	export let organization: string | null = null;
 	export let quickCreateId: string | null = null;
 	export let labels: Labels;
@@ -511,7 +510,6 @@
 
 	<form
 		class="event-form"
-		aria-disabled={!organization}
 		on:submit|preventDefault={() => {
 			void submit();
 		}}
@@ -639,7 +637,7 @@
 
 	{#if quickCreateOpen}
 		<div class="quick-create-backdrop" role="presentation">
-			<section class="quick-create-modal" role="dialog" aria-modal="true" aria-labelledby="quick-create-title">
+			<div class="quick-create-modal" role="dialog" aria-modal="true" aria-labelledby="quick-create-title">
 				<button
 					type="button"
 					class="quick-create-close"
@@ -676,7 +674,7 @@
 						{labels.quickCreateConfirmLabel}
 					</button>
 				</div>
-			</section>
+			</div>
 		</div>
 	{/if}
 
@@ -883,7 +881,6 @@
 	}
 
 	.event-field input.error,
-	.event-field textarea.error,
 	.event-field select.error {
 		border-color: rgba(203, 80, 80, 0.8);
 		box-shadow: 0 0 0 1px rgba(203, 80, 80, 0.14);

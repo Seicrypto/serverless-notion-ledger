@@ -22,15 +22,20 @@
 		return items.reduce((total, item) => total + item.amountTotal, 0);
 	}
 
-	function formatDateTime(value: string | null | undefined) {
-		if (!value) {
+	function formatDateTime(value: unknown) {
+		if (typeof value !== 'string' || !value) {
 			return '—';
+		}
+
+		const date = new Date(value);
+		if (Number.isNaN(date.getTime())) {
+			return value;
 		}
 
 		return new Intl.DateTimeFormat(undefined, {
 			dateStyle: 'medium',
 			timeStyle: 'short',
-		}).format(new Date(value));
+		}).format(date);
 	}
 </script>
 

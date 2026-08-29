@@ -1,4 +1,5 @@
 import type { MyOrganizationsResponse } from '../openapi/generated/schema';
+import { getApiAdapter } from '../adapters/api.adapter.ts';
 import type { OrganizationCardCacheSnapshot } from './organization-card.ts';
 import { mapApiOrganizationCardToOrganizationCardResponse } from './organization-card.ts';
 
