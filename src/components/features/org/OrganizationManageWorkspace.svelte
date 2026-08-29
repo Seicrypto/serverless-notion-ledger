@@ -14,6 +14,7 @@
 		type OrganizationManageSummary,
 	} from '../../../libs/api/organizations/manage-workspace-cache.ts';
 	import { refreshMyOrganizationsCache } from '../../../libs/api/organizations/my-organizations-cache.ts';
+	import { resolveOrganizationQuery } from '../../../libs/organizations/reference.ts';
 
 	interface Labels {
 		title: string;
@@ -422,6 +423,7 @@
 	};
 
 	onMount(() => {
+		orgVanity = resolveOrganizationQuery(orgVanity);
 		void (async () => {
 			session = await ensureAuthSession();
 			hydrateRefreshCooldown();
