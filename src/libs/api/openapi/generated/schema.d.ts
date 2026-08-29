@@ -5,9 +5,11 @@ export type HealthResponse = { "appEnv": string; "ok": boolean; "service": strin
 
 export type RegisterResponse = { "email": string; "message": string; "requiresEmailVerification": boolean; "status": "pending_verification" | "pending_approval" | "active" | "disabled"; "userId": number; };
 
-export type ErrorResponse = { "code": string; "error": string; "requestId": string; };
+export type RegisterConflictResponse = { "canResendVerification": boolean; "code": string; "email": string; "error": string; "requestId": string; "requiresEmailVerification": boolean; "status": "pending_verification" | "pending_approval" | "active" | "disabled"; };
 
 export type ValidationErrorResponse = { "code": string; "error": string; "issues": Array<string>; "requestId": string; };
+
+export type ErrorResponse = { "code": string; "error": string; "requestId": string; };
 
 export type RegisterRequest = { "displayName"?: string; "email": string; "password": string; };
 
@@ -29,7 +31,7 @@ export type UpdateDisplayNameRequest = { "displayName": string; };
 
 export type VerifyEmailResponse = { "email": string; "message": string; "status": "pending_approval" | "active"; "userId": number; };
 
-export type ResendVerificationEmailResponse = { "message": string; };
+export type ResendVerificationEmailResponse = { "email": string; "message": string; "resent": boolean; "status": "pending_verification" | null; };
 
 export type ResendVerificationEmailRequest = { "email": string; };
 

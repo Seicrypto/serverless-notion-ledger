@@ -103,6 +103,25 @@ const t = getI18n(lang);
 			const statusUrl = page.dataset.statusUrl || '/';
 			const idleLabel = submitButton.textContent || 'Submit registration';
 
+			const redirectToAccountStatus = (response, fallbackEmail) => {
+				const nextUrl = new URL(statusUrl, window.location.origin);
+				const resolvedEmail =
+					typeof response?.email === 'string' && response.email.trim() ? response.email : fallbackEmail;
+				if (typeof response?.status === 'string' && response.status) {
+					nextUrl.searchParams.set('status', response.status);
+				}
+				if (typeof response?.code === 'string' && response.code) {
+					nextUrl.searchParams.set('code', response.code);
+				}
+				if (resolvedEmail) {
+					nextUrl.searchParams.set('email', resolvedEmail);
+				}
+				if (response?.status === 'pending_verification') {
+					nextUrl.searchParams.set('mode', 'verify-email');
+				}
+				window.location.href = nextUrl.toString();
+			};
+
 			const setStatus = (state, message) => {
 				status.dataset.state = state;
 				statusText.textContent = message;
@@ -130,15 +149,10 @@ const t = getI18n(lang);
 					if (
 						response.status === 'pending_verification' ||
 						response.status === 'pending_approval' ||
-						response.status === 'disabled'
+						response.status === 'disabled' ||
+						response.status === 'active'
 					) {
-						const nextUrl = new URL(statusUrl, window.location.origin);
-						nextUrl.searchParams.set('status', response.status);
-						nextUrl.searchParams.set('email', email);
-						if (response.status === 'pending_verification') {
-							nextUrl.searchParams.set('mode', 'verify-email');
-						}
-						window.location.href = nextUrl.toString();
+						redirectToAccountStatus(response, email);
 						return;
 					}
 
