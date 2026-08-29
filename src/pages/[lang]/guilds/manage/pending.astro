@@ -1,6 +1,6 @@
 ---
 import Layout from '../../../../layouts/Layout.astro';
-import AccessNoticeCard from '../../../../components/features/shared/AccessNoticeCard.svelte';
+import OrganizationManagePendingWorkspace from '../../../../components/features/org/OrganizationManagePendingWorkspace.svelte';
 import '../../../../styles/app-pages.css';
 import { getI18n, getLangFromUrl } from '../../../../libs/i18n';
 import { buildLayoutLabels } from '../../../../libs/i18n/layoutLabels';
@@ -19,11 +19,38 @@ const orgVanity = Astro.url.searchParams.get('orgVanity') ?? Astro.url.searchPar
 	currentPath={`${Astro.url.pathname}${Astro.url.search}`}
 	labels={buildLayoutLabels(t)}
 >
-	<AccessNoticeCard
+	<OrganizationManagePendingWorkspace
 		client:load
-		title={t.app.orgs_manage_pending_title}
-		body={`${t.app.orgs_manage_pending_intro}${orgVanity ? ` (@${orgVanity})` : ''}`}
-		primaryAction={{ label: t.app.action_back_org_manage, href: `/${lang}/guilds/manage${Astro.url.search}` }}
-		secondaryAction={{ label: t.app.action_view_my_orgs, href: `/${lang}/me/guilds` }}
+		lang={lang}
+		orgVanity={orgVanity}
+		labels={{
+			title: t.app.orgs_manage_pending_title,
+			intro: t.app.orgs_manage_pending_intro,
+			loadingLabel: t.app.orgs_manage_loading_label,
+			authRequiredTitle: t.app.auth_required_title,
+			authRequiredBody: t.app.auth_required_body,
+			loginLabel: t.app.action_login,
+			homeLabel: t.app.action_back_home,
+			missingOrgTitle: t.app.orgs_manage_missing_title,
+			missingOrgBody: t.app.orgs_manage_missing_body,
+			backManageLabel: t.app.orgs_manage_pending_back_manage_label,
+			currentUserLabel: t.app.orgs_manage_current_user_label,
+			relatedBadgeLabel: t.app.orgs_manage_pending_related_badge_label,
+			memberSectionTitle: t.app.orgs_manage_pending_member_section_title,
+			memberSectionIntro: t.app.orgs_manage_pending_member_section_intro,
+			claimSectionTitle: t.app.orgs_manage_pending_claim_section_title,
+			claimSectionIntro: t.app.orgs_manage_pending_claim_section_intro,
+			emptyMembersTitle: t.app.orgs_manage_pending_empty_members_title,
+			emptyClaimsTitle: t.app.orgs_manage_pending_empty_claims_title,
+			localClaimsNote: t.app.orgs_manage_pending_local_claims_note,
+			kindInviteLabel: t.app.orgs_manage_pending_kind_invite_label,
+			kindApplyLabel: t.app.orgs_manage_pending_kind_apply_label,
+			requestedByLabel: t.app.orgs_manage_pending_requested_by_label,
+			targetLabel: t.app.orgs_manage_pending_target_label,
+			roleLabel: t.app.orgs_manage_pending_role_label,
+			characterLabel: t.app.orgs_manage_pending_character_label,
+			gameLabel: t.app.orgs_manage_pending_game_label,
+			errorTitle: t.app.orgs_manage_save_error_title,
+		}}
 	/>
 </Layout>
