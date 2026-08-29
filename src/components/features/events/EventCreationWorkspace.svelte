@@ -2,6 +2,7 @@
 	import { onMount } from 'svelte';
 
 	import RequestStatusDialog from '../org/RequestStatusDialog.svelte';
+	import GamePicker from '../../shared/GamePicker.svelte';
 	import { getApiAdapter } from '../../../libs/api/adapters/api.adapter.ts';
 	import { getErrorMessage } from '../../../libs/api/auth/session.ts';
 	import {
@@ -16,6 +17,9 @@
 	interface GameOption {
 		id: number;
 		name: string;
+		iconUrl: string | null;
+		officialSiteUrl: string | null;
+		resolvedIconUrl: string | null;
 	}
 
 	interface AssetInputRow {
@@ -390,6 +394,9 @@
 				.map((game) => ({
 					id: game.id,
 					name: game.name,
+					iconUrl: typeof game.iconUrl === 'string' ? game.iconUrl : null,
+					officialSiteUrl: typeof game.officialSiteUrl === 'string' ? game.officialSiteUrl : null,
+					resolvedIconUrl: typeof game.resolvedIconUrl === 'string' ? game.resolvedIconUrl : null,
 				}));
 		} catch (error) {
 			gamesError = getErrorMessage(error, labels.errorCreateTitle);
@@ -553,12 +560,20 @@
 
 			<label class="event-field">
 				<span>{labels.gameIdLabel}</span>
-				<select class:error={Boolean(errors.gameId)} bind:value={gameId} disabled={!organization || gamesLoading}>
-					<option value="">{gamesLoading ? labels.loadingGames : labels.gameOptionalHint}</option>
-					{#each games as game}
-						<option value={String(game.id)}>{game.name}</option>
-					{/each}
-				</select>
+				<GamePicker
+					bind:value={gameId}
+					ariaLabel={labels.gameIdLabel}
+					placeholder={gamesLoading ? labels.loadingGames : labels.gameOptionalHint}
+					disabled={!organization || gamesLoading}
+					error={Boolean(errors.gameId)}
+					items={games.map((game) => ({
+						value: String(game.id),
+						label: game.name,
+						iconUrl: game.iconUrl,
+						officialSiteUrl: game.officialSiteUrl,
+						resolvedIconUrl: game.resolvedIconUrl,
+					}))}
+				/>
 				<small>{labels.optionalHint}</small>
 				{#if errors.gameId}<em>{errors.gameId}</em>{/if}
 				{#if gamesError}<em>{gamesError}</em>{/if}

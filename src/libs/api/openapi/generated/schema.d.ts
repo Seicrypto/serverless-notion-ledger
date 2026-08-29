@@ -67,9 +67,27 @@ export type Asset = { "assetKey": string; "assetType": "item" | "currency" | "ti
 
 export type MergeAssetRequest = { "targetAssetId": number; };
 
+export type OfficialManagedGameResponse = { "game": OfficialManagedGame; "message": string; };
+
+export type OfficialManagedGame = { "iconUrl": string | unknown; "id": number; "metadataSource": "inherited" | "official"; "name": string; "officialSiteUrl": string | unknown; };
+
+export type OfficialUpdateGameMetadataRequest = { "iconUrl"?: string | unknown; "officialSiteUrl"?: string | unknown; };
+
+export type PublicGameListResponse = { "games": Array<PublicGame>; };
+
+export type PublicGame = { "description": string | unknown; "iconUrl": string | unknown; "id": number; "isActive": boolean; "metadataSource": "inherited" | "official"; "name": string; "officialSiteUrl": string | unknown; "resolvedIconUrl": string | unknown; "slug": string; "source": "internal" | "steam"; "sourceId": string | unknown; "type": "game" | "activity"; };
+
+export type PublicGameSearchResponse = { "games": Array<PublicGameSearchItem>; "pagination": GamesOffsetPagination; };
+
+export type PublicGameSearchItem = { "iconUrl": string | unknown; "id": number; "name": string; "officialSiteUrl": string | unknown; };
+
+export type GamesOffsetPagination = { "hasMore": boolean; "limit": number; "offset": number; };
+
+export type PublicGameDetailResponse = { "game": PublicGame; };
+
 export type GameListResponse = { "games": Array<Game>; };
 
-export type Game = { "description": string | unknown; "iconUrl": string | unknown; "id": number; "isActive": boolean; "name": string; "slug": string; "source": "internal" | "steam"; "sourceId": string | unknown; "type": "game" | "activity"; };
+export type Game = { "description": string | unknown; "iconUrl": string | unknown; "id": number; "isActive": boolean; "metadataSource": "inherited" | "official"; "name": string; "officialSiteUrl": string | unknown; "resolvedIconUrl": string | unknown; "slug": string; "source": "internal" | "steam"; "sourceId": string | unknown; "type": "game" | "activity"; };
 
 export type OrganizationListResponse = { "organizations": Array<OrganizationCard>; "pagination": OffsetPagination; };
 
@@ -91,11 +109,15 @@ export type OrganizationDetailResponse = { "organization": OrganizationSearchIte
 
 export type OrganizationSearchItem = Organization & { "activeCharacterCount": number; "activeMemberCount": number; "games": Array<OrganizationGameSummary>; };
 
-export type OrganizationGameSummary = { "displayName": string | unknown; "gameId": number; "gameName": string; "gameSlug": string; "isPrimary": boolean; "source": "internal" | "steam"; "sourceId": string | unknown; "type": "game" | "activity"; };
+export type OrganizationGameSummary = { "displayName": string | unknown; "gameId": number; "iconUrl": string | unknown; "gameName": string; "gameSlug": string; "isPrimary": boolean; "metadataSource": "inherited" | "official"; "officialSiteUrl": string | unknown; "resolvedIconUrl": string | unknown; "source": "internal" | "steam"; "sourceId": string | unknown; "type": "game" | "activity"; };
 
 export type Organization = { "createdAt": string; "createdByUserId": number; "description": string | unknown; "iconUrl": string | unknown; "id": number; "name": string; "updatedAt": string; "vanity": string | unknown; };
 
-export type OrganizationCharactersResponse = { "characters": Array<OrganizationCharacter>; };
+export type OrganizationCharactersResponse = { "characters": Array<OrganizationCharacterWithGame>; };
+
+export type OrganizationCharacterWithGame = OrganizationCharacter & { "game": OrganizationCharacterGame; };
+
+export type OrganizationCharacterGame = { "displayName": string | unknown; "gameId": number; "iconUrl": string | unknown; "gameName": string; "gameSlug": string; "isPrimary": boolean; "metadataSource": "inherited" | "official"; "officialSiteUrl": string | unknown; "resolvedIconUrl": string | unknown; "source": "internal" | "steam"; "sourceId": string | unknown; "type": "game" | "activity"; } | { "displayName": string | unknown; "gameId": number; "iconUrl": string | unknown; "gameName": string; "gameSlug": string; "isPrimary": boolean; "metadataSource": "inherited" | "official"; "officialSiteUrl": string | unknown; "resolvedIconUrl": string | unknown; "source": "internal" | "steam"; "sourceId": string | unknown; "type": "game" | "activity"; };
 
 export type OrganizationCharacter = { "claimedByUserId": number | unknown; "createdAt": string; "gameId": number | unknown; "id": number; "isActive": boolean; "name": string; "notes": string | unknown; "organizationId": number; "slug": string | unknown; "updatedAt": string; "vanity": string | unknown; };
 
@@ -105,7 +127,7 @@ export type OrganizationMember = { "approvedAt": string | unknown; "createdAt": 
 
 export type OrganizationManagementCharactersResponse = { "characters": Array<OrganizationManagementCharacter>; };
 
-export type OrganizationManagementCharacter = { "claimedBy": { "displayName": string | unknown; "userId": number; "vanity": string | unknown; } | { "displayName": string | unknown; "userId": number; "vanity": string | unknown; }; "description": string | unknown; "displayName": string; "id": number; "isClaimed": boolean; "slug": string | unknown; "vanity": string | unknown; };
+export type OrganizationManagementCharacter = { "claimedBy": { "displayName": string | unknown; "userId": number; "vanity": string | unknown; } | { "displayName": string | unknown; "userId": number; "vanity": string | unknown; }; "description": string | unknown; "displayName": string; "game": OrganizationCharacterGame; "id": number; "isClaimed": boolean; "slug": string | unknown; "vanity": string | unknown; };
 
 export type OrganizationActiveMembersResponse = { "members": Array<OrganizationActiveMember>; };
 
@@ -115,7 +137,7 @@ export type OrganizationPendingMembersResponse = { "members": Array<Organization
 
 export type OrganizationPendingMember = { "displayName": string | unknown; "invitedByUserId": number | unknown; "memberId": number; "pendingCharacter": OrganizationMemberAssignmentCharacter; "pendingKind": "apply" | "invite"; "role": "owner" | "admin" | "member"; "status": "pending"; "userId": number; "userVanity": string | unknown; };
 
-export type OrganizationMemberAssignmentCharacter = { "characterId": number | unknown; "description": string | unknown; "name": string; "slug": string | unknown; "vanity": string | unknown; } | { "characterId": number | unknown; "description": string | unknown; "name": string; "slug": string | unknown; "vanity": string | unknown; };
+export type OrganizationMemberAssignmentCharacter = { "characterId": number | unknown; "description": string | unknown; "game": OrganizationCharacterGame; "name": string; "slug": string | unknown; "vanity": string | unknown; } | { "characterId": number | unknown; "description": string | unknown; "game": OrganizationCharacterGame; "name": string; "slug": string | unknown; "vanity": string | unknown; };
 
 export type OrganizationAvailableCharactersResponse = { "characters": Array<OrganizationMemberAssignmentCharacter>; };
 

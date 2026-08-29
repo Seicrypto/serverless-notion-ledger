@@ -177,6 +177,9 @@ export const app = {
 	orgs_manage_characters_add_game_label: 'Add game',
 	orgs_manage_characters_unknown_game_label: 'Unknown game',
 	orgs_manage_empty_characters_for_game_title: 'There are no characters in this game yet',
+	orgs_manage_add_game_coming_soon_title: 'Feature coming soon',
+	orgs_manage_add_game_coming_soon_body:
+		'Adding more games to this guild from the management page is not available yet, but this workflow is planned.',
 	orgs_manage_pending_badge_label: 'Pending',
 	orgs_manage_current_user_label: 'You',
 	orgs_manage_placeholder_title: 'The UI is ready for this action',

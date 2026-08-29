@@ -3,7 +3,11 @@ import { getApiAdapter } from '../adapters/api.adapter.ts';
 export interface OrganizationManageGameSummary {
 	gameId: number;
 	name: string;
+	displayName: string | null;
 	slug: string;
+	iconUrl: string | null;
+	officialSiteUrl: string | null;
+	resolvedIconUrl: string | null;
 	primary: boolean;
 }
 
@@ -27,6 +31,7 @@ export interface OrganizationManageCharacter {
 	slug: string | null;
 	vanity: string | null;
 	gameId: number | null;
+	game: OrganizationManageGameSummary | null;
 	isClaimed: boolean;
 	claimedBy: {
 		userId: number;
@@ -57,6 +62,36 @@ const CACHE_KEY_PREFIX = 'raid-ledger.org-manage-cache';
 
 function toNullableString(value: unknown) {
 	return typeof value === 'string' ? value : null;
+}
+
+function mapGameSummary(
+	game:
+		| {
+				gameId: number;
+				gameName: string;
+				gameSlug: string;
+				displayName?: unknown;
+				iconUrl?: unknown;
+				resolvedIconUrl?: unknown;
+				isPrimary: boolean;
+		  }
+		| null
+		| undefined,
+): OrganizationManageGameSummary | null {
+	if (!game || typeof game.gameId !== 'number') {
+		return null;
+	}
+
+	return {
+		gameId: game.gameId,
+		name: game.gameName,
+		displayName: toNullableString(game.displayName),
+		slug: game.gameSlug,
+		iconUrl: toNullableString(game.iconUrl),
+		officialSiteUrl: null,
+		resolvedIconUrl: toNullableString(game.resolvedIconUrl),
+		primary: game.isPrimary,
+	};
 }
 
 function createCacheKey(orgVanity: string) {
@@ -119,10 +154,10 @@ async function fetchSnapshot(orgVanity: string) {
 		getApiAdapter().listOrganizationCharacters(orgVanity),
 		getApiAdapter().listOrganizationActiveMembers(orgVanity),
 	]);
-	const rawCharacterGameIds = new Map(
+	const rawCharacterGames = new Map(
 		rawCharactersResponse.characters.map((character) => [
 			character.id,
-			typeof character.gameId === 'number' ? character.gameId : null,
+			mapGameSummary(character.game),
 		]),
 	);
 
@@ -140,7 +175,11 @@ async function fetchSnapshot(orgVanity: string) {
 			games: organizationResponse.organization.games.map((game) => ({
 				gameId: game.gameId,
 				name: game.gameName,
+				displayName: toNullableString(game.displayName),
 				slug: game.gameSlug,
+				iconUrl: toNullableString(game.iconUrl),
+				officialSiteUrl: toNullableString(game.officialSiteUrl),
+				resolvedIconUrl: toNullableString(game.resolvedIconUrl),
 				primary: game.isPrimary,
 			})),
 		},
@@ -150,7 +189,10 @@ async function fetchSnapshot(orgVanity: string) {
 			description: toNullableString(character.description),
 			slug: toNullableString(character.slug),
 			vanity: toNullableString(character.vanity),
-			gameId: rawCharacterGameIds.get(character.id) ?? null,
+			gameId:
+				rawCharacterGames.get(character.id)?.gameId ??
+				(typeof character.game?.gameId === 'number' ? character.game.gameId : null),
+			game: mapGameSummary(character.game) ?? rawCharacterGames.get(character.id) ?? null,
 			isClaimed: character.isClaimed,
 			claimedBy:
 				character.claimedBy && typeof character.claimedBy.userId === 'number'

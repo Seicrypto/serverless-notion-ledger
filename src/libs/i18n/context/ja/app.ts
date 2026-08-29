@@ -177,6 +177,9 @@ export const app = {
 	orgs_manage_characters_add_game_label: 'ゲームを追加',
 	orgs_manage_characters_unknown_game_label: '不明なゲーム',
 	orgs_manage_empty_characters_for_game_title: 'このゲームにはまだキャラクターがありません',
+	orgs_manage_add_game_coming_soon_title: '機能準備中です',
+	orgs_manage_add_game_coming_soon_body:
+		'この管理ページからギルドにゲームを追加する機能は、今後対応予定です。もう少しだけお待ちください。',
 	orgs_manage_pending_badge_label: 'Pending',
 	orgs_manage_current_user_label: 'あなた',
 	orgs_manage_placeholder_title: 'この操作の UI は先に用意しました',

@@ -2,6 +2,7 @@
 	import { onMount } from 'svelte';
 
 	import RequestStatusDialog from './RequestStatusDialog.svelte';
+	import GamePicker from '../../shared/GamePicker.svelte';
 	import { getApiAdapter } from '../../../libs/api/adapters/api.adapter.ts';
 	import { getErrorMessage } from '../../../libs/api/auth/session.ts';
 	import { refreshMyOrganizationsCache } from '../../../libs/api/organizations/my-organizations-cache.ts';
@@ -9,6 +10,9 @@
 interface GameOption {
 	id: number;
 	name: string;
+	iconUrl: string | null;
+	officialSiteUrl: string | null;
+	resolvedIconUrl: string | null;
 }
 
 	interface Labels {
@@ -178,6 +182,9 @@ const CREATE_TIMEOUT_MS = 15000;
 				.map((game) => ({
 					id: game.id,
 					name: game.name,
+					iconUrl: typeof game.iconUrl === 'string' ? game.iconUrl : null,
+					officialSiteUrl: typeof game.officialSiteUrl === 'string' ? game.officialSiteUrl : null,
+					resolvedIconUrl: typeof game.resolvedIconUrl === 'string' ? game.resolvedIconUrl : null,
 				}));
 			if (!gameId && games[0]) {
 				gameId = String(games[0].id);
@@ -290,12 +297,20 @@ const CREATE_TIMEOUT_MS = 15000;
 
 			<label class="create-org-field">
 				<span>{labels.gameLabel}</span>
-				<select class:error={Boolean(errors.gameId)} bind:value={gameId} disabled={gamesLoading || games.length === 0}>
-					<option value="">{gamesLoading ? labels.loadingGames : labels.gameLabel}</option>
-					{#each games as game}
-						<option value={String(game.id)}>{game.name}</option>
-					{/each}
-				</select>
+				<GamePicker
+					bind:value={gameId}
+					ariaLabel={labels.gameLabel}
+					placeholder={gamesLoading ? labels.loadingGames : labels.gameLabel}
+					disabled={gamesLoading || games.length === 0}
+					error={Boolean(errors.gameId)}
+					items={games.map((game) => ({
+						value: String(game.id),
+						label: game.name,
+						iconUrl: game.iconUrl,
+						officialSiteUrl: game.officialSiteUrl,
+						resolvedIconUrl: game.resolvedIconUrl,
+					}))}
+				/>
 				<small>{labels.requiredHint}</small>
 				{#if errors.gameId}<em>{errors.gameId}</em>{/if}
 				{#if gamesError}<em>{gamesError}</em>{/if}
@@ -380,8 +395,7 @@ const CREATE_TIMEOUT_MS = 15000;
 	}
 
 	.create-org-field input,
-	.create-org-field textarea,
-	.create-org-field select {
+	.create-org-field textarea {
 		width: 100%;
 		min-height: 48px;
 		padding: 0 16px;
@@ -399,8 +413,7 @@ const CREATE_TIMEOUT_MS = 15000;
 	}
 
 	.create-org-field input.error,
-	.create-org-field textarea.error,
-	.create-org-field select.error {
+	.create-org-field textarea.error {
 		border-color: rgba(203, 80, 80, 0.8);
 		box-shadow: 0 0 0 1px rgba(203, 80, 80, 0.14);
 	}

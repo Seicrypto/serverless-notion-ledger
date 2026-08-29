@@ -176,6 +176,8 @@ export const app = {
 	orgs_manage_characters_add_game_label: '新增遊戲',
 	orgs_manage_characters_unknown_game_label: '未知遊戲',
 	orgs_manage_empty_characters_for_game_title: '這個遊戲目前還沒有角色',
+	orgs_manage_add_game_coming_soon_title: '功能即將推出',
+	orgs_manage_add_game_coming_soon_body: '之後會支援在這個管理頁直接為公會加入更多遊戲，這個功能目前還在準備中。',
 	orgs_manage_pending_badge_label: 'Pending',
 	orgs_manage_current_user_label: '你',
 	orgs_manage_placeholder_title: '這個功能的畫面已先建立',
