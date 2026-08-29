@@ -3,8 +3,9 @@
 import type {
 	HealthResponse,
 	RegisterResponse,
-	ErrorResponse,
+	RegisterConflictResponse,
 	ValidationErrorResponse,
+	ErrorResponse,
 	RegisterRequest,
 	LoginResponse,
 	LoginRequest,

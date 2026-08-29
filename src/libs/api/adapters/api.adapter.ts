@@ -16,7 +16,9 @@ import type {
 	InviteOrganizationMemberRequest,
 	LoginRequest,
 	MergeAssetRequest,
+	RegisterConflictResponse,
 	RegisterRequest,
+	RegisterResponse,
 	ResetPasswordRequest,
 	UpdateUserVanityRequest,
 	UpdateLedgerAllocationStatusRequest,
@@ -104,6 +106,39 @@ function normalizeOrganizationReference(organization: OrganizationReference) {
 	return String(organization);
 }
 
+function isObject(value: unknown): value is Record<string, unknown> {
+	return typeof value === 'object' && value !== null;
+}
+
+function parseJsonObject(raw: string) {
+	try {
+		const parsed = JSON.parse(raw);
+		return isObject(parsed) ? parsed : null;
+	} catch {
+		return null;
+	}
+}
+
+function isRegisterConflictResponse(value: unknown): value is RegisterConflictResponse {
+	if (!isObject(value)) {
+		return false;
+	}
+
+	return (
+		typeof value.email === 'string' &&
+		typeof value.error === 'string' &&
+		typeof value.code === 'string' &&
+		typeof value.canResendVerification === 'boolean' &&
+		typeof value.requiresEmailVerification === 'boolean' &&
+		(value.status === 'pending_verification' ||
+			value.status === 'pending_approval' ||
+			value.status === 'active' ||
+			value.status === 'disabled')
+	);
+}
+
+export type RegisterResult = RegisterResponse | RegisterConflictResponse;
+
 export class ApiAdapter {
 	private readonly client: ApiClientLike;
 
@@ -115,8 +150,19 @@ export class ApiAdapter {
 		return this.client.getHealthz();
 	}
 
-	register(payload: RegisterRequest) {
-		return this.client.postAuthRegister({ body: payload });
+	async register(payload: RegisterRequest): Promise<RegisterResult> {
+		try {
+			return await this.client.postAuthRegister({ body: payload });
+		} catch (error) {
+			if (error instanceof Error) {
+				const parsed = parseJsonObject(error.message);
+				if (isRegisterConflictResponse(parsed)) {
+					return parsed;
+				}
+			}
+
+			throw error;
+		}
 	}
 
 	login(payload: LoginRequest) {

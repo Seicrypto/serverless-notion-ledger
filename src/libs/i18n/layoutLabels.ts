@@ -15,7 +15,6 @@ export function buildLayoutLabels(t: I18nSchema) {
 		navigation: t.common.navigation,
 		navOverview: t.common.nav_overview,
 		navMy: t.common.nav_my,
-		navEvents: t.common.nav_events,
 		navOrgs: t.common.nav_orgs,
 		officialDashboard: t.common.official_dashboard,
 		userStatus: t.common.user_status,

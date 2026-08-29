@@ -11,9 +11,7 @@
 	import type { LedgerEvent } from '../../../libs/api/openapi/generated/schema';
 
 	interface Labels {
-		eyebrow: string;
 		title: string;
-		intro: string;
 		authRequiredTitle: string;
 		authRequiredBody: string;
 		loginLabel: string;
@@ -23,7 +21,7 @@
 		noOrganizationsBody: string;
 		findOrganizationsLabel: string;
 		organizationLabel: string;
-		organizationHint: string;
+		organizationCurrentPrefix: string;
 		organizationStatsMembers: string;
 		organizationStatsCharacters: string;
 		eventCardEyebrow: string;
@@ -70,6 +68,14 @@
 	let dialogPrimaryAction: { label: string; href?: string; onClick?: () => void; variant?: 'primary' | 'secondary' } | null = null;
 	let dialogSecondaryAction: { label: string; href?: string; onClick?: () => void; variant?: 'primary' | 'secondary' } | null = null;
 
+	function getOrganizationReference(organization: OrganizationCardResponse) {
+		return organization.vanity?.trim() || String(organization.id);
+	}
+
+	function findOrganizationByReference(reference: string) {
+		return organizations.find((organization) => getOrganizationReference(organization) === reference) ?? null;
+	}
+
 	function closeDialog() {
 		dialogOpen = false;
 		dialogPrimaryAction = null;
@@ -88,7 +94,7 @@
 		dialogOpen = true;
 		dialogTitle = labels.noOrganizationsTitle;
 		dialogMessage = labels.noOrganizationsBody;
-		dialogPrimaryAction = { label: labels.findOrganizationsLabel, href: `/${lang}/orgs`, variant: 'primary' };
+		dialogPrimaryAction = { label: labels.findOrganizationsLabel, href: `/${lang}/guilds`, variant: 'primary' };
 		dialogSecondaryAction = { label: labels.homeLabel, href: `/${lang}/`, variant: 'secondary' };
 	}
 
@@ -121,7 +127,7 @@
 	}
 
 	function getSelectedOrganizationCard() {
-		return organizations.find((organization) => organization.slug === selectedOrganization) ?? null;
+		return findOrganizationByReference(selectedOrganization);
 	}
 
 	function refreshRecentEvents() {
@@ -173,18 +179,26 @@
 			return;
 		}
 
-		const organizationSet = new Set(organizations.map((organization) => organization.slug));
 		const recentOrganization =
 			typeof window !== 'undefined'
 				? getLatestActiveOrganization(window.localStorage, window.sessionStorage)
 				: null;
 		const preferredOrganization =
 			typeof window !== 'undefined' ? readPreferredOrganization(window.localStorage) : null;
+		const normalizedInitialOrganization = initialOrganization
+			? findOrganizationByReference(initialOrganization)
+			: null;
+		const normalizedRecentOrganization = recentOrganization
+			? findOrganizationByReference(recentOrganization)
+			: null;
+		const normalizedPreferredOrganization = preferredOrganization
+			? findOrganizationByReference(preferredOrganization)
+			: null;
 		const nextOrganization =
-			(initialOrganization && organizationSet.has(initialOrganization) && initialOrganization) ||
-			(recentOrganization && organizationSet.has(recentOrganization) && recentOrganization) ||
-			(preferredOrganization && organizationSet.has(preferredOrganization) && preferredOrganization) ||
-			organizations[0]?.slug ||
+			(normalizedInitialOrganization && getOrganizationReference(normalizedInitialOrganization)) ||
+			(normalizedRecentOrganization && getOrganizationReference(normalizedRecentOrganization)) ||
+			(normalizedPreferredOrganization && getOrganizationReference(normalizedPreferredOrganization)) ||
+			(organizations[0] && getOrganizationReference(organizations[0])) ||
 			'';
 
 		selectedOrganization = nextOrganization;
@@ -216,20 +230,20 @@
 	}
 
 	$: selectedOrganizationCard = getSelectedOrganizationCard();
-	$: eventCreateHref = selectedOrganization ? `/${lang}/orgs/events/new?orgVanity=${encodeURIComponent(selectedOrganization)}` : `/${lang}/login`;
+	$: eventCreateHref = selectedOrganization ? `/${lang}/guilds/events/new?orgVanity=${encodeURIComponent(selectedOrganization)}` : `/${lang}/login`;
 	$: eventDuplicateHref =
 		selectedOrganization && selectedRecentEventId
-			? `/${lang}/orgs/events/new?orgVanity=${encodeURIComponent(selectedOrganization)}&quickCreateId=${encodeURIComponent(selectedRecentEventId)}`
+			? `/${lang}/guilds/events/new?orgVanity=${encodeURIComponent(selectedOrganization)}&quickCreateId=${encodeURIComponent(selectedRecentEventId)}`
 			: eventCreateHref;
 	$: settlementCreateHref = selectedOrganization
-		? `/${lang}/orgs/settlements/new?orgVanity=${encodeURIComponent(selectedOrganization)}`
+		? `/${lang}/guilds/settlements/new?orgVanity=${encodeURIComponent(selectedOrganization)}`
 		: `/${lang}/login`;
 	$: settlementQuickHref =
 		selectedOrganization && selectedSettleableEventId
-			? `/${lang}/orgs/settlements/new?orgVanity=${encodeURIComponent(selectedOrganization)}&eventId=${encodeURIComponent(selectedSettleableEventId)}`
+			? `/${lang}/guilds/settlements/new?orgVanity=${encodeURIComponent(selectedOrganization)}&eventId=${encodeURIComponent(selectedSettleableEventId)}`
 			: settlementCreateHref;
 	$: claimHref = selectedOrganization
-		? `/${lang}/orgs/claim?orgVanity=${encodeURIComponent(selectedOrganization)}`
+		? `/${lang}/guilds/claim?orgVanity=${encodeURIComponent(selectedOrganization)}`
 		: `/${lang}/login`;
 
 	onMount(() => {
@@ -249,36 +263,27 @@
 	});
 </script>
 
-<section class="app-hero">
-	<div class="app-hero-copy ledger-hero">
-		<p class="app-eyebrow">{labels.eyebrow}</p>
-		<h1>{labels.title}</h1>
-		<p class="app-intro">{labels.intro}</p>
-	</div>
-
-	<aside class="app-status-card ledger-status">
-		<p class="app-status-label">{labels.organizationLabel}</p>
-		{#if selectedOrganizationCard}
-			<p class="app-status-value">{selectedOrganizationCard.name}</p>
-			<p class="app-intro">
-				{labels.organizationStatsMembers}: {selectedOrganizationCard.stats.memberCount}
-				<br />
-				{labels.organizationStatsCharacters}: {selectedOrganizationCard.stats.characterCount}
-			</p>
-		{:else}
-			<p class="app-status-value">{labels.organizationHint}</p>
-		{/if}
-	</aside>
-</section>
-
 <section class="app-section">
-	<article class="workspace-card">
-		<div class="workspace-head">
-			<div>
-				<p class="app-card-label">{labels.organizationLabel}</p>
-				<h2>{labels.organizationLabel}</h2>
-				<p>{labels.organizationHint}</p>
+	<article class="workspace-card ledger-context-card">
+		<div class="ledger-context-head">
+			<div class="ledger-context-copy">
+				<h1>{labels.title}</h1>
+				{#if selectedOrganizationCard}
+					<p class="ledger-context-current">
+						{labels.organizationCurrentPrefix}
+						<strong>{selectedOrganizationCard.name}</strong>
+					</p>
+				{:else}
+					<p class="ledger-context-current">{labels.organizationCurrentPrefix}</p>
+				{/if}
 			</div>
+			{#if selectedOrganizationCard}
+				<p class="ledger-context-stats">
+					{labels.organizationStatsMembers}: {selectedOrganizationCard.stats.memberCount}
+					<span aria-hidden="true"> · </span>
+					{labels.organizationStatsCharacters}: {selectedOrganizationCard.stats.characterCount}
+				</p>
+			{/if}
 		</div>
 
 		{#if pageError}
@@ -288,11 +293,11 @@
 		{:else if !organizations.length}
 			<p class="workspace-meta">{labels.noOrganizationsBody}</p>
 		{:else}
-			<label class="workspace-field">
+			<label class="workspace-field ledger-context-field">
 				<span>{labels.organizationLabel}</span>
 				<select bind:value={selectedOrganization} on:change={handleOrganizationChange}>
 					{#each organizations as organization}
-						<option value={organization.slug}>{organization.name}</option>
+						<option value={getOrganizationReference(organization)}>{organization.name}</option>
 					{/each}
 				</select>
 			</label>
@@ -378,21 +383,6 @@
 />
 
 <style>
-	.ledger-hero {
-		background:
-			radial-gradient(circle at top right, color-mix(in srgb, var(--ledger-accent) 18%, transparent), transparent 44%),
-			var(--surface);
-	}
-
-	.ledger-status {
-		background:
-			linear-gradient(
-				180deg,
-				color-mix(in srgb, var(--ledger-accent-soft) 74%, white),
-				color-mix(in srgb, var(--surface) 84%, white)
-			);
-	}
-
 	.workspace-card {
 		padding: 24px;
 		border: 1px solid color-mix(in srgb, var(--line) 92%, white);
@@ -403,13 +393,34 @@
 		gap: 16px;
 	}
 
-	.workspace-head h2,
+	.ledger-context-card {
+		gap: 14px;
+		background:
+			radial-gradient(circle at top right, color-mix(in srgb, var(--ledger-accent) 12%, transparent), transparent 38%),
+			linear-gradient(180deg, color-mix(in srgb, var(--surface) 94%, white), var(--surface));
+	}
+
+	.ledger-context-head {
+		display: flex;
+		align-items: end;
+		justify-content: space-between;
+		gap: 16px;
+		flex-wrap: wrap;
+	}
+
+	.ledger-context-copy h1,
 	.ledger-card h2 {
-		margin: 10px 0 0;
+		margin: 0;
 		letter-spacing: -0.03em;
 	}
 
-	.workspace-head p:last-child,
+	.ledger-context-copy {
+		display: grid;
+		gap: 8px;
+	}
+
+	.ledger-context-current,
+	.ledger-context-stats,
 	.workspace-meta,
 	.ledger-card p,
 	.workspace-error {
@@ -422,6 +433,16 @@
 		color: #c43c3c;
 	}
 
+	.ledger-context-current strong {
+		color: var(--text-main);
+	}
+
+	.ledger-context-stats {
+		font-size: 0.95rem;
+		font-weight: 700;
+		white-space: nowrap;
+	}
+
 	.workspace-field {
 		display: grid;
 		gap: 8px;
@@ -430,6 +451,10 @@
 	.workspace-field span {
 		font-size: 0.94rem;
 		font-weight: 700;
+	}
+
+	.ledger-context-field {
+		margin-top: 2px;
 	}
 
 	.workspace-field select {
@@ -503,6 +528,10 @@
 		.workspace-card {
 			padding: 20px;
 			border-radius: 22px;
+		}
+
+		.ledger-context-stats {
+			white-space: normal;
 		}
 	}
 </style>

@@ -11,9 +11,16 @@
 		supportedOrg: string;
 	}
 
+	interface ActionLink {
+		label: string;
+		href: string;
+		tone?: 'primary' | 'secondary';
+	}
+
 	export let organization: OrganizationCardResponse;
 	export let href: string = '#';
 	export let actionLabel: string = 'Open';
+	export let actions: ActionLink[] = [];
 	export let labels: PropsLabels = {
 		members: 'Members',
 		characters: 'Characters',
@@ -60,6 +67,10 @@
 	$: membershipStatusLabel = organization.membership?.status
 		? MEMBERSHIP_STATUS_LABELS[organization.membership.status]
 		: null;
+	$: resolvedActions =
+		actions.length > 0
+			? actions
+			: [{ label: actionLabel, href, tone: 'secondary' as const }];
 </script>
 
 <article class="org-card" data-supported={display.isSupportedOrg ? 'true' : 'false'}>
@@ -136,7 +147,16 @@
 	{/if}
 
 	<div class="org-card-footer">
-		<a class="org-card-link" href={href}>{actionLabel}</a>
+		{#each resolvedActions as action}
+			<a
+				class:org-card-link-primary={action.tone === 'primary'}
+				class:org-card-link-secondary={action.tone !== 'primary'}
+				class="org-card-link"
+				href={action.href}
+			>
+				{action.label}
+			</a>
+		{/each}
 	</div>
 </article>
 
@@ -329,6 +349,7 @@
 		padding-top: 8px;
 		display: flex;
 		justify-content: flex-end;
+		flex-wrap: wrap;
 		gap: 16px;
 	}
 
@@ -347,13 +368,36 @@
 		transition:
 			transform 0.18s ease,
 			border-color 0.18s ease,
-			background 0.18s ease;
+			background 0.18s ease,
+			box-shadow 0.18s ease,
+			color 0.18s ease;
+	}
+
+	.org-card-link-secondary {
+		border: 1px solid var(--line);
+		background: color-mix(in srgb, var(--surface-strong) 78%, white);
+	}
+
+	.org-card-link-primary {
+		border: 1px solid color-mix(in srgb, #2563eb 78%, white);
+		background: linear-gradient(135deg, #2563eb 0%, #3b82f6 100%);
+		color: white;
+		box-shadow: 0 16px 30px -22px rgba(37, 99, 235, 0.95);
 	}
 
 	.org-card-link:hover {
 		transform: translateY(-1px);
+	}
+
+	.org-card-link-secondary:hover {
 		border-color: var(--line-strong);
 		background: color-mix(in srgb, var(--accent) 8%, var(--surface-strong));
+	}
+
+	.org-card-link-primary:hover {
+		border-color: color-mix(in srgb, #1d4ed8 82%, white);
+		background: linear-gradient(135deg, #1d4ed8 0%, #2563eb 100%);
+		box-shadow: 0 20px 32px -22px rgba(29, 78, 216, 1);
 	}
 
 	@media (max-width: 720px) {

@@ -11,7 +11,7 @@ export const common = {
 	nav_home: 'Home',
 	nav_my: 'My pages',
 	nav_events: 'Events',
-	nav_orgs: 'Organizations',
+	nav_orgs: 'Guild Lobby',
 	nav_drops: 'Drops',
 	mode_light: 'Light',
 	mode_dark: 'Dark',

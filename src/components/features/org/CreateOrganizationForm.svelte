@@ -108,7 +108,7 @@
 		};
 	};
 
-	const openSuccessDialog = (orgName: string, orgVanity: string | null, orgSlug: string) => {
+	const openSuccessDialog = (orgName: string, orgVanity: string | null, orgId: number) => {
 		dialogOpen = true;
 		dialogState = 'success';
 		dialogTitle = labels.successCreateTitle;
@@ -119,7 +119,7 @@
 		};
 		dialogPrimaryAction = {
 			label: `${labels.goManageLabelPrefix} ${orgName}`,
-			href: `/${lang}/orgs/manage?orgVanity=${encodeURIComponent(orgVanity ?? orgSlug)}`,
+			href: `/${lang}/guilds/manage?orgVanity=${encodeURIComponent(orgVanity ?? String(orgId))}`,
 		};
 	};
 
@@ -256,7 +256,7 @@
 			openSuccessDialog(
 				response.organization.name,
 				typeof response.organization.vanity === 'string' ? response.organization.vanity : null,
-				response.organization.slug,
+				response.organization.id,
 			);
 		} catch (error) {
 			if (timedOut) {
