@@ -47,6 +47,8 @@ const t = getI18n(lang);
 		data-reset-success-message={t.app.auth_reset_success}
 		data-login-url={`/${lang}/login`}
 		data-home-url={`/${lang}/`}
+		data-status-url={`/${lang}/account-status`}
+		data-profile-url={`/${lang}/me`}
 	>
 		<article class="auth-panel">
 			<p class="auth-kicker">{t.app.account_status_kicker}</p>
@@ -84,7 +86,10 @@ const t = getI18n(lang);
 
 			<div class="auth-status" data-state="idle" data-auth-status>
 				<p class="auth-status-label">{t.app.auth_status_label}</p>
-				<p class="auth-status-text" data-auth-status-text></p>
+				<div class="auth-status-body">
+					<span class="auth-status-spinner" aria-hidden="true" data-auth-status-spinner></span>
+					<p class="auth-status-text" data-auth-status-text></p>
+				</div>
 			</div>
 		</article>
 

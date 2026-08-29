@@ -16,6 +16,7 @@ export interface ApiClientLike {
 	getAdminUsersPending: OpenApiClient['getAdminUsersPending'];
 	getAdminUsersDisabled: OpenApiClient['getAdminUsersDisabled'];
 	getAdminUsersByUser: OpenApiClient['getAdminUsersByUser'];
+	deleteAdminUsersByUser: OpenApiClient['deleteAdminUsersByUser'];
 	patchAdminOrganizationsByOrganizationVanity: OpenApiClient['patchAdminOrganizationsByOrganizationVanity'];
 	patchAdminUsersByUserVanity: OpenApiClient['patchAdminUsersByUserVanity'];
 	postAdminUsersByIdApprove: OpenApiClient['postAdminUsersByIdApprove'];

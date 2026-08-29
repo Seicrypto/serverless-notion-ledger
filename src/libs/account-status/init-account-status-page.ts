@@ -23,6 +23,20 @@ function getNamedInput(form: HTMLFormElement, name: string) {
 	return field instanceof HTMLInputElement ? field : null;
 }
 
+function buildUrl(path: string, searchParams?: Record<string, string | undefined>) {
+	const nextUrl = new URL(path, window.location.origin);
+
+	if (searchParams) {
+		for (const [key, value] of Object.entries(searchParams)) {
+			if (typeof value === 'string' && value) {
+				nextUrl.searchParams.set(key, value);
+			}
+		}
+	}
+
+	return nextUrl;
+}
+
 export function initAccountStatusPage() {
 	const page = document.querySelector('[data-account-status-page]');
 	const title = document.querySelector('[data-account-status-title]');
@@ -62,9 +76,11 @@ export function initAccountStatusPage() {
 	const mode = params.get('mode') || '';
 	const email = params.get('email') || '';
 	const key = params.get('key') || email;
-	const token = params.get('token') || '';
+	const token = params.get('token') || params.get('verifyCode') || '';
 	const loginUrl = page.dataset.loginUrl || '/';
 	const homeUrl = page.dataset.homeUrl || '/';
+	const statusUrl = page.dataset.statusUrl || '/';
+	const profileUrl = page.dataset.profileUrl || homeUrl;
 	const pendingMessage = page.dataset.pendingMessage || 'Submitting request';
 	const errorMessage = page.dataset.errorMessage || 'Request failed.';
 	const verifySuccessMessage = page.dataset.verifySuccessMessage || 'Verification completed.';
@@ -130,8 +146,16 @@ export function initAccountStatusPage() {
 		return candidate && candidate in statusMap ? statusMap[candidate as AccountStatusKey] : null;
 	};
 
+	const isResetPasswordMode = mode === 'reset-password';
+	const hasPrefilledEmail = Boolean(email);
+	const shouldAutoVerify =
+		!isResetPasswordMode &&
+		Boolean(token) &&
+		Boolean(key) &&
+		(mode === 'verify-email' || rawStatus === 'pending_verification' || rawCode === 'EMAIL_VERIFICATION_REQUIRED');
+
 	const resolvedState: AccountStatusState =
-		mode === 'reset-password'
+		isResetPasswordMode
 			? {
 					title: page.dataset.resetTitle,
 					message: page.dataset.resetMessage,
@@ -171,6 +195,7 @@ export function initAccountStatusPage() {
 
 	form.hidden = false;
 	keyInput.value = key;
+	keyInput.readOnly = hasPrefilledEmail;
 	const tokenInput = getNamedInput(form, 'token');
 	if (tokenInput) {
 		tokenInput.value = token;
@@ -191,8 +216,19 @@ export function initAccountStatusPage() {
 		resendButton.hidden = !email;
 	}
 
-	form.addEventListener('submit', async (event) => {
-		event.preventDefault();
+	const redirectAfterVerify = (nextStatus: 'pending_approval' | 'active', nextEmail: string) => {
+		if (nextStatus === 'active') {
+			window.location.href = buildUrl(profileUrl).toString();
+			return;
+		}
+
+		window.location.href = buildUrl(statusUrl, {
+			status: nextStatus,
+			email: nextEmail,
+		}).toString();
+	};
+
+	const handleSubmit = async () => {
 		const formData = new FormData(form);
 		const currentKey = String(formData.get('key') || '').trim();
 		const currentToken = String(formData.get('token') || '').trim();
@@ -209,18 +245,26 @@ export function initAccountStatusPage() {
 					password: currentPassword,
 				});
 				setStatus('success', resetSuccessMessage);
-			} else {
-				const response = await getApiAdapter().verifyEmail({
-					key: currentKey,
-					token: currentToken,
-				});
-				setStatus('success', response.message || verifySuccessMessage);
+				return;
 			}
+
+			const response = await getApiAdapter().verifyEmail({
+				key: currentKey,
+				token: currentToken,
+			});
+
+			setStatus('success', response.message || verifySuccessMessage);
+			redirectAfterVerify(response.status, response.email || currentKey);
 		} catch (error) {
 			setStatus('error', getErrorMessage(error, errorMessage));
 		} finally {
 			setPending(false, resolvedState.mode === 'reset-password' ? resetLabel : verifyLabel);
 		}
+	};
+
+	form.addEventListener('submit', async (event) => {
+		event.preventDefault();
+		await handleSubmit();
 	});
 
 	resendButton.addEventListener('click', async () => {
@@ -240,4 +284,8 @@ export function initAccountStatusPage() {
 			setPending(false, verifyLabel);
 		}
 	});
+
+	if (shouldAutoVerify) {
+		void handleSubmit();
+	}
 }

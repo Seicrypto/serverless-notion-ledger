@@ -154,8 +154,34 @@
 	margin: 0;
 }
 
+.auth-status-body {
+	display: flex;
+	align-items: flex-start;
+	gap: 10px;
+}
+
+.auth-status-spinner {
+	display: none;
+	width: 18px;
+	height: 18px;
+	margin-top: 4px;
+	border-radius: 999px;
+	border: 2px solid color-mix(in srgb, var(--accent) 20%, var(--line));
+	border-top-color: var(--accent);
+	animation: auth-status-spin 0.8s linear infinite;
+	flex: 0 0 auto;
+}
+
+.auth-status[data-state='pending'] .auth-status-spinner {
+	display: inline-flex;
+}
+
 .auth-status-text {
 	margin-top: 8px;
+}
+
+.auth-status-body .auth-status-text {
+	margin-top: 0;
 }
 
 .auth-side-card {
@@ -196,6 +222,12 @@
 	justify-content: flex-end;
 	gap: 12px;
 	margin-top: 24px;
+}
+
+@keyframes auth-status-spin {
+	to {
+		transform: rotate(360deg);
+	}
 }
 
 @media (max-width: 920px) {

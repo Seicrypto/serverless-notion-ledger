@@ -23,6 +23,7 @@ const t = getI18n(lang);
 		data-success-message={t.app.auth_register_success}
 		data-error-message={t.app.auth_error_fallback}
 		data-pending-message={t.app.auth_pending}
+		data-register-lang={lang}
 		data-status-url={`/${lang}/account-status`}
 	>
 		<article class="auth-panel">
@@ -101,6 +102,7 @@ const t = getI18n(lang);
 			const successMessage = page.dataset.successMessage || 'Registration submitted.';
 			const errorMessage = page.dataset.errorMessage || 'Request failed.';
 			const statusUrl = page.dataset.statusUrl || '/';
+			const registerLang = page.dataset.registerLang || '';
 			const idleLabel = submitButton.textContent || 'Submit registration';
 
 			const redirectToAccountStatus = (response, fallbackEmail) => {
@@ -144,6 +146,7 @@ const t = getI18n(lang);
 					const response = await getApiAdapter().register({
 						displayName: String(formData.get('displayName') || '').trim() || undefined,
 						email,
+						lang: registerLang || undefined,
 						password: String(formData.get('password') || ''),
 					});
 					if (

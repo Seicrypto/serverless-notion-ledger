@@ -138,6 +138,7 @@ export const operationPaths = {
 	getAdminUsersPending: "/admin/users/pending",
 	getAdminUsersDisabled: "/admin/users/disabled",
 	getAdminUsersByUser: "/admin/users/{user}",
+	deleteAdminUsersByUser: "/admin/users/{user}",
 	patchAdminOrganizationsByOrganizationVanity: "/admin/organizations/{organization}/vanity",
 	patchAdminUsersByUserVanity: "/admin/users/{user}/vanity",
 	postAdminUsersByIdApprove: "/admin/users/{id}/approve",
@@ -202,13 +203,14 @@ export type ApiOperations = {
 	getAuthMe: { response: AuthMeResponse; };
 	patchAuthMe: { body: UpdateDisplayNameRequest; response: UpdateDisplayNameResponse; };
 	getAuthUsersByUser: { pathParams: { "user": string; }; response: PublicUserResponse; };
-	getAuthVerifyEmail: { query: { "key": string; "token": string; }; response: VerifyEmailResponse; };
+	getAuthVerifyEmail: { query: { "code"?: string; "key": string; "token"?: string; }; response: VerifyEmailResponse; };
 	postAuthResendVerificationEmail: { body: ResendVerificationEmailRequest; response: ResendVerificationEmailResponse; };
 	postAuthForgotPassword: { body: ForgotPasswordRequest; response: ForgotPasswordResponse; };
 	postAuthResetPassword: { body: ResetPasswordRequest; response: ResetPasswordResponse; };
 	getAdminUsersPending: { response: PendingUsersResponse; };
 	getAdminUsersDisabled: { query: { "displayName"?: string; "email"?: string; "limit"?: number; "offset"?: number | unknown; }; response: DisabledUsersResponse; };
 	getAdminUsersByUser: { pathParams: { "user": string; }; response: ManagedUserResponse; };
+	deleteAdminUsersByUser: { pathParams: { "user": string; }; response: ManagedUserResponse; };
 	patchAdminOrganizationsByOrganizationVanity: { pathParams: { "organization": string; }; body: UpdateOrganizationVanityRequest; response: ManagedOrganizationResponse; };
 	patchAdminUsersByUserVanity: { pathParams: { "user": string; }; body: UpdateUserVanityRequest; response: ManagedUserResponse; };
 	postAdminUsersByIdApprove: { pathParams: { "id": number; }; response: ManagedUserResponse; };
@@ -590,6 +592,22 @@ export class OpenApiClient {
 		return this.request<ApiOperations['getAdminUsersByUser']['response']>({
 			method: "GET",
 			path: operationPaths.getAdminUsersByUser,
+			pathParams: options.pathParams,
+			query: options.query,
+			headers: {
+				...options.headers,
+			},
+			body: undefined,
+		});
+	}
+
+	/**
+	 * DELETE /admin/users/{user}
+	 */
+	async deleteAdminUsersByUser(options: RequestOptions<ApiOperations['deleteAdminUsersByUser']> = {}): Promise<ApiOperations['deleteAdminUsersByUser']['response']> {
+		return this.request<ApiOperations['deleteAdminUsersByUser']['response']>({
+			method: "DELETE",
+			path: operationPaths.deleteAdminUsersByUser,
 			pathParams: options.pathParams,
 			query: options.query,
 			headers: {
