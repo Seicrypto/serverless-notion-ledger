@@ -28,7 +28,7 @@ const orgSlug = Astro.url.searchParams.get('orgVanity') ?? Astro.url.searchParam
 		statusLabel={t.common.user_status}
 		statusValue={t.app.items_status}
 		primaryLink={{ label: t.app.action_pick_org, href: `/${lang}/guilds` }}
-		secondaryLink={{ label: t.app.action_view_me, href: `/${lang}/me/items` }}
+		secondaryLink={{ label: t.app.action_view_me, href: `/${lang}/me/guilds` }}
 		cards={[
 			{ label: t.app.card_scope_label, title: t.app.card_scope_title, body: t.app.card_scope_body },
 			{ label: t.app.card_data_label, title: t.app.card_data_title, body: t.app.card_data_body },

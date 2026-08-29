@@ -25,6 +25,7 @@
 		writeDashboardSummaryCache,
 	} from '../../../libs/dashboard/dashboard-cache.ts';
 	import { writePreferredOrganization } from '../../../libs/ledger/workspace-preferences.ts';
+	import { resolveOrganizationQuery } from '../../../libs/organizations/reference.ts';
 	import type {
 		CharacterLedgerDashboardDetailResponse,
 		CharacterLedgerDashboardSummaryItem,
@@ -304,6 +305,7 @@
 	}
 
 	onMount(() => {
+		organization = resolveOrganizationQuery(organization);
 		const intervalId = window.setInterval(() => {
 			refreshClock = Date.now();
 		}, 1000);

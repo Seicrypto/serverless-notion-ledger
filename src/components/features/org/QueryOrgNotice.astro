@@ -7,11 +7,47 @@ interface Props {
 }
 
 const { label, missing, prefix, orgSlug } = Astro.props;
+const initialValue = typeof orgSlug === 'string' && orgSlug.trim() ? orgSlug.trim() : '';
 ---
 
-<section class="query-notice">
+<section
+	class="query-notice"
+	data-query-org-notice
+	data-missing={missing}
+	data-prefix={prefix}
+	data-initial-org={initialValue}
+>
 	<p class="query-notice-label">{label}</p>
-	<p class="query-notice-value">
-		{orgSlug ? `${prefix} ${orgSlug}` : missing}
-	</p>
+	<p class="query-notice-value" data-query-org-value>{initialValue ? `${prefix} ${initialValue}` : missing}</p>
 </section>
+
+<script is:inline>
+	(() => {
+		const initQueryOrgNotice = () => {
+			document.querySelectorAll('[data-query-org-notice]').forEach((node) => {
+				if (!(node instanceof HTMLElement)) {
+					return;
+				}
+
+				const valueNode = node.querySelector('[data-query-org-value]');
+				if (!(valueNode instanceof HTMLElement)) {
+					return;
+				}
+
+				const params = new URLSearchParams(window.location.search);
+				const runtimeOrg = params.get('orgVanity') ?? params.get('org') ?? '';
+				const nextOrg = runtimeOrg.trim() || node.dataset.initialOrg || '';
+				const prefix = node.dataset.prefix || '';
+				const missing = node.dataset.missing || '';
+
+				valueNode.textContent = nextOrg ? `${prefix} ${nextOrg}` : missing;
+			});
+		};
+
+		if (document.readyState === 'loading') {
+			document.addEventListener('DOMContentLoaded', initQueryOrgNotice, { once: true });
+		} else {
+			initQueryOrgNotice();
+		}
+	})();
+</script>
