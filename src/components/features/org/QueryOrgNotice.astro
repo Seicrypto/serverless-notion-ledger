@@ -3,11 +3,11 @@ interface Props {
 	label: string;
 	missing: string;
 	prefix: string;
-	orgSlug?: string | null;
+	orgReference?: string | null;
 }
 
-const { label, missing, prefix, orgSlug } = Astro.props;
-const initialValue = typeof orgSlug === 'string' && orgSlug.trim() ? orgSlug.trim() : '';
+const { label, missing, prefix, orgReference } = Astro.props;
+const initialValue = typeof orgReference === 'string' && orgReference.trim() ? orgReference.trim() : '';
 ---
 
 <section

@@ -83,7 +83,9 @@
 			{/if}
 
 			<div class="org-card-copy">
-				<p class="org-card-slug">/{organization.slug}</p>
+				{#if organization.vanity}
+					<p class="org-card-slug">@{organization.vanity}</p>
+				{/if}
 				<h3>{organization.name}</h3>
 			</div>
 		</div>

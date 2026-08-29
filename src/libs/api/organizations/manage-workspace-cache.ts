@@ -10,7 +10,6 @@ export interface OrganizationManageGameSummary {
 export interface OrganizationManageSummary {
 	id: number;
 	name: string;
-	slug: string;
 	description: string | null;
 	iconUrl: string | null;
 	vanity: string | null;
@@ -123,7 +122,6 @@ async function fetchSnapshot(orgVanity: string) {
 		organization: {
 			id: organizationResponse.organization.id,
 			name: organizationResponse.organization.name,
-			slug: organizationResponse.organization.slug,
 			description: toNullableString(organizationResponse.organization.description),
 			iconUrl: toNullableString(organizationResponse.organization.iconUrl),
 			vanity: toNullableString(organizationResponse.organization.vanity),

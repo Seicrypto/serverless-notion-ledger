@@ -213,7 +213,6 @@ test('ApiAdapter maps organization operations to generated client methods', asyn
 	});
 	await adapter.createOrganization({
 		name: 'Demo Guild',
-		slug: 'demo-guild',
 		initialCharacter: { gameId: 100, name: 'Tank Main' },
 	});
 	await adapter.listMyOrganizations({ limit: 10, offset: 10 });
@@ -307,7 +306,6 @@ test('ApiAdapter maps organization operations to generated client methods', asyn
 			payload: {
 				body: {
 					name: 'Demo Guild',
-					slug: 'demo-guild',
 					initialCharacter: { gameId: 100, name: 'Tank Main' },
 				},
 			},

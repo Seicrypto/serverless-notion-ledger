@@ -55,7 +55,7 @@ export type ManagedUserResponse = { "message": string; "user": ManagedUser; };
 
 export type ManagedOrganizationResponse = { "message": string; "organization": ManagedOrganization; };
 
-export type ManagedOrganization = { "id": number; "name": string; "slug": string; "vanity": string | unknown; };
+export type ManagedOrganization = { "id": number; "name": string; "vanity": string | unknown; };
 
 export type UpdateOrganizationVanityRequest = { "vanity": string; };
 
@@ -73,7 +73,7 @@ export type Game = { "description": string | unknown; "iconUrl": string | unknow
 
 export type OrganizationListResponse = { "organizations": Array<OrganizationCard>; "pagination": OffsetPagination; };
 
-export type OrganizationCard = { "description": string | unknown; "display": OrganizationCardDisplay; "games": Array<OrganizationCardGame>; "iconUrl": string | unknown; "id": number; "membership": OrganizationCardMembership; "name": string; "slug": string; "stats": OrganizationCardStats; "tags": Array<string>; "vanity": string | unknown; };
+export type OrganizationCard = { "description": string | unknown; "display": OrganizationCardDisplay; "games": Array<OrganizationCardGame>; "iconUrl": string | unknown; "id": number; "membership": OrganizationCardMembership; "name": string; "stats": OrganizationCardStats; "tags": Array<string>; "vanity": string | unknown; };
 
 export type OrganizationCardDisplay = { "isSupportedOrg": boolean; "maxVisibleGames": number; "maxVisibleTags": number; };
 
@@ -93,7 +93,7 @@ export type OrganizationSearchItem = Organization & { "activeCharacterCount": nu
 
 export type OrganizationGameSummary = { "displayName": string | unknown; "gameId": number; "gameName": string; "gameSlug": string; "isPrimary": boolean; "source": "internal" | "steam"; "sourceId": string | unknown; "type": "game" | "activity"; };
 
-export type Organization = { "createdAt": string; "createdByUserId": number; "description": string | unknown; "iconUrl": string | unknown; "id": number; "name": string; "slug": string; "updatedAt": string; "vanity": string | unknown; };
+export type Organization = { "createdAt": string; "createdByUserId": number; "description": string | unknown; "iconUrl": string | unknown; "id": number; "name": string; "updatedAt": string; "vanity": string | unknown; };
 
 export type OrganizationCharactersResponse = { "characters": Array<OrganizationCharacter>; };
 
@@ -127,7 +127,7 @@ export type CreateCharacterRequest = { "gameId": number; "name": string; "notes"
 
 export type CreateOrganizationResponse = { "character": OrganizationCharacter; "message": string; "membership": OrganizationMember; "organization": Organization; };
 
-export type CreateOrganizationRequest = { "description"?: string | unknown; "iconUrl"?: string | unknown; "initialCharacter": InitialCharacterRequest; "name": string; "slug": string; };
+export type CreateOrganizationRequest = { "description"?: string | unknown; "iconUrl"?: string | unknown; "initialCharacter": InitialCharacterRequest; "name": string; };
 
 export type InitialCharacterRequest = { "gameId": number; "name": string; "notes"?: string | unknown; "slug"?: string | unknown; };
 
@@ -143,7 +143,7 @@ export type DeleteOrganizationResponse = { "message": string; };
 
 export type UpdateOrganizationResponse = { "message": string; "organization": Organization; };
 
-export type UpdateOrganizationRequest = { "description"?: string | unknown; "iconUrl"?: string | unknown; "name"?: string; "slug"?: string; };
+export type UpdateOrganizationRequest = { "description"?: string | unknown; "iconUrl"?: string | unknown; "name"?: string; };
 
 export type MessageResponse = { "message": string; };
 
@@ -159,7 +159,7 @@ export type CreateAssetOperationalConflictResponse = { "code": string; "error": 
 
 export type CreateAssetRequest = { "assetType"?: "item" | "currency" | "ticket" | "reward" | "service" | "other"; "iconUrl"?: string | unknown; "metadataJson"?: string | unknown; "name": string; "rarityLabel"?: string | unknown; };
 
-export type OrganizationLedgerDashboardSummaryResponse = { "generatedAt": string; "organization": { "id": number; "name": string; "slug": string; }; "summary": { "disbursementInProgressCount": number; "disbursementNotStartedCount": number; "revenueUnitBreakdown": Array<OrganizationLedgerDashboardRevenueBreakdown>; "settlementCount": number; "unsettledEventCount": number; }; };
+export type OrganizationLedgerDashboardSummaryResponse = { "generatedAt": string; "organization": { "id": number; "name": string; "vanity": string | unknown; }; "summary": { "disbursementInProgressCount": number; "disbursementNotStartedCount": number; "revenueUnitBreakdown": Array<OrganizationLedgerDashboardRevenueBreakdown>; "settlementCount": number; "unsettledEventCount": number; }; };
 
 export type OrganizationLedgerDashboardRevenueBreakdown = { "grossAmountTotal": number; "netAmountTotal": number; "settlementCount": number; "unitAssetId": number | unknown; "unitAssetName": string | unknown; };
 
