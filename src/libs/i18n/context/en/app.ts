@@ -131,7 +131,7 @@ export const app = {
 	orgs_manage_vanity_label: 'Guild vanity',
 	orgs_manage_tab_characters: 'Characters',
 	orgs_manage_tab_members: 'Members',
-	orgs_manage_create_character_label: 'Create character',
+	orgs_manage_create_character_label: 'New character',
 	orgs_manage_refresh_label: 'Refresh',
 	orgs_manage_invite_member_label: 'Invite member',
 	orgs_manage_pending_members_label: 'View pending confirmations',
@@ -359,9 +359,11 @@ export const app = {
 		'The first settlement flow is event-driven. Pick a settleable event first, then let the page prefill the most predictable fields.',
 	settlements_event_select_label: 'Settleable events',
 	settlements_event_loading_label: 'Loading settleable events',
-	settlements_event_empty_title: 'There are no settleable events yet',
+	settlements_event_empty_title: 'There are no events ready for settlement yet',
 	settlements_event_empty_body:
-		'Move an event to ready for settlement or partially settled first, then come back here to create a settlement.',
+		'If you already created an event, refresh this page after marking it ready for settlement. If not, create a new event first.',
+	settlements_event_empty_action_label: 'New event',
+	settlements_event_empty_refresh_hint: 'After your event is ready, use Refresh events to load it here.',
 	settlements_event_refresh_label: 'Refresh events',
 	settlements_event_summary_title: 'Source event summary',
 	settlements_event_summary_status_label: 'Event status',
@@ -522,17 +524,26 @@ export const app = {
 	claim_intro:
 		'This page groups pending allocations by character so the operator can choose a recipient, review the total, optionally include sibling characters under the same member, and submit one batch claim.',
 	claim_status: 'Requires orgVanity query',
-	claim_org_required_title: 'Guild query is required',
+	claim_org_required_title: 'Choose a guild first',
 	claim_org_required_body:
-		'Add `?orgVanity=` before opening the claim workspace so the frontend can load claimable recipients for that organization.',
+		'Open this page from the ledger flow or a guild page so the app knows which guild to load for payouts.',
 	claim_recipients_title: 'Claimable recipients',
 	claim_recipients_body:
 		'Choose the character you are paying now. The list is sorted for quick scanning so the operator can move through many recipients in one session.',
 	claim_recipients_loading_label: 'Loading claimable recipients',
 	claim_recipients_refresh_label: 'Refresh recipients',
-	claim_recipients_empty_title: 'There are no pending disbursements',
+	claim_recipients_empty_title: 'There are no payouts ready yet',
 	claim_recipients_empty_body:
-		'Once settlements create pending allocations, this workspace will show the characters that can be paid next.',
+		'When settlements generate pending allocations, this page will list the characters you can pay next.',
+	claim_recipients_empty_no_events_title: 'There are no events yet',
+	claim_recipients_empty_no_events_body:
+		'Create your first event before continuing to settlements and payouts.',
+	claim_recipients_empty_no_settlements_title: 'There are no payouts ready yet',
+	claim_recipients_empty_no_settlements_body:
+		'You already have events. Create a settlement first, then come back here or refresh the list.',
+	claim_recipients_empty_new_event_label: 'New event',
+	claim_recipients_empty_new_settlement_label: 'New settlement',
+	claim_recipients_empty_refresh_hint: 'If you just finished a previous step, use Refresh recipients to load the latest result.',
 	claim_detail_title: 'Disbursement details',
 	claim_detail_body:
 		'Review the pending allocations, trim partial amounts if needed, then submit one batch claim for the selected character.',

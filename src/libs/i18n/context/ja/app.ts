@@ -131,7 +131,7 @@ export const app = {
 	orgs_manage_vanity_label: 'ギルド vanity',
 	orgs_manage_tab_characters: 'キャラクター一覧',
 	orgs_manage_tab_members: 'メンバー一覧',
-	orgs_manage_create_character_label: '新しいキャラクターを作成',
+	orgs_manage_create_character_label: '新しいキャラクター',
 	orgs_manage_refresh_label: '更新',
 	orgs_manage_invite_member_label: 'メンバーを招待',
 	orgs_manage_pending_members_label: '確認待ちを表示',
@@ -359,9 +359,11 @@ export const app = {
 		'最初の settlement flow は event 起点です。まず精算可能な event を選び、その後に予測しやすい項目を自動入力します。',
 	settlements_event_select_label: '精算可能な event',
 	settlements_event_loading_label: '精算可能 event を読み込み中',
-	settlements_event_empty_title: '精算可能な event がまだありません',
+	settlements_event_empty_title: 'まだ精算を作れる event がありません',
 	settlements_event_empty_body:
-		'先に event を ready for settlement か partially settled に進めてから、ここで settlement を作成してください。',
+		'すでに event を作成している場合は、精算可能な状態にしてから再読み込みしてください。まだなら先に新しい event を作成してください。',
+	settlements_event_empty_action_label: '新規 event',
+	settlements_event_empty_refresh_hint: 'event の準備ができたら、上の再読み込みでここに反映できます。',
 	settlements_event_refresh_label: 'event を再読み込み',
 	settlements_event_summary_title: '元 event の概要',
 	settlements_event_summary_status_label: 'event 状態',
@@ -523,17 +525,26 @@ export const app = {
 	claim_intro:
 		'このページは pending allocation をキャラクター単位でまとめ、支払い相手を選んで総額を確認し、必要なら同じ member の別キャラクターも含めて一括 claim できるようにします。',
 	claim_status: 'orgVanity query が必要',
-	claim_org_required_title: 'ギルド query が不足しています',
+	claim_org_required_title: '先にギルドを選択してください',
 	claim_org_required_body:
-		'`?orgVanity=` を付けて claim workspace を開いてください。frontend が対象組織の配布候補キャラクターを読み込むために必要です。',
+		'このページはフロー入口やギルドページから開いて、どのギルドの配布データを読み込むかを指定してください。',
 	claim_recipients_title: '配布対象キャラクター',
 	claim_recipients_body:
 		'今回支払うキャラクターを選びます。多くの相手を連続処理しやすいよう、素早く切り替えられる一覧にしています。',
 	claim_recipients_loading_label: '配布対象キャラクターを読み込み中',
 	claim_recipients_refresh_label: '一覧を再読み込み',
-	claim_recipients_empty_title: '現在 pending の配布はありません',
+	claim_recipients_empty_title: 'まだ配布できる項目がありません',
 	claim_recipients_empty_body:
-		'settlement から pending allocation が作成されると、このページに次に支払えるキャラクターが表示されます。',
+		'settlement で pending allocation が作成されると、このページに次に支払えるキャラクターが表示されます。',
+	claim_recipients_empty_no_events_title: 'まだ event がありません',
+	claim_recipients_empty_no_events_body:
+		'まず最初の event を作成してから、settlement と配布へ進んでください。',
+	claim_recipients_empty_no_settlements_title: 'まだ配布できる項目がありません',
+	claim_recipients_empty_no_settlements_body:
+		'event はあるので、先に settlement を作成してください。完了後にここへ戻るか、一覧を再読み込みしてください。',
+	claim_recipients_empty_new_event_label: '新規 event',
+	claim_recipients_empty_new_settlement_label: '新規 settlement',
+	claim_recipients_empty_refresh_hint: '直前の手順を終えたばかりなら、上の再読み込みでも最新状態を反映できます。',
 	claim_detail_title: '配布詳細',
 	claim_detail_body:
 		'pending allocation を確認し、必要なら一部金額に調整してから、選択中キャラクター向けの batch claim を送信します。',

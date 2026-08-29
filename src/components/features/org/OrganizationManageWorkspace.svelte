@@ -523,9 +523,12 @@
 			</article>
 
 			<section class="org-manage-panels">
-				<div class="org-manage-tabs">
+				<div class="org-manage-panel-frame">
+					<div class="org-manage-tabs" role="tablist" aria-label={labels.title}>
 					<button
 						type="button"
+						role="tab"
+						aria-selected={activeTab === 'characters' ? 'true' : 'false'}
 						class:active={activeTab === 'characters'}
 						on:click={() => {
 							activeTab = 'characters';
@@ -535,6 +538,8 @@
 					</button>
 					<button
 						type="button"
+						role="tab"
+						aria-selected={activeTab === 'members' ? 'true' : 'false'}
 						class:active={activeTab === 'members'}
 						on:click={() => {
 							activeTab = 'members';
@@ -542,9 +547,9 @@
 					>
 						{labels.tabMembersLabel}
 					</button>
-				</div>
+					</div>
 
-				<div class="org-manage-toolbar">
+					<div class="org-manage-toolbar">
 					{#if activeTab === 'characters'}
 						<div class="org-manage-toolbar-actions">
 							<button
@@ -555,6 +560,7 @@
 									createCharacterOpen = true;
 								}}
 							>
+								<span class="toolbar-primary-icon" aria-hidden="true">+</span>
 								{labels.charactersCreateLabel}
 							</button>
 							<button
@@ -592,9 +598,9 @@
 					{#if activeTab === 'characters' && isRefreshCoolingDown()}
 						<p class="org-manage-toolbar-note">{labels.refreshCooldownLabel}</p>
 					{/if}
-				</div>
+					</div>
 
-				<div class="org-manage-table-shell">
+					<div class="org-manage-table-shell">
 					{#if activeTab === 'characters'}
 						{#if characters.length === 0}
 							<p class="org-manage-empty">{labels.emptyCharactersTitle}</p>
@@ -675,6 +681,7 @@
 							</table>
 						{/if}
 					{/if}
+					</div>
 				</div>
 			</section>
 		{/if}
@@ -943,6 +950,11 @@
 		font-weight: 700;
 	}
 
+	.org-manage-panel-frame {
+		position: relative;
+		padding-top: 4px;
+	}
+
 	.org-manage-card-games span {
 		display: inline-flex;
 		align-items: center;
@@ -994,16 +1006,61 @@
 	}
 
 	.org-manage-tabs button {
-		border: 1px solid var(--line);
-		background: color-mix(in srgb, var(--surface-strong) 78%, white);
+		position: relative;
+		min-height: 44px;
+		padding: 0 18px;
+		border: 1px solid color-mix(in srgb, var(--line) 92%, white);
+		border-bottom-color: color-mix(in srgb, var(--line) 72%, transparent);
+		border-radius: 18px 18px 0 0;
+		background: linear-gradient(
+			180deg,
+			color-mix(in srgb, var(--surface-strong) 88%, white),
+			color-mix(in srgb, var(--surface) 94%, white)
+		);
+		color: var(--text-soft);
+		transform: translateY(1px);
+		z-index: 0;
 	}
 
-	.org-manage-tabs button.active,
+	.org-manage-tabs {
+		position: relative;
+		gap: 8px;
+		align-items: end;
+	}
+
+	.org-manage-tabs::after {
+		content: '';
+		position: absolute;
+		left: 0;
+		right: 0;
+		bottom: 0;
+		border-bottom: 1px solid color-mix(in srgb, var(--line) 88%, white);
+		pointer-events: none;
+	}
+
+	.org-manage-tabs button.active {
+		border-color: color-mix(in srgb, var(--ledger-accent) 42%, var(--line));
+		border-bottom-color: transparent;
+		background: linear-gradient(
+			180deg,
+			color-mix(in srgb, var(--ledger-accent) 22%, white) 0%,
+			color-mix(in srgb, var(--ledger-accent) 10%, transparent) 52%,
+			var(--surface) 100%
+		);
+		color: color-mix(in srgb, var(--ledger-accent-deep) 90%, var(--text-main));
+		box-shadow:
+			inset 0 1px 0 rgba(255, 255, 255, 0.42),
+			0 -1px 0 color-mix(in srgb, var(--ledger-accent) 18%, transparent);
+		transform: translateY(0);
+		z-index: 1;
+	}
+
 	.toolbar-primary,
 	.modal-primary {
 		border: 1px solid transparent;
-		background: var(--accent);
+		background: linear-gradient(135deg, #2563eb 0%, #3b82f6 100%);
 		color: white;
+		box-shadow: 0 16px 30px -22px rgba(37, 99, 235, 0.95);
 	}
 
 	.toolbar-secondary,
@@ -1026,7 +1083,40 @@
 	}
 
 	.org-manage-table-shell {
-		margin-top: 20px;
+		margin-top: 16px;
+	}
+
+	.org-manage-toolbar {
+		margin-top: 18px;
+	}
+
+	.org-manage-toolbar-actions {
+		gap: 12px;
+	}
+
+	.toolbar-primary {
+		display: inline-flex;
+		align-items: center;
+		gap: 10px;
+	}
+
+	.toolbar-primary:hover,
+	.modal-primary:hover {
+		background: linear-gradient(135deg, #1d4ed8 0%, #2563eb 100%);
+		box-shadow: 0 20px 32px -22px rgba(29, 78, 216, 1);
+	}
+
+	.toolbar-primary-icon {
+		width: 20px;
+		height: 20px;
+		border-radius: 999px;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		background: rgba(255, 255, 255, 0.18);
+		font-size: 1rem;
+		line-height: 1;
+		font-weight: 800;
 	}
 
 	.org-manage-table {
