@@ -109,7 +109,7 @@ export type OrganizationDetailResponse = { "organization": OrganizationSearchIte
 
 export type OrganizationSearchItem = Organization & { "activeCharacterCount": number; "activeMemberCount": number; "games": Array<OrganizationGameSummary>; };
 
-export type OrganizationGameSummary = { "displayName": string | unknown; "gameId": number; "iconUrl": string | unknown; "gameName": string; "gameSlug": string; "isPrimary": boolean; "metadataSource": "inherited" | "official"; "officialSiteUrl": string | unknown; "resolvedIconUrl": string | unknown; "source": "internal" | "steam"; "sourceId": string | unknown; "type": "game" | "activity"; };
+export type OrganizationGameSummary = { "displayName": string | unknown; "gameId": number; "iconUrl": string | unknown; "gameName": string; "gameSlug": string; "isPrimary": boolean; "metadataSource": "inherited" | "official"; "officialSiteUrl": string | unknown; "resolvedIconUrl": string | unknown; "sortOrder": number; "source": "internal" | "steam"; "sourceId": string | unknown; "type": "game" | "activity"; };
 
 export type Organization = { "createdAt": string; "createdByUserId": number; "description": string | unknown; "iconUrl": string | unknown; "id": number; "name": string; "updatedAt": string; "vanity": string | unknown; };
 
@@ -117,9 +117,29 @@ export type OrganizationCharactersResponse = { "characters": Array<OrganizationC
 
 export type OrganizationCharacterWithGame = OrganizationCharacter & { "game": OrganizationCharacterGame; };
 
-export type OrganizationCharacterGame = { "displayName": string | unknown; "gameId": number; "iconUrl": string | unknown; "gameName": string; "gameSlug": string; "isPrimary": boolean; "metadataSource": "inherited" | "official"; "officialSiteUrl": string | unknown; "resolvedIconUrl": string | unknown; "source": "internal" | "steam"; "sourceId": string | unknown; "type": "game" | "activity"; } | { "displayName": string | unknown; "gameId": number; "iconUrl": string | unknown; "gameName": string; "gameSlug": string; "isPrimary": boolean; "metadataSource": "inherited" | "official"; "officialSiteUrl": string | unknown; "resolvedIconUrl": string | unknown; "source": "internal" | "steam"; "sourceId": string | unknown; "type": "game" | "activity"; };
+export type OrganizationCharacterGame = { "displayName": string | unknown; "gameId": number; "iconUrl": string | unknown; "gameName": string; "gameSlug": string; "isPrimary": boolean; "metadataSource": "inherited" | "official"; "officialSiteUrl": string | unknown; "resolvedIconUrl": string | unknown; "sortOrder": number; "source": "internal" | "steam"; "sourceId": string | unknown; "type": "game" | "activity"; } | { "displayName": string | unknown; "gameId": number; "iconUrl": string | unknown; "gameName": string; "gameSlug": string; "isPrimary": boolean; "metadataSource": "inherited" | "official"; "officialSiteUrl": string | unknown; "resolvedIconUrl": string | unknown; "sortOrder": number; "source": "internal" | "steam"; "sourceId": string | unknown; "type": "game" | "activity"; };
 
 export type OrganizationCharacter = { "claimedByUserId": number | unknown; "createdAt": string; "gameId": number | unknown; "id": number; "isActive": boolean; "name": string; "notes": string | unknown; "organizationId": number; "slug": string | unknown; "updatedAt": string; "vanity": string | unknown; };
+
+export type OrganizationCharacterSearchResponse = { "characters": Array<OrganizationCharacterWithGame>; "pagination": OffsetPagination; };
+
+export type OrganizationCharacterDetailResponse = { "character": OrganizationCharacterWithGame; };
+
+export type UpdateOrganizationCharacterResponse = { "character": OrganizationCharacterWithGame; "message": string; };
+
+export type UpdateOrganizationCharacterRequest = { "description"?: string | unknown; "gameId"?: number | unknown; "isActive"?: boolean; "name"?: string; "notes"?: string | unknown; "slug"?: string | unknown; };
+
+export type DeleteOrganizationCharacterResponse = { "character": OrganizationCharacter; "message": string; };
+
+export type OrganizationCharacterClaimResponse = { "character": OrganizationCharacterWithGame; "claimRequest": CharacterClaimRequest; "message": string; };
+
+export type CharacterClaimRequest = { "characterId": number; "createdAt": string; "id": number; "organizationId": number; "requestedByUserId": number; "status": "pending_confirmation" | "accepted" | "declined" | "cancelled"; "targetMemberId": number | unknown; "targetUserId": number; "updatedAt": string; } | { "characterId": number; "createdAt": string; "id": number; "organizationId": number; "requestedByUserId": number; "status": "pending_confirmation" | "accepted" | "declined" | "cancelled"; "targetMemberId": number | unknown; "targetUserId": number; "updatedAt": string; };
+
+export type OrganizationCharacterClaimRequest = { "memberId"?: number; "mode"?: "assign" | "transfer" | "unassign"; "status"?: "claimed" | "pending_confirmation"; "userId"?: number; };
+
+export type CreateCharacterClaimRequestResponse = { "character": OrganizationCharacterWithGame; "claimRequest": CharacterClaimRequest; "message": string; };
+
+export type CreateCharacterClaimRequest = { "memberId"?: number; "userId"?: number; };
 
 export type OrganizationMembersResponse = { "members": Array<OrganizationMember>; };
 
@@ -155,6 +175,14 @@ export type InitialCharacterRequest = { "gameId": number; "name": string; "notes
 
 export type CreateCharacterResponse = { "character": OrganizationCharacter; "message": string; };
 
+export type OrganizationGameResponse = { "game": OrganizationGameSummary; "message": string; };
+
+export type CreateOrganizationGameRequest = { "displayName"?: string | unknown; "gameId": number; "isPrimary"?: boolean; "sortOrder"?: number; };
+
+export type UpdateOrganizationGameRequest = { "displayName"?: string | unknown; "isPrimary"?: boolean; "sortOrder"?: number; };
+
+export type SetPrimaryOrganizationGameRequest = Record<string, unknown>;
+
 export type OrganizationMemberWithCharacterResponse = { "character": OrganizationCharacter; "member": OrganizationMember; "message": string; };
 
 export type AddOrganizationMemberRequest = { "characterId": number; "role"?: "admin" | "member"; "userId": number; };
@@ -180,6 +208,18 @@ export type AssetDuplicateCandidate = { "alias": AssetAlias; "asset": Asset; "ma
 export type CreateAssetOperationalConflictResponse = { "code": string; "error": string; "requestId": string; };
 
 export type CreateAssetRequest = { "assetType"?: "item" | "currency" | "ticket" | "reward" | "service" | "other"; "iconUrl"?: string | unknown; "metadataJson"?: string | unknown; "name": string; "rarityLabel"?: string | unknown; };
+
+export type OrganizationAssetListResponse = { "assets": Array<Asset>; "pagination": { "hasMore": boolean; "limit": number; "offset": number; }; };
+
+export type OrganizationAssetDetailResponse = { "asset": Asset; };
+
+export type UpdateOrganizationAssetResponse = { "asset": Asset; "message": string; };
+
+export type UpdateOrganizationAssetRequest = { "assetType"?: "item" | "currency" | "ticket" | "reward" | "service" | "other"; "gameId"?: number; "iconUrl"?: string | unknown; "metadataJson"?: string | unknown; "name"?: string; "rarityLabel"?: string | unknown; "status"?: "candidate" | "org_verified" | "active" | "merged" | "deprecated"; };
+
+export type ResolveOrganizationAssetResponse = { "duplicate": { "exactMatch": AssetDuplicateCandidate; "normalizedName": string; "possibleMatches": Array<AssetDuplicateCandidate>; "recommendedAction": "use_existing" | "confirm_create" | "allow_create"; }; };
+
+export type ResolveOrganizationAssetRequest = { "gameId": number; "name": string; };
 
 export type OrganizationLedgerDashboardSummaryResponse = { "generatedAt": string; "organization": { "id": number; "name": string; "vanity": string | unknown; }; "summary": { "disbursementInProgressCount": number; "disbursementNotStartedCount": number; "revenueUnitBreakdown": Array<OrganizationLedgerDashboardRevenueBreakdown>; "settlementCount": number; "unsettledEventCount": number; }; };
 
@@ -218,6 +258,12 @@ export type LedgerClaimableRecipientDetailResponse = { "allocations": Array<Ledg
 export type LedgerClaimableRecipientAllocation = { "allocationId": number; "amount": number; "eventId": number | unknown; "eventKey": string | unknown; "eventOccurredAt": string | unknown; "eventStatus": "open" | "ready_for_settlement" | "partially_settled" | "settled" | "cancelled" | null; "eventTitle": string | unknown; "eventType": "loot" | "raid" | "activity" | "bonus" | "salary" | "guild_event" | "other" | null; "ratio": number | unknown; "settlementDecidedAt": string; "settlementId": number; "settlementKey": string; "settlementStatus": "draft" | "calculated" | "paying" | "paid" | "cancelled"; "settlementTitle": string; "settlementType": "sale" | "bonus" | "salary" | "reward" | "subsidy" | "adjustment"; "unitAssetId": number | unknown; "unitAssetName": string | unknown; "weight": number; };
 
 export type CreateLedgerEventRequest = { "assetId"?: number | unknown; "eventType"?: "loot" | "raid" | "activity" | "bonus" | "salary" | "guild_event" | "other"; "gameId"?: number | unknown; "holderRef"?: string | unknown; "holderType"?: "character" | "org_treasury" | "market" | "external" | "custom"; "notes"?: string | unknown; "occurredAt": string; "sourceType"?: "manual" | "api" | "import"; "title": string; };
+
+export type CreateLedgerEventBatchResponse = { "events": Array<LedgerEvent>; "message": string; };
+
+export type CreateLedgerEventBatchRequest = { "events": Array<CreateLedgerEventRequest>; };
+
+export type UpdateLedgerEventRequest = { "assetId"?: number | unknown; "gameId"?: number | unknown; "holderRef"?: string | unknown; "holderType"?: "character" | "org_treasury" | "market" | "external" | "custom"; "notes"?: string | unknown; "occurredAt"?: string; "title"?: string; };
 
 export type UpdateLedgerEventStatusRequest = { "status": "ready_for_settlement" | "cancelled"; };
 

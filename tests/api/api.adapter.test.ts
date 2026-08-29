@@ -50,6 +50,20 @@ function createMockClient() {
 			response('getOrganizationsByOrganizationCharacters', payload),
 		postOrganizationsByOrganizationCharacters: (payload) =>
 			response('postOrganizationsByOrganizationCharacters', payload),
+		getOrganizationsByOrganizationCharactersSearch: (payload) =>
+			response('getOrganizationsByOrganizationCharactersSearch', payload),
+		getOrganizationsByOrganizationCharactersByCharacterId: (payload) =>
+			response('getOrganizationsByOrganizationCharactersByCharacterId', payload),
+		patchOrganizationsByOrganizationCharactersByCharacterId: (payload) =>
+			response('patchOrganizationsByOrganizationCharactersByCharacterId', payload),
+		deleteOrganizationsByOrganizationCharactersByCharacterId: (payload) =>
+			response('deleteOrganizationsByOrganizationCharactersByCharacterId', payload),
+		patchOrganizationsByOrganizationCharactersByCharacterIdClaim: (payload) =>
+			response('patchOrganizationsByOrganizationCharactersByCharacterIdClaim', payload),
+		postOrganizationsByOrganizationCharactersByCharacterIdClaimRequest: (payload) =>
+			response('postOrganizationsByOrganizationCharactersByCharacterIdClaimRequest', payload),
+		postOrganizationsByOrganizationCharactersByCharacterIdUnclaim: (payload) =>
+			response('postOrganizationsByOrganizationCharactersByCharacterIdUnclaim', payload),
 		getOrganizationsByOrganizationMembers: (payload) =>
 			response('getOrganizationsByOrganizationMembers', payload),
 		postOrganizationsByOrganizationMembers: (payload) =>
@@ -62,6 +76,12 @@ function createMockClient() {
 			response('getOrganizationsByOrganizationManagementMembersPending', payload),
 		getOrganizationsByOrganizationCharactersAvailable: (payload) =>
 			response('getOrganizationsByOrganizationCharactersAvailable', payload),
+		postOrganizationsByOrganizationGames: (payload) =>
+			response('postOrganizationsByOrganizationGames', payload),
+		patchOrganizationsByOrganizationGamesByGameId: (payload) =>
+			response('patchOrganizationsByOrganizationGamesByGameId', payload),
+		patchOrganizationsByOrganizationGamesByGameIdPrimary: (payload) =>
+			response('patchOrganizationsByOrganizationGamesByGameIdPrimary', payload),
 		postOrganizationsByOrganizationMembersInvite: (payload) =>
 			response('postOrganizationsByOrganizationMembersInvite', payload),
 		postOrganizationsByOrganizationMembersApply: (payload) =>
@@ -82,12 +102,24 @@ function createMockClient() {
 		getOrganizationsCurrentMembers: () => response('getOrganizationsCurrentMembers'),
 		postOrganizationsByOrganizationAssets: (payload) =>
 			response('postOrganizationsByOrganizationAssets', payload),
+		getOrganizationsByOrganizationAssetsSearch: (payload) =>
+			response('getOrganizationsByOrganizationAssetsSearch', payload),
+		getOrganizationsByOrganizationAssetsByAssetId: (payload) =>
+			response('getOrganizationsByOrganizationAssetsByAssetId', payload),
+		patchOrganizationsByOrganizationAssetsByAssetId: (payload) =>
+			response('patchOrganizationsByOrganizationAssetsByAssetId', payload),
+		postOrganizationsByOrganizationAssetsResolve: (payload) =>
+			response('postOrganizationsByOrganizationAssetsResolve', payload),
 		getOrganizationsByOrganizationLedgerEvents: (payload) =>
 			response('getOrganizationsByOrganizationLedgerEvents', payload),
 		postOrganizationsByOrganizationLedgerEvents: (payload) =>
 			response('postOrganizationsByOrganizationLedgerEvents', payload),
+		postOrganizationsByOrganizationLedgerEventsBatch: (payload) =>
+			response('postOrganizationsByOrganizationLedgerEventsBatch', payload),
 		getOrganizationsByOrganizationLedgerEventsByEventId: (payload) =>
 			response('getOrganizationsByOrganizationLedgerEventsByEventId', payload),
+		patchOrganizationsByOrganizationLedgerEventsByEventId: (payload) =>
+			response('patchOrganizationsByOrganizationLedgerEventsByEventId', payload),
 		getOrganizationsByOrganizationLedgerClaimableRecipients: (payload) =>
 			response('getOrganizationsByOrganizationLedgerClaimableRecipients', payload),
 		getOrganizationsByOrganizationLedgerClaimableRecipientsByCharacterId: (payload) =>
@@ -231,12 +263,22 @@ test('ApiAdapter maps organization operations to generated client methods', asyn
 	await adapter.updateOrganization('demo-guild', { name: 'Renamed Guild' });
 	await adapter.listOrganizationCharacters('demo-guild');
 	await adapter.createOrganizationCharacter('demo-guild', { gameId: 100, name: 'Healer Alt' });
+	await adapter.searchOrganizationCharacters('demo-guild', { q: 'heal', isActive: true, limit: 5, offset: 0 });
+	await adapter.getOrganizationCharacter('demo-guild', 501);
+	await adapter.updateOrganizationCharacter('demo-guild', 501, { name: 'Healer Main', notes: 'Updated' });
+	await adapter.deleteOrganizationCharacter('demo-guild', 502);
+	await adapter.updateOrganizationCharacterClaim('demo-guild', 501, { userId: 42, mode: 'assign', status: 'claimed' });
+	await adapter.createOrganizationCharacterClaimRequest('demo-guild', 503, { memberId: 88 });
+	await adapter.unclaimOrganizationCharacter('demo-guild', 504);
 	await adapter.listOrganizationMembers('demo-guild');
 	await adapter.addOrganizationMember('demo-guild', { userId: 42, characterId: 7, role: 'admin' });
 	await adapter.listOrganizationManagementCharacters('demo-guild');
 	await adapter.listOrganizationActiveMembers('demo-guild');
 	await adapter.listOrganizationPendingMembers('demo-guild');
 	await adapter.listOrganizationAvailableCharacters('demo-guild');
+	await adapter.addOrganizationGame('demo-guild', { gameId: 100, isPrimary: true });
+	await adapter.updateOrganizationGame('demo-guild', 100, { displayName: 'WOW Main' });
+	await adapter.setPrimaryOrganizationGame('demo-guild', 100);
 	await adapter.inviteOrganizationMember('demo-guild', { userVanity: 'teammate', role: 'member' });
 	await adapter.applyToOrganization('demo-guild', {
 		newCharacter: { gameId: 100, name: 'Fresh Alt' },
@@ -249,6 +291,10 @@ test('ApiAdapter maps organization operations to generated client methods', asyn
 	await adapter.declineOrganizationInvite('demo-guild', 93);
 	await adapter.deleteOrganization('demo-guild');
 	await adapter.createOrganizationAsset('demo-guild', { name: 'Epic Sword', assetType: 'item' });
+	await adapter.searchOrganizationAssets('demo-guild', { q: 'epic', gameId: 100, assetType: 'item', limit: 10, offset: 0 });
+	await adapter.getOrganizationAsset('demo-guild', 601);
+	await adapter.updateOrganizationAsset('demo-guild', 601, { name: 'Epic Sword +1', status: 'active' });
+	await adapter.resolveOrganizationAsset('demo-guild', { gameId: 100, name: 'Epic Sword' });
 	await adapter.listOrganizationLedgerEvents('demo-guild', {
 		statusGroup: 'settleable',
 		limit: 20,
@@ -259,6 +305,14 @@ test('ApiAdapter maps organization operations to generated client methods', asyn
 	await adapter.createOrganizationLedgerEvent('demo-guild', {
 		title: 'Weekly Raid',
 		occurredAt: '2026-08-27T12:00:00.000Z',
+	});
+	await adapter.createOrganizationLedgerEventsBatch('demo-guild', {
+		events: [{ title: 'Weekly Raid 2', occurredAt: '2026-08-27T12:10:00.000Z' }],
+	});
+	await adapter.updateOrganizationLedgerEvent('demo-guild', 101, {
+		title: 'Weekly Raid Updated',
+		holderType: 'character',
+		holderRef: 'Tank Main',
 	});
 	await adapter.updateOrganizationLedgerEventStatus('demo-guild', 101, { status: 'cancelled' });
 	await adapter.listOrganizationLedgerSettlements('demo-guild', {
@@ -345,6 +399,46 @@ test('ApiAdapter maps organization operations to generated client methods', asyn
 			},
 		},
 		{
+			method: 'getOrganizationsByOrganizationCharactersSearch',
+			payload: {
+				pathParams: { organization: 'demo-guild' },
+				query: { q: 'heal', isActive: 'true', limit: 5, offset: 0 },
+			},
+		},
+		{
+			method: 'getOrganizationsByOrganizationCharactersByCharacterId',
+			payload: { pathParams: { organization: 'demo-guild', characterId: 501 } },
+		},
+		{
+			method: 'patchOrganizationsByOrganizationCharactersByCharacterId',
+			payload: {
+				pathParams: { organization: 'demo-guild', characterId: 501 },
+				body: { name: 'Healer Main', notes: 'Updated' },
+			},
+		},
+		{
+			method: 'deleteOrganizationsByOrganizationCharactersByCharacterId',
+			payload: { pathParams: { organization: 'demo-guild', characterId: 502 } },
+		},
+		{
+			method: 'patchOrganizationsByOrganizationCharactersByCharacterIdClaim',
+			payload: {
+				pathParams: { organization: 'demo-guild', characterId: 501 },
+				body: { userId: 42, mode: 'assign', status: 'claimed' },
+			},
+		},
+		{
+			method: 'postOrganizationsByOrganizationCharactersByCharacterIdClaimRequest',
+			payload: {
+				pathParams: { organization: 'demo-guild', characterId: 503 },
+				body: { memberId: 88 },
+			},
+		},
+		{
+			method: 'postOrganizationsByOrganizationCharactersByCharacterIdUnclaim',
+			payload: { pathParams: { organization: 'demo-guild', characterId: 504 } },
+		},
+		{
 			method: 'getOrganizationsByOrganizationMembers',
 			payload: { pathParams: { organization: 'demo-guild' } },
 		},
@@ -370,6 +464,21 @@ test('ApiAdapter maps organization operations to generated client methods', asyn
 		{
 			method: 'getOrganizationsByOrganizationCharactersAvailable',
 			payload: { pathParams: { organization: 'demo-guild' } },
+		},
+		{
+			method: 'postOrganizationsByOrganizationGames',
+			payload: { pathParams: { organization: 'demo-guild' }, body: { gameId: 100, isPrimary: true } },
+		},
+		{
+			method: 'patchOrganizationsByOrganizationGamesByGameId',
+			payload: {
+				pathParams: { organization: 'demo-guild', gameId: 100 },
+				body: { displayName: 'WOW Main' },
+			},
+		},
+		{
+			method: 'patchOrganizationsByOrganizationGamesByGameIdPrimary',
+			payload: { pathParams: { organization: 'demo-guild', gameId: 100 }, body: {} },
 		},
 		{
 			method: 'postOrganizationsByOrganizationMembersInvite',
@@ -421,6 +530,31 @@ test('ApiAdapter maps organization operations to generated client methods', asyn
 			},
 		},
 		{
+			method: 'getOrganizationsByOrganizationAssetsSearch',
+			payload: {
+				pathParams: { organization: 'demo-guild' },
+				query: { q: 'epic', gameId: 100, assetType: 'item', limit: 10, offset: 0 },
+			},
+		},
+		{
+			method: 'getOrganizationsByOrganizationAssetsByAssetId',
+			payload: { pathParams: { organization: 'demo-guild', assetId: 601 } },
+		},
+		{
+			method: 'patchOrganizationsByOrganizationAssetsByAssetId',
+			payload: {
+				pathParams: { organization: 'demo-guild', assetId: 601 },
+				body: { name: 'Epic Sword +1', status: 'active' },
+			},
+		},
+		{
+			method: 'postOrganizationsByOrganizationAssetsResolve',
+			payload: {
+				pathParams: { organization: 'demo-guild' },
+				body: { gameId: 100, name: 'Epic Sword' },
+			},
+		},
+		{
 			method: 'getOrganizationsByOrganizationLedgerEvents',
 			payload: {
 				pathParams: { organization: 'demo-guild' },
@@ -443,6 +577,20 @@ test('ApiAdapter maps organization operations to generated client methods', asyn
 			payload: {
 				pathParams: { organization: 'demo-guild' },
 				body: { title: 'Weekly Raid', occurredAt: '2026-08-27T12:00:00.000Z' },
+			},
+		},
+		{
+			method: 'postOrganizationsByOrganizationLedgerEventsBatch',
+			payload: {
+				pathParams: { organization: 'demo-guild' },
+				body: { events: [{ title: 'Weekly Raid 2', occurredAt: '2026-08-27T12:10:00.000Z' }] },
+			},
+		},
+		{
+			method: 'patchOrganizationsByOrganizationLedgerEventsByEventId',
+			payload: {
+				pathParams: { organization: 'demo-guild', eventId: 101 },
+				body: { title: 'Weekly Raid Updated', holderType: 'character', holderRef: 'Tank Main' },
 			},
 		},
 		{
