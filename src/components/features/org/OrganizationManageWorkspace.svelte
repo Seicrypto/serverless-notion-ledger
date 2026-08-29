@@ -57,6 +57,8 @@
 		createCharacterTitle: string;
 		createCharacterNameLabel: string;
 		createCharacterDescriptionLabel: string;
+		createCharacterGameLabel: string;
+		createCharacterGameHint: string;
 		createCharacterAssigneeLabel: string;
 		createCharacterAssigneeHint: string;
 		createCharacterSubmitLabel: string;
@@ -75,6 +77,12 @@
 		editLabel: string;
 		deleteLabel: string;
 		removeMemberLabel: string;
+		charactersGameScopeLabel: string;
+		charactersGameScopeHint: string;
+		charactersManageGameLabel: string;
+		charactersAddGameLabel: string;
+		charactersUnknownGameLabel: string;
+		charactersEmptyForGameTitle: string;
 		pendingBadgeLabel: string;
 		currentUserLabel: string;
 		placeholderActionTitle: string;
@@ -89,6 +97,7 @@
 		createSuccessTitle: string;
 		createSuccessBody: string;
 		createErrorTitle: string;
+		createMissingGameBody: string;
 		confirmLabel: string;
 		closeLabel: string;
 		validationRequired: string;
@@ -135,6 +144,7 @@
 	let createCharacterOpen = false;
 	let createCharacterName = '';
 	let createCharacterDescription = '';
+	let createCharacterGameId = '';
 
 	let inviteMemberOpen = false;
 	let inviteSearchField: 'displayName' | 'email' = 'displayName';
@@ -149,6 +159,8 @@
 	let statusTitle = '';
 	let statusMessage = '';
 	let statusPrimaryAction: { label: string; onClick?: () => void; href?: string } | null = null;
+
+	let selectedCharacterGameId = '';
 
 	const toRefreshKey = (targetOrgVanity: string) => `${REFRESH_KEY_PREFIX}:${targetOrgVanity}`;
 
@@ -237,6 +249,66 @@
 		return `User #${character.claimedBy.userId}`;
 	};
 
+	const getPrimaryManageGameId = () => {
+		if (organization?.games.length) {
+			const primaryGame = organization.games.find((game) => game.primary) ?? organization.games[0];
+			return String(primaryGame.gameId);
+		}
+
+		const firstCharacterGameId = characters.find((character) => typeof character.gameId === 'number')?.gameId;
+		return typeof firstCharacterGameId === 'number' ? String(firstCharacterGameId) : '';
+	};
+
+	const getGameLabel = (gameId: number | string | null | undefined) => {
+		const normalizedGameId = Number(gameId);
+		if (!Number.isFinite(normalizedGameId)) {
+			return labels.charactersUnknownGameLabel;
+		}
+
+		const matchedGame = organization?.games.find((game) => game.gameId === normalizedGameId);
+		return matchedGame?.name ?? `${labels.charactersUnknownGameLabel} #${normalizedGameId}`;
+	};
+
+	$: availableCharacterGameIds = Array.from(
+		new Set([
+			...(organization?.games.map((game) => game.gameId) ?? []),
+			...characters.map((character) => character.gameId).filter((gameId): gameId is number => typeof gameId === 'number'),
+		]),
+	);
+
+	$: availableCharacterGames = availableCharacterGameIds.map((gameId) => ({
+		gameId,
+		name: getGameLabel(gameId),
+		primary: organization?.games.some((game) => game.gameId === gameId && game.primary) ?? false,
+	}));
+
+	$: if (activeTab === 'characters' && availableCharacterGames.length > 0 && !selectedCharacterGameId) {
+		selectedCharacterGameId = getPrimaryManageGameId();
+	}
+
+	$: if (
+		selectedCharacterGameId &&
+		!availableCharacterGames.some((game) => String(game.gameId) === selectedCharacterGameId)
+	) {
+		selectedCharacterGameId = getPrimaryManageGameId();
+	}
+
+	$: if (!createCharacterGameId && availableCharacterGames.length > 0) {
+		createCharacterGameId = selectedCharacterGameId || getPrimaryManageGameId();
+	}
+
+	$: if (
+		createCharacterGameId &&
+		!availableCharacterGames.some((game) => String(game.gameId) === createCharacterGameId)
+	) {
+		createCharacterGameId = selectedCharacterGameId || getPrimaryManageGameId();
+	}
+
+	$: filteredCharacters =
+		activeTab === 'characters' && selectedCharacterGameId
+			? characters.filter((character) => String(character.gameId ?? '') === selectedCharacterGameId)
+			: characters;
+
 	const loadWorkspace = async (forceRefresh = false) => {
 		if (!orgVanity || !isAuthenticatedSession(session)) {
 			loading = false;
@@ -253,6 +325,8 @@
 			organization = snapshot.organization;
 			characters = snapshot.characters;
 			members = snapshot.members;
+			selectedCharacterGameId = getPrimaryManageGameId();
+			createCharacterGameId = selectedCharacterGameId;
 			fillEditForm();
 		} catch (error) {
 			workspaceError = getErrorMessage(error, labels.saveErrorTitle);
@@ -329,6 +403,10 @@
 			nextErrors.characterDescription = labels.validationDescriptionLength;
 		}
 
+		if (!createCharacterGameId) {
+			nextErrors.characterDescription = nextErrors.characterDescription ?? labels.validationRequired;
+		}
+
 		fieldErrors = nextErrors;
 		return Object.keys(nextErrors).length === 0;
 	};
@@ -338,9 +416,25 @@
 			return;
 		}
 
-		const primaryGame = organization.games.find((game) => game.primary) ?? organization.games[0];
-		if (!primaryGame) {
-			openStatus('error', labels.createErrorTitle, labels.placeholderActionBody, {
+		let createGameId = createCharacterGameId ? Number(createCharacterGameId) : undefined;
+
+		if (!Number.isFinite(createGameId)) {
+			const primaryGameId = organization.games.find((game) => game.primary)?.gameId ?? organization.games[0]?.gameId;
+			createGameId = primaryGameId;
+		}
+
+		if (!Number.isFinite(createGameId)) {
+			try {
+				const response = await getApiAdapter().listOrganizationCharacters(orgVanity);
+				const fallbackCharacter = response.characters.find((character) => typeof character.gameId === 'number');
+				createGameId = typeof fallbackCharacter?.gameId === 'number' ? fallbackCharacter.gameId : undefined;
+			} catch {
+				createGameId = undefined;
+			}
+		}
+
+		if (!Number.isFinite(createGameId)) {
+			openStatus('error', labels.createErrorTitle, labels.createMissingGameBody, {
 				label: labels.closeLabel,
 				onClick: resetStatusDialog,
 			});
@@ -352,12 +446,13 @@
 
 		try {
 			await getApiAdapter().createOrganizationCharacter(orgVanity, {
-				gameId: primaryGame.gameId,
+				gameId: Number(createGameId),
 				name: createCharacterName.trim(),
 				notes: createCharacterDescription.trim() || undefined,
 			});
 			createCharacterName = '';
 			createCharacterDescription = '';
+			createCharacterGameId = selectedCharacterGameId || getPrimaryManageGameId();
 			clearOrganizationManageCache(orgVanity);
 			await loadWorkspace(true);
 			openStatus('success', labels.createSuccessTitle, labels.createSuccessBody, {
@@ -523,9 +618,12 @@
 			</article>
 
 			<section class="org-manage-panels">
-				<div class="org-manage-tabs">
+				<div class="org-manage-panel-frame">
+					<div class="org-manage-tabs" role="tablist" aria-label={labels.title}>
 					<button
 						type="button"
+						role="tab"
+						aria-selected={activeTab === 'characters' ? 'true' : 'false'}
 						class:active={activeTab === 'characters'}
 						on:click={() => {
 							activeTab = 'characters';
@@ -535,6 +633,8 @@
 					</button>
 					<button
 						type="button"
+						role="tab"
+						aria-selected={activeTab === 'members' ? 'true' : 'false'}
 						class:active={activeTab === 'members'}
 						on:click={() => {
 							activeTab = 'members';
@@ -542,9 +642,9 @@
 					>
 						{labels.tabMembersLabel}
 					</button>
-				</div>
+					</div>
 
-				<div class="org-manage-toolbar">
+					<div class="org-manage-toolbar">
 					{#if activeTab === 'characters'}
 						<div class="org-manage-toolbar-actions">
 							<button
@@ -552,9 +652,11 @@
 								class="toolbar-primary"
 								on:click={() => {
 									fieldErrors = {};
+									createCharacterGameId = selectedCharacterGameId || getPrimaryManageGameId();
 									createCharacterOpen = true;
 								}}
 							>
+								<span class="toolbar-primary-icon" aria-hidden="true">+</span>
 								{labels.charactersCreateLabel}
 							</button>
 							<button
@@ -592,12 +694,43 @@
 					{#if activeTab === 'characters' && isRefreshCoolingDown()}
 						<p class="org-manage-toolbar-note">{labels.refreshCooldownLabel}</p>
 					{/if}
-				</div>
+					</div>
 
-				<div class="org-manage-table-shell">
+					<div class="org-manage-table-shell">
 					{#if activeTab === 'characters'}
+						{#if availableCharacterGames.length > 0}
+							<div class="org-manage-game-scope">
+								<div class="org-manage-game-scope-copy">
+									<p class="org-manage-game-scope-label">{labels.charactersGameScopeLabel}</p>
+									<h3>{labels.charactersManageGameLabel}: {getGameLabel(selectedCharacterGameId)}</h3>
+									<p>{labels.charactersGameScopeHint}</p>
+								</div>
+								<div class="org-manage-game-switcher" role="tablist" aria-label={labels.charactersGameScopeLabel}>
+									{#each availableCharacterGames as game}
+										<button
+											type="button"
+											role="tab"
+											aria-selected={selectedCharacterGameId === String(game.gameId) ? 'true' : 'false'}
+											class:active={selectedCharacterGameId === String(game.gameId)}
+											on:click={() => {
+												selectedCharacterGameId = String(game.gameId);
+											}}
+										>
+											<span>{game.name}</span>
+											{#if game.primary}<strong>Primary</strong>{/if}
+										</button>
+									{/each}
+									<button type="button" class="org-manage-game-add-button" on:click={triggerPlaceholderAction}>
+										<span aria-hidden="true">+</span>
+										{labels.charactersAddGameLabel}
+									</button>
+								</div>
+							</div>
+						{/if}
 						{#if characters.length === 0}
 							<p class="org-manage-empty">{labels.emptyCharactersTitle}</p>
+						{:else if filteredCharacters.length === 0}
+							<p class="org-manage-empty">{labels.charactersEmptyForGameTitle}</p>
 						{:else}
 							<table class="org-manage-table">
 								<thead>
@@ -610,7 +743,7 @@
 									</tr>
 								</thead>
 								<tbody>
-									{#each characters as character}
+									{#each filteredCharacters as character}
 										<tr>
 											<td>{character.name}</td>
 											<td>
@@ -675,6 +808,7 @@
 							</table>
 						{/if}
 					{/if}
+					</div>
 				</div>
 			</section>
 		{/if}
@@ -731,6 +865,18 @@
 								maxlength="1000"
 							></textarea>
 							{#if fieldErrors.characterDescription}<em>{fieldErrors.characterDescription}</em>{/if}
+						</label>
+						<label class="manage-field">
+							<span>{labels.createCharacterGameLabel}</span>
+							<select bind:value={createCharacterGameId} disabled={availableCharacterGames.length === 0}>
+								<option value="">
+									{availableCharacterGames.length === 0 ? labels.createCharacterGameHint : labels.createCharacterGameLabel}
+								</option>
+								{#each availableCharacterGames as game}
+									<option value={String(game.gameId)}>{game.name}</option>
+								{/each}
+							</select>
+							{#if !availableCharacterGames.length}<em>{labels.createCharacterGameHint}</em>{/if}
 						</label>
 						<label class="manage-field">
 							<span>{labels.createCharacterAssigneeLabel}</span>
@@ -923,6 +1069,7 @@
 
 	.org-manage-card-games,
 	.org-manage-tabs,
+	.org-manage-game-switcher,
 	.org-manage-toolbar-actions,
 	.manage-modal-actions,
 	.org-manage-actions-cell {
@@ -941,6 +1088,11 @@
 		border-radius: 999px;
 		font: inherit;
 		font-weight: 700;
+	}
+
+	.org-manage-panel-frame {
+		position: relative;
+		padding-top: 4px;
 	}
 
 	.org-manage-card-games span {
@@ -994,16 +1146,61 @@
 	}
 
 	.org-manage-tabs button {
-		border: 1px solid var(--line);
-		background: color-mix(in srgb, var(--surface-strong) 78%, white);
+		position: relative;
+		min-height: 44px;
+		padding: 0 18px;
+		border: 1px solid color-mix(in srgb, var(--line) 92%, white);
+		border-bottom-color: color-mix(in srgb, var(--line) 72%, transparent);
+		border-radius: 18px 18px 0 0;
+		background: linear-gradient(
+			180deg,
+			color-mix(in srgb, var(--surface-strong) 88%, white),
+			color-mix(in srgb, var(--surface) 94%, white)
+		);
+		color: var(--text-soft);
+		transform: translateY(1px);
+		z-index: 0;
 	}
 
-	.org-manage-tabs button.active,
+	.org-manage-tabs {
+		position: relative;
+		gap: 8px;
+		align-items: end;
+	}
+
+	.org-manage-tabs::after {
+		content: '';
+		position: absolute;
+		left: 0;
+		right: 0;
+		bottom: 0;
+		border-bottom: 1px solid color-mix(in srgb, var(--line) 88%, white);
+		pointer-events: none;
+	}
+
+	.org-manage-tabs button.active {
+		border-color: color-mix(in srgb, var(--ledger-accent) 42%, var(--line));
+		border-bottom-color: transparent;
+		background: linear-gradient(
+			180deg,
+			color-mix(in srgb, var(--ledger-accent) 22%, white) 0%,
+			color-mix(in srgb, var(--ledger-accent) 10%, transparent) 52%,
+			var(--surface) 100%
+		);
+		color: color-mix(in srgb, var(--ledger-accent-deep) 90%, var(--text-main));
+		box-shadow:
+			inset 0 1px 0 rgba(255, 255, 255, 0.42),
+			0 -1px 0 color-mix(in srgb, var(--ledger-accent) 18%, transparent);
+		transform: translateY(0);
+		z-index: 1;
+	}
+
 	.toolbar-primary,
 	.modal-primary {
 		border: 1px solid transparent;
-		background: var(--accent);
+		background: linear-gradient(135deg, #2563eb 0%, #3b82f6 100%);
 		color: white;
+		box-shadow: 0 16px 30px -22px rgba(37, 99, 235, 0.95);
 	}
 
 	.toolbar-secondary,
@@ -1026,7 +1223,119 @@
 	}
 
 	.org-manage-table-shell {
-		margin-top: 20px;
+		margin-top: 16px;
+	}
+
+	.org-manage-game-scope {
+		margin-bottom: 18px;
+		padding: 18px;
+		border: 1px solid color-mix(in srgb, var(--line) 82%, transparent);
+		border-radius: 22px;
+		background:
+			linear-gradient(135deg, color-mix(in srgb, var(--ledger-accent) 10%, white), transparent 58%),
+			color-mix(in srgb, var(--surface-strong) 76%, white);
+		display: grid;
+		gap: 14px;
+	}
+
+	.org-manage-game-scope-copy h3,
+	.org-manage-game-scope-copy p {
+		margin: 0;
+	}
+
+	.org-manage-game-scope-copy h3 {
+		margin-top: 6px;
+		font-size: 1.05rem;
+	}
+
+	.org-manage-game-scope-copy p {
+		color: var(--text-soft);
+		line-height: 1.6;
+	}
+
+	.org-manage-game-scope-label {
+		font-size: 0.78rem;
+		font-weight: 800;
+		letter-spacing: 0.12em;
+		text-transform: uppercase;
+		color: color-mix(in srgb, var(--ledger-accent-deep) 74%, var(--text-soft));
+	}
+
+	.org-manage-game-switcher {
+		gap: 10px;
+	}
+
+	.org-manage-game-switcher button,
+	.org-manage-game-add-button {
+		min-height: 42px;
+		padding: 0 14px;
+		border-radius: 999px;
+		border: 1px solid color-mix(in srgb, var(--line) 88%, white);
+		background: color-mix(in srgb, var(--surface) 86%, white);
+		color: var(--text-main);
+		font: inherit;
+		font-weight: 700;
+		display: inline-flex;
+		align-items: center;
+		gap: 10px;
+		cursor: pointer;
+	}
+
+	.org-manage-game-switcher button.active {
+		border-color: color-mix(in srgb, var(--ledger-accent) 34%, var(--line));
+		background: linear-gradient(
+			135deg,
+			color-mix(in srgb, var(--ledger-accent) 22%, white),
+			color-mix(in srgb, var(--ledger-accent) 10%, var(--surface))
+		);
+		color: color-mix(in srgb, var(--ledger-accent-deep) 88%, var(--text-main));
+	}
+
+	.org-manage-game-switcher strong {
+		padding: 4px 8px;
+		border-radius: 999px;
+		background: rgba(255, 255, 255, 0.6);
+		font-size: 0.72rem;
+		letter-spacing: 0.06em;
+		text-transform: uppercase;
+	}
+
+	.org-manage-game-add-button span {
+		font-size: 1rem;
+		line-height: 1;
+	}
+
+	.org-manage-toolbar {
+		margin-top: 18px;
+	}
+
+	.org-manage-toolbar-actions {
+		gap: 12px;
+	}
+
+	.toolbar-primary {
+		display: inline-flex;
+		align-items: center;
+		gap: 10px;
+	}
+
+	.toolbar-primary:hover,
+	.modal-primary:hover {
+		background: linear-gradient(135deg, #1d4ed8 0%, #2563eb 100%);
+		box-shadow: 0 20px 32px -22px rgba(29, 78, 216, 1);
+	}
+
+	.toolbar-primary-icon {
+		width: 20px;
+		height: 20px;
+		border-radius: 999px;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		background: rgba(255, 255, 255, 0.18);
+		font-size: 1rem;
+		line-height: 1;
+		font-weight: 800;
 	}
 
 	.org-manage-table {
@@ -1201,6 +1510,12 @@
 		.org-manage-table {
 			display: block;
 			overflow-x: auto;
+		}
+
+		.org-manage-game-switcher button,
+		.org-manage-game-add-button {
+			width: 100%;
+			justify-content: space-between;
 		}
 
 		.manage-modal-actions {

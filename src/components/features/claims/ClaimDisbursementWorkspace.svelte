@@ -26,6 +26,13 @@
 		recipientsRefreshLabel: string;
 		recipientsEmptyTitle: string;
 		recipientsEmptyBody: string;
+		recipientsEmptyNoEventsTitle: string;
+		recipientsEmptyNoEventsBody: string;
+		recipientsEmptyNoSettlementsTitle: string;
+		recipientsEmptyNoSettlementsBody: string;
+		recipientsEmptyNewEventLabel: string;
+		recipientsEmptyNewSettlementLabel: string;
+		recipientsEmptyRefreshHint: string;
 		detailTitle: string;
 		detailBody: string;
 		detailLoadingLabel: string;
@@ -88,12 +95,14 @@
 		{ value: 'other', labelKey: 'methodOther' },
 	];
 
+	export let lang: string;
 	export let organization: string | null = null;
 	export let labels: Labels;
 
 	let recipients: LedgerClaimableRecipientSummary[] = [];
 	let recipientsLoading = false;
 	let recipientsError = '';
+	let emptyStateMode: 'default' | 'no-events' | 'no-settlements' = 'default';
 
 	let selectedCharacterId = '';
 	let includeSiblingCharacters = false;
@@ -302,6 +311,11 @@
 		try {
 			const response = await getApiAdapter().listOrganizationClaimableRecipients(organization);
 			recipients = response.recipients;
+			if (!response.recipients.length) {
+				await hydrateEmptyStateMode();
+			} else {
+				emptyStateMode = 'default';
+			}
 
 			if (!keepSelection || !recipients.some((recipient) => String(recipient.characterId) === selectedCharacterId)) {
 				selectedCharacterId = recipients[0] ? String(recipients[0].characterId) : '';
@@ -321,6 +335,51 @@
 			recipientsLoading = false;
 		}
 	}
+
+	async function hydrateEmptyStateMode() {
+		if (!organization) {
+			emptyStateMode = 'default';
+			return;
+		}
+
+		try {
+			const eventsResponse = await getApiAdapter().listOrganizationLedgerEvents(organization, {
+				limit: 1,
+				sortBy: 'occurredAt',
+				sortOrder: 'desc',
+			});
+			emptyStateMode = eventsResponse.events.length > 0 ? 'no-settlements' : 'no-events';
+		} catch {
+			emptyStateMode = 'default';
+		}
+	}
+
+	function getEmptyStateCopy() {
+		if (emptyStateMode === 'no-events') {
+			return {
+				title: labels.recipientsEmptyNoEventsTitle,
+				body: labels.recipientsEmptyNoEventsBody,
+			};
+		}
+
+		if (emptyStateMode === 'no-settlements') {
+			return {
+				title: labels.recipientsEmptyNoSettlementsTitle,
+				body: labels.recipientsEmptyNoSettlementsBody,
+			};
+		}
+
+		return {
+			title: labels.recipientsEmptyTitle,
+			body: labels.recipientsEmptyBody,
+		};
+	}
+
+	$: emptyStateCopy = getEmptyStateCopy();
+	$: newEventHref = organization ? `/${lang}/guilds/events/new?orgVanity=${encodeURIComponent(organization)}` : `/${lang}/guilds/events/new`;
+	$: newSettlementHref = organization
+		? `/${lang}/guilds/settlements/new?orgVanity=${encodeURIComponent(organization)}`
+		: `/${lang}/guilds/settlements/new`;
 
 	async function loadRecipientDetail(characterId: number, options: { force?: boolean } = {}) {
 		if (!organization) {
@@ -568,8 +627,16 @@
 				<p class="workspace-error">{recipientsError}</p>
 			{:else if !recipients.length}
 				<div class="workspace-empty">
-					<h3>{labels.recipientsEmptyTitle}</h3>
-					<p>{labels.recipientsEmptyBody}</p>
+					<h3>{emptyStateCopy.title}</h3>
+					<p>{emptyStateCopy.body}</p>
+					<p class="workspace-empty-note">{labels.recipientsEmptyRefreshHint}</p>
+					<div class="workspace-empty-actions">
+						{#if emptyStateMode === 'no-events'}
+							<a class="primary-button workflow-action" href={newEventHref}>{labels.recipientsEmptyNewEventLabel}</a>
+						{:else if emptyStateMode === 'no-settlements'}
+							<a class="primary-button workflow-action" href={newSettlementHref}>{labels.recipientsEmptyNewSettlementLabel}</a>
+						{/if}
+					</div>
 				</div>
 			{:else}
 				<div class="recipient-selector">
@@ -619,8 +686,8 @@
 				<p class="workspace-error">{detailError}</p>
 			{:else if !currentDetail}
 				<div class="workspace-empty">
-					<h3>{labels.recipientsEmptyTitle}</h3>
-					<p>{labels.recipientsEmptyBody}</p>
+					<h3>{emptyStateCopy.title}</h3>
+					<p>{emptyStateCopy.body}</p>
 				</div>
 			{:else}
 				<div class="summary-grid">
@@ -824,10 +891,18 @@
 	}
 
 	.workspace-head p,
-	.workspace-empty p {
+	.workspace-empty p,
+	.workspace-empty-note {
 		margin: 10px 0 0;
 		line-height: 1.7;
 		color: var(--text-soft);
+	}
+
+	.workspace-empty-actions {
+		margin-top: 12px;
+		display: flex;
+		flex-wrap: wrap;
+		gap: 12px;
 	}
 
 	.workspace-meta,
@@ -867,6 +942,16 @@
 		color: white;
 		padding: 0 18px;
 		font-weight: 700;
+	}
+
+	.primary-button.workflow-action {
+		border-color: color-mix(in srgb, var(--ledger-accent) 45%, var(--line));
+		background: linear-gradient(
+			135deg,
+			color-mix(in srgb, var(--ledger-accent) 88%, white),
+			color-mix(in srgb, var(--ledger-accent) 56%, white)
+		);
+		color: color-mix(in srgb, var(--ledger-accent-deep) 88%, var(--text-main));
 	}
 
 	.ghost-button:hover,

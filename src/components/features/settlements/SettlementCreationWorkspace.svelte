@@ -30,6 +30,8 @@
 		eventLoadingLabel: string;
 		eventEmptyTitle: string;
 		eventEmptyBody: string;
+		eventEmptyActionLabel: string;
+		eventEmptyRefreshHint: string;
 		eventRefreshLabel: string;
 		eventSummaryTitle: string;
 		eventSummaryStatusLabel: string;
@@ -136,6 +138,7 @@
 		rule: 'feeModeRule',
 	};
 
+	export let lang: string;
 	export let organization: string | null = null;
 	export let eventId: number | null = null;
 	export let labels: Labels;
@@ -143,6 +146,7 @@
 	let events: LedgerEvent[] = [];
 	let eventsLoading = false;
 	let eventsError = '';
+	let hasAnyEvents = false;
 	let selectedEventId = '';
 	let selectedEvent: LedgerEvent | null = null;
 
@@ -309,6 +313,13 @@
 		eventsError = '';
 
 		try {
+			const allEventsResponse = await getApiAdapter().listOrganizationLedgerEvents(organization, {
+				limit: 1,
+				sortBy: 'occurredAt',
+				sortOrder: 'desc',
+			});
+			hasAnyEvents = allEventsResponse.events.length > 0;
+
 			let preferredEvent: LedgerEvent | null = null;
 			if (eventId) {
 				try {
@@ -332,6 +343,7 @@
 			selectedEventId = String(preferred?.id ?? response.events[0]?.id ?? '');
 			updateSelectedEvent();
 		} catch (error) {
+			hasAnyEvents = false;
 			eventsError = getErrorMessage(error, labels.errorCreateTitle);
 		} finally {
 			eventsLoading = false;
@@ -584,6 +596,16 @@
 				<div class="settlement-empty">
 					<h3>{labels.eventEmptyTitle}</h3>
 					<p>{labels.eventEmptyBody}</p>
+					{#if hasAnyEvents}
+						<p class="settlement-empty-note">{labels.eventEmptyRefreshHint}</p>
+					{:else}
+						<a
+							class="primary-button workflow-action settlement-empty-action"
+							href={`/${lang}/guilds/events/new?orgVanity=${encodeURIComponent(organization)}`}
+						>
+							{labels.eventEmptyActionLabel}
+						</a>
+					{/if}
 				</div>
 			{/if}
 		</section>
@@ -977,6 +999,16 @@
 		color: var(--surface-strong);
 	}
 
+	.primary-button.workflow-action {
+		border-color: color-mix(in srgb, var(--ledger-accent) 45%, var(--line));
+		background: linear-gradient(
+			135deg,
+			color-mix(in srgb, var(--ledger-accent) 88%, white),
+			color-mix(in srgb, var(--ledger-accent) 56%, white)
+		);
+		color: color-mix(in srgb, var(--ledger-accent-deep) 88%, var(--text-main));
+	}
+
 	.secondary-button {
 		border: 1px solid var(--line);
 		background: color-mix(in srgb, var(--surface-strong) 82%, white);
@@ -1002,6 +1034,16 @@
 		border: 1px dashed color-mix(in srgb, var(--accent) 14%, var(--line));
 		display: grid;
 		gap: 10px;
+	}
+
+	.settlement-empty-note {
+		margin: 0;
+		color: var(--text-soft);
+	}
+
+	.settlement-empty-action {
+		justify-self: start;
+		margin-top: 4px;
 	}
 
 	@media (max-width: 820px) {

@@ -26,6 +26,7 @@ export interface OrganizationManageCharacter {
 	description: string | null;
 	slug: string | null;
 	vanity: string | null;
+	gameId: number | null;
 	isClaimed: boolean;
 	claimedBy: {
 		userId: number;
@@ -112,11 +113,18 @@ export function clearOrganizationManageCache(orgVanity: string) {
 }
 
 async function fetchSnapshot(orgVanity: string) {
-	const [organizationResponse, charactersResponse, membersResponse] = await Promise.all([
+	const [organizationResponse, charactersResponse, rawCharactersResponse, membersResponse] = await Promise.all([
 		getApiAdapter().getOrganization(orgVanity),
 		getApiAdapter().listOrganizationManagementCharacters(orgVanity),
+		getApiAdapter().listOrganizationCharacters(orgVanity),
 		getApiAdapter().listOrganizationActiveMembers(orgVanity),
 	]);
+	const rawCharacterGameIds = new Map(
+		rawCharactersResponse.characters.map((character) => [
+			character.id,
+			typeof character.gameId === 'number' ? character.gameId : null,
+		]),
+	);
 
 	return writeCache(orgVanity, {
 		organization: {
@@ -142,6 +150,7 @@ async function fetchSnapshot(orgVanity: string) {
 			description: toNullableString(character.description),
 			slug: toNullableString(character.slug),
 			vanity: toNullableString(character.vanity),
+			gameId: rawCharacterGameIds.get(character.id) ?? null,
 			isClaimed: character.isClaimed,
 			claimedBy:
 				character.claimedBy && typeof character.claimedBy.userId === 'number'
