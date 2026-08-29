@@ -1238,6 +1238,22 @@
 		gap: 14px;
 	}
 
+	:root[data-theme='dark'] .org-manage-game-scope {
+		border-color: color-mix(in srgb, var(--ledger-accent) 18%, var(--line));
+		background:
+			radial-gradient(
+				circle at top left,
+				color-mix(in srgb, var(--ledger-accent) 18%, rgba(255, 255, 255, 0.06)) 0%,
+				transparent 52%
+			),
+			linear-gradient(
+				135deg,
+				color-mix(in srgb, var(--surface-strong) 94%, rgba(255, 255, 255, 0.03)) 0%,
+				color-mix(in srgb, var(--surface) 88%, rgba(44, 120, 79, 0.12)) 100%
+			);
+		box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+	}
+
 	.org-manage-game-scope-copy h3,
 	.org-manage-game-scope-copy p {
 		margin: 0;
@@ -1246,6 +1262,7 @@
 	.org-manage-game-scope-copy h3 {
 		margin-top: 6px;
 		font-size: 1.05rem;
+		color: var(--text-main);
 	}
 
 	.org-manage-game-scope-copy p {
@@ -1259,6 +1276,10 @@
 		letter-spacing: 0.12em;
 		text-transform: uppercase;
 		color: color-mix(in srgb, var(--ledger-accent-deep) 74%, var(--text-soft));
+	}
+
+	:root[data-theme='dark'] .org-manage-game-scope-label {
+		color: color-mix(in srgb, var(--ledger-accent) 42%, white);
 	}
 
 	.org-manage-game-switcher {
@@ -1281,6 +1302,13 @@
 		cursor: pointer;
 	}
 
+	:root[data-theme='dark'] .org-manage-game-switcher button,
+	:root[data-theme='dark'] .org-manage-game-add-button {
+		border-color: color-mix(in srgb, var(--line) 82%, rgba(255, 255, 255, 0.08));
+		background: color-mix(in srgb, var(--surface) 90%, rgba(255, 255, 255, 0.03));
+		color: var(--text-main);
+	}
+
 	.org-manage-game-switcher button.active {
 		border-color: color-mix(in srgb, var(--ledger-accent) 34%, var(--line));
 		background: linear-gradient(
@@ -1291,6 +1319,16 @@
 		color: color-mix(in srgb, var(--ledger-accent-deep) 88%, var(--text-main));
 	}
 
+	:root[data-theme='dark'] .org-manage-game-switcher button.active {
+		border-color: color-mix(in srgb, var(--ledger-accent) 38%, var(--line));
+		background: linear-gradient(
+			135deg,
+			color-mix(in srgb, var(--ledger-accent) 24%, rgba(255, 255, 255, 0.06)),
+			color-mix(in srgb, var(--surface) 86%, rgba(39, 110, 71, 0.18))
+		);
+		color: color-mix(in srgb, #eefcf4 72%, var(--text-main));
+	}
+
 	.org-manage-game-switcher strong {
 		padding: 4px 8px;
 		border-radius: 999px;
@@ -1298,6 +1336,11 @@
 		font-size: 0.72rem;
 		letter-spacing: 0.06em;
 		text-transform: uppercase;
+	}
+
+	:root[data-theme='dark'] .org-manage-game-switcher strong {
+		background: rgba(255, 255, 255, 0.08);
+		color: color-mix(in srgb, #eefcf4 68%, var(--text-main));
 	}
 
 	.org-manage-game-add-button span {
