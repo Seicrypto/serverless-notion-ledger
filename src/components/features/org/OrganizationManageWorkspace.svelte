@@ -57,6 +57,8 @@
 		createCharacterTitle: string;
 		createCharacterNameLabel: string;
 		createCharacterDescriptionLabel: string;
+		createCharacterGameLabel: string;
+		createCharacterGameHint: string;
 		createCharacterAssigneeLabel: string;
 		createCharacterAssigneeHint: string;
 		createCharacterSubmitLabel: string;
@@ -75,6 +77,12 @@
 		editLabel: string;
 		deleteLabel: string;
 		removeMemberLabel: string;
+		charactersGameScopeLabel: string;
+		charactersGameScopeHint: string;
+		charactersManageGameLabel: string;
+		charactersAddGameLabel: string;
+		charactersUnknownGameLabel: string;
+		charactersEmptyForGameTitle: string;
 		pendingBadgeLabel: string;
 		currentUserLabel: string;
 		placeholderActionTitle: string;
@@ -89,6 +97,7 @@
 		createSuccessTitle: string;
 		createSuccessBody: string;
 		createErrorTitle: string;
+		createMissingGameBody: string;
 		confirmLabel: string;
 		closeLabel: string;
 		validationRequired: string;
@@ -135,6 +144,7 @@
 	let createCharacterOpen = false;
 	let createCharacterName = '';
 	let createCharacterDescription = '';
+	let createCharacterGameId = '';
 
 	let inviteMemberOpen = false;
 	let inviteSearchField: 'displayName' | 'email' = 'displayName';
@@ -149,6 +159,8 @@
 	let statusTitle = '';
 	let statusMessage = '';
 	let statusPrimaryAction: { label: string; onClick?: () => void; href?: string } | null = null;
+
+	let selectedCharacterGameId = '';
 
 	const toRefreshKey = (targetOrgVanity: string) => `${REFRESH_KEY_PREFIX}:${targetOrgVanity}`;
 
@@ -237,6 +249,66 @@
 		return `User #${character.claimedBy.userId}`;
 	};
 
+	const getPrimaryManageGameId = () => {
+		if (organization?.games.length) {
+			const primaryGame = organization.games.find((game) => game.primary) ?? organization.games[0];
+			return String(primaryGame.gameId);
+		}
+
+		const firstCharacterGameId = characters.find((character) => typeof character.gameId === 'number')?.gameId;
+		return typeof firstCharacterGameId === 'number' ? String(firstCharacterGameId) : '';
+	};
+
+	const getGameLabel = (gameId: number | string | null | undefined) => {
+		const normalizedGameId = Number(gameId);
+		if (!Number.isFinite(normalizedGameId)) {
+			return labels.charactersUnknownGameLabel;
+		}
+
+		const matchedGame = organization?.games.find((game) => game.gameId === normalizedGameId);
+		return matchedGame?.name ?? `${labels.charactersUnknownGameLabel} #${normalizedGameId}`;
+	};
+
+	$: availableCharacterGameIds = Array.from(
+		new Set([
+			...(organization?.games.map((game) => game.gameId) ?? []),
+			...characters.map((character) => character.gameId).filter((gameId): gameId is number => typeof gameId === 'number'),
+		]),
+	);
+
+	$: availableCharacterGames = availableCharacterGameIds.map((gameId) => ({
+		gameId,
+		name: getGameLabel(gameId),
+		primary: organization?.games.some((game) => game.gameId === gameId && game.primary) ?? false,
+	}));
+
+	$: if (activeTab === 'characters' && availableCharacterGames.length > 0 && !selectedCharacterGameId) {
+		selectedCharacterGameId = getPrimaryManageGameId();
+	}
+
+	$: if (
+		selectedCharacterGameId &&
+		!availableCharacterGames.some((game) => String(game.gameId) === selectedCharacterGameId)
+	) {
+		selectedCharacterGameId = getPrimaryManageGameId();
+	}
+
+	$: if (!createCharacterGameId && availableCharacterGames.length > 0) {
+		createCharacterGameId = selectedCharacterGameId || getPrimaryManageGameId();
+	}
+
+	$: if (
+		createCharacterGameId &&
+		!availableCharacterGames.some((game) => String(game.gameId) === createCharacterGameId)
+	) {
+		createCharacterGameId = selectedCharacterGameId || getPrimaryManageGameId();
+	}
+
+	$: filteredCharacters =
+		activeTab === 'characters' && selectedCharacterGameId
+			? characters.filter((character) => String(character.gameId ?? '') === selectedCharacterGameId)
+			: characters;
+
 	const loadWorkspace = async (forceRefresh = false) => {
 		if (!orgVanity || !isAuthenticatedSession(session)) {
 			loading = false;
@@ -253,6 +325,8 @@
 			organization = snapshot.organization;
 			characters = snapshot.characters;
 			members = snapshot.members;
+			selectedCharacterGameId = getPrimaryManageGameId();
+			createCharacterGameId = selectedCharacterGameId;
 			fillEditForm();
 		} catch (error) {
 			workspaceError = getErrorMessage(error, labels.saveErrorTitle);
@@ -329,6 +403,10 @@
 			nextErrors.characterDescription = labels.validationDescriptionLength;
 		}
 
+		if (!createCharacterGameId) {
+			nextErrors.characterDescription = nextErrors.characterDescription ?? labels.validationRequired;
+		}
+
 		fieldErrors = nextErrors;
 		return Object.keys(nextErrors).length === 0;
 	};
@@ -338,9 +416,25 @@
 			return;
 		}
 
-		const primaryGame = organization.games.find((game) => game.primary) ?? organization.games[0];
-		if (!primaryGame) {
-			openStatus('error', labels.createErrorTitle, labels.placeholderActionBody, {
+		let createGameId = createCharacterGameId ? Number(createCharacterGameId) : undefined;
+
+		if (!Number.isFinite(createGameId)) {
+			const primaryGameId = organization.games.find((game) => game.primary)?.gameId ?? organization.games[0]?.gameId;
+			createGameId = primaryGameId;
+		}
+
+		if (!Number.isFinite(createGameId)) {
+			try {
+				const response = await getApiAdapter().listOrganizationCharacters(orgVanity);
+				const fallbackCharacter = response.characters.find((character) => typeof character.gameId === 'number');
+				createGameId = typeof fallbackCharacter?.gameId === 'number' ? fallbackCharacter.gameId : undefined;
+			} catch {
+				createGameId = undefined;
+			}
+		}
+
+		if (!Number.isFinite(createGameId)) {
+			openStatus('error', labels.createErrorTitle, labels.createMissingGameBody, {
 				label: labels.closeLabel,
 				onClick: resetStatusDialog,
 			});
@@ -352,12 +446,13 @@
 
 		try {
 			await getApiAdapter().createOrganizationCharacter(orgVanity, {
-				gameId: primaryGame.gameId,
+				gameId: Number(createGameId),
 				name: createCharacterName.trim(),
 				notes: createCharacterDescription.trim() || undefined,
 			});
 			createCharacterName = '';
 			createCharacterDescription = '';
+			createCharacterGameId = selectedCharacterGameId || getPrimaryManageGameId();
 			clearOrganizationManageCache(orgVanity);
 			await loadWorkspace(true);
 			openStatus('success', labels.createSuccessTitle, labels.createSuccessBody, {
@@ -557,6 +652,7 @@
 								class="toolbar-primary"
 								on:click={() => {
 									fieldErrors = {};
+									createCharacterGameId = selectedCharacterGameId || getPrimaryManageGameId();
 									createCharacterOpen = true;
 								}}
 							>
@@ -602,8 +698,39 @@
 
 					<div class="org-manage-table-shell">
 					{#if activeTab === 'characters'}
+						{#if availableCharacterGames.length > 0}
+							<div class="org-manage-game-scope">
+								<div class="org-manage-game-scope-copy">
+									<p class="org-manage-game-scope-label">{labels.charactersGameScopeLabel}</p>
+									<h3>{labels.charactersManageGameLabel}: {getGameLabel(selectedCharacterGameId)}</h3>
+									<p>{labels.charactersGameScopeHint}</p>
+								</div>
+								<div class="org-manage-game-switcher" role="tablist" aria-label={labels.charactersGameScopeLabel}>
+									{#each availableCharacterGames as game}
+										<button
+											type="button"
+											role="tab"
+											aria-selected={selectedCharacterGameId === String(game.gameId) ? 'true' : 'false'}
+											class:active={selectedCharacterGameId === String(game.gameId)}
+											on:click={() => {
+												selectedCharacterGameId = String(game.gameId);
+											}}
+										>
+											<span>{game.name}</span>
+											{#if game.primary}<strong>Primary</strong>{/if}
+										</button>
+									{/each}
+									<button type="button" class="org-manage-game-add-button" on:click={triggerPlaceholderAction}>
+										<span aria-hidden="true">+</span>
+										{labels.charactersAddGameLabel}
+									</button>
+								</div>
+							</div>
+						{/if}
 						{#if characters.length === 0}
 							<p class="org-manage-empty">{labels.emptyCharactersTitle}</p>
+						{:else if filteredCharacters.length === 0}
+							<p class="org-manage-empty">{labels.charactersEmptyForGameTitle}</p>
 						{:else}
 							<table class="org-manage-table">
 								<thead>
@@ -616,7 +743,7 @@
 									</tr>
 								</thead>
 								<tbody>
-									{#each characters as character}
+									{#each filteredCharacters as character}
 										<tr>
 											<td>{character.name}</td>
 											<td>
@@ -738,6 +865,18 @@
 								maxlength="1000"
 							></textarea>
 							{#if fieldErrors.characterDescription}<em>{fieldErrors.characterDescription}</em>{/if}
+						</label>
+						<label class="manage-field">
+							<span>{labels.createCharacterGameLabel}</span>
+							<select bind:value={createCharacterGameId} disabled={availableCharacterGames.length === 0}>
+								<option value="">
+									{availableCharacterGames.length === 0 ? labels.createCharacterGameHint : labels.createCharacterGameLabel}
+								</option>
+								{#each availableCharacterGames as game}
+									<option value={String(game.gameId)}>{game.name}</option>
+								{/each}
+							</select>
+							{#if !availableCharacterGames.length}<em>{labels.createCharacterGameHint}</em>{/if}
 						</label>
 						<label class="manage-field">
 							<span>{labels.createCharacterAssigneeLabel}</span>
@@ -930,6 +1069,7 @@
 
 	.org-manage-card-games,
 	.org-manage-tabs,
+	.org-manage-game-switcher,
 	.org-manage-toolbar-actions,
 	.manage-modal-actions,
 	.org-manage-actions-cell {
@@ -1084,6 +1224,85 @@
 
 	.org-manage-table-shell {
 		margin-top: 16px;
+	}
+
+	.org-manage-game-scope {
+		margin-bottom: 18px;
+		padding: 18px;
+		border: 1px solid color-mix(in srgb, var(--line) 82%, transparent);
+		border-radius: 22px;
+		background:
+			linear-gradient(135deg, color-mix(in srgb, var(--ledger-accent) 10%, white), transparent 58%),
+			color-mix(in srgb, var(--surface-strong) 76%, white);
+		display: grid;
+		gap: 14px;
+	}
+
+	.org-manage-game-scope-copy h3,
+	.org-manage-game-scope-copy p {
+		margin: 0;
+	}
+
+	.org-manage-game-scope-copy h3 {
+		margin-top: 6px;
+		font-size: 1.05rem;
+	}
+
+	.org-manage-game-scope-copy p {
+		color: var(--text-soft);
+		line-height: 1.6;
+	}
+
+	.org-manage-game-scope-label {
+		font-size: 0.78rem;
+		font-weight: 800;
+		letter-spacing: 0.12em;
+		text-transform: uppercase;
+		color: color-mix(in srgb, var(--ledger-accent-deep) 74%, var(--text-soft));
+	}
+
+	.org-manage-game-switcher {
+		gap: 10px;
+	}
+
+	.org-manage-game-switcher button,
+	.org-manage-game-add-button {
+		min-height: 42px;
+		padding: 0 14px;
+		border-radius: 999px;
+		border: 1px solid color-mix(in srgb, var(--line) 88%, white);
+		background: color-mix(in srgb, var(--surface) 86%, white);
+		color: var(--text-main);
+		font: inherit;
+		font-weight: 700;
+		display: inline-flex;
+		align-items: center;
+		gap: 10px;
+		cursor: pointer;
+	}
+
+	.org-manage-game-switcher button.active {
+		border-color: color-mix(in srgb, var(--ledger-accent) 34%, var(--line));
+		background: linear-gradient(
+			135deg,
+			color-mix(in srgb, var(--ledger-accent) 22%, white),
+			color-mix(in srgb, var(--ledger-accent) 10%, var(--surface))
+		);
+		color: color-mix(in srgb, var(--ledger-accent-deep) 88%, var(--text-main));
+	}
+
+	.org-manage-game-switcher strong {
+		padding: 4px 8px;
+		border-radius: 999px;
+		background: rgba(255, 255, 255, 0.6);
+		font-size: 0.72rem;
+		letter-spacing: 0.06em;
+		text-transform: uppercase;
+	}
+
+	.org-manage-game-add-button span {
+		font-size: 1rem;
+		line-height: 1;
 	}
 
 	.org-manage-toolbar {
@@ -1291,6 +1510,12 @@
 		.org-manage-table {
 			display: block;
 			overflow-x: auto;
+		}
+
+		.org-manage-game-switcher button,
+		.org-manage-game-add-button {
+			width: 100%;
+			justify-content: space-between;
 		}
 
 		.manage-modal-actions {
