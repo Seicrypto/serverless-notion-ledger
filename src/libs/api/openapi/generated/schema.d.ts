@@ -11,7 +11,7 @@ export type ValidationErrorResponse = { "code": string; "error": string; "issues
 
 export type ErrorResponse = { "code": string; "error": string; "requestId": string; };
 
-export type RegisterRequest = { "displayName"?: string; "email": string; "password": string; };
+export type RegisterRequest = { "displayName"?: string; "email": string; "lang"?: string; "password": string; };
 
 export type LoginResponse = { "email": string; "message": string; "userId": number; };
 

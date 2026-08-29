@@ -31,6 +31,7 @@ function createMockClient() {
 		getAdminUsersPending: () => response('getAdminUsersPending'),
 		getAdminUsersDisabled: (payload) => response('getAdminUsersDisabled', payload),
 		getAdminUsersByUser: (payload) => response('getAdminUsersByUser', payload),
+		deleteAdminUsersByUser: (payload) => response('deleteAdminUsersByUser', payload),
 		patchAdminOrganizationsByOrganizationVanity: (payload) =>
 			response('patchAdminOrganizationsByOrganizationVanity', payload),
 		patchAdminUsersByUserVanity: (payload) => response('patchAdminUsersByUserVanity', payload),
@@ -131,6 +132,7 @@ test('ApiAdapter maps auth operations to generated client methods', async () => 
 	const { client, calls } = createMockClient();
 	const adapter = new ApiAdapter(client);
 
+	await adapter.register({ email: 'demo@example.com', password: 'password123', lang: 'zh-tw' });
 	await adapter.login({ email: 'demo@example.com', password: 'password123' });
 	await adapter.getCurrentUser();
 	await adapter.updateDisplayName({ displayName: 'Demo User' });
@@ -140,6 +142,10 @@ test('ApiAdapter maps auth operations to generated client methods', async () => 
 	await adapter.resendVerificationEmail({ email: 'demo@example.com' });
 
 	assert.deepEqual(calls, [
+		{
+			method: 'postAuthRegister',
+			payload: { body: { email: 'demo@example.com', password: 'password123', lang: 'zh-tw' } },
+		},
 		{
 			method: 'postAuthLogin',
 			payload: { body: { email: 'demo@example.com', password: 'password123' } },
@@ -165,6 +171,7 @@ test('ApiAdapter maps admin operations to generated client path params', async (
 
 	await adapter.listDisabledUsers({ displayName: 'mika', limit: 10, offset: 0 });
 	await adapter.getManagedUser('demo-user');
+	await adapter.deleteUserData('demo-user');
 	await adapter.updateOrganizationVanity('demo-guild', { vanity: 'demo' });
 	await adapter.updateUserVanity('demo-user', { vanity: 'mika-demo' });
 	await adapter.approveUser(7);
@@ -179,6 +186,10 @@ test('ApiAdapter maps admin operations to generated client path params', async (
 		},
 		{
 			method: 'getAdminUsersByUser',
+			payload: { pathParams: { user: 'demo-user' } },
+		},
+		{
+			method: 'deleteAdminUsersByUser',
 			payload: { pathParams: { user: 'demo-user' } },
 		},
 		{

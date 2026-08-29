@@ -219,6 +219,12 @@ export class ApiAdapter {
 		});
 	}
 
+	deleteUserData(user: UserReference) {
+		return this.client.deleteAdminUsersByUser({
+			pathParams: { user: normalizeUserReference(user) },
+		});
+	}
+
 	updateOrganizationVanity(organization: OrganizationReference, payload: UpdateOrganizationVanityRequest) {
 		return this.client.patchAdminOrganizationsByOrganizationVanity({
 			pathParams: { organization: normalizeOrganizationReference(organization) },

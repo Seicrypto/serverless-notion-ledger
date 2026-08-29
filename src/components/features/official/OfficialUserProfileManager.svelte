@@ -62,6 +62,10 @@
 		actionErrorTitle: string;
 		actionErrorBody: string;
 		confirmLabel: string;
+		deleteConfirmLabel: string;
+		deleteDangerLabel: string;
+		deleteSuccessBody: string;
+		deleteAdminOnlyBody: string;
 		statusApproveLabel: string;
 		statusEnableLabel: string;
 		statusDisableLabel: string;
@@ -224,6 +228,14 @@
 		};
 	}
 
+	function canDeleteUserData(currentSession: AuthSession | null) {
+		return (
+			isAuthenticatedSession(currentSession) &&
+			currentSession.user.isStaff &&
+			currentSession.user.staffRole === 'admin'
+		);
+	}
+
 	function getStatusActionLabel(status: ManagedUserView['status']) {
 		if (status === 'pending_approval') {
 			return labels.statusApproveLabel;
@@ -361,6 +373,37 @@
 						: await getApiAdapter().disableUser(selectedUser.id);
 			selectedUser = normalizeManagedUser(response.user);
 			openSuccessDialog();
+		} catch (error) {
+			openErrorDialog(getErrorMessage(error, labels.actionErrorBody));
+		}
+	}
+
+	async function submitDeleteUserData() {
+		if (!selectedUser) {
+			return;
+		}
+
+		if (!canDeleteUserData(session)) {
+			openErrorDialog(labels.deleteAdminOnlyBody);
+			return;
+		}
+
+		const confirmed = window.confirm(labels.deleteConfirmLabel);
+		if (!confirmed) {
+			return;
+		}
+
+		openPendingDialog();
+
+		try {
+			await getApiAdapter().deleteUserData(selectedUser.id);
+			selectedUser = null;
+			hasSearched = true;
+			queryDraft = '';
+			queryError = '';
+			resultError = '';
+			syncUrl('');
+			openSuccessDialog(labels.deleteSuccessBody);
 		} catch (error) {
 			openErrorDialog(getErrorMessage(error, labels.actionErrorBody));
 		}
@@ -525,6 +568,17 @@
 						>
 							{getStatusActionLabel(selectedUser.status)}
 						</button>
+						{#if canDeleteUserData(session)}
+							<button
+								type="button"
+								class="official-user-status-action official-user-status-action-danger"
+								on:click={() => {
+									void submitDeleteUserData();
+								}}
+							>
+								{labels.deleteDangerLabel}
+							</button>
+						{/if}
 					</div>
 				</div>
 			{:else if hasSearched}
@@ -718,6 +772,12 @@
 		border: 1px solid var(--line);
 		background: color-mix(in srgb, var(--surface-strong) 76%, white);
 		color: var(--text-main);
+	}
+
+	.official-user-status-action-danger {
+		border-color: transparent;
+		background: #a62828;
+		color: #fff8f8;
 	}
 
 	.official-user-state-block {
