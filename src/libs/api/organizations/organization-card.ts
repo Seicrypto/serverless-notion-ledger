@@ -20,7 +20,6 @@ export interface OrganizationCardDisplayOptions {
 export interface OrganizationCardResponse {
 	id: number;
 	name: string;
-	slug: string;
 	vanity: string | null;
 	description: string | null;
 	iconUrl: string | null;
@@ -83,7 +82,6 @@ export function mapApiOrganizationCardToOrganizationCardResponse(
 	return createOrganizationCardResponse({
 		id: organization.id,
 		name: organization.name,
-		slug: organization.slug,
 		vanity: toNullableString(organization.vanity),
 		description: toNullableString(organization.description),
 		iconUrl: toNullableString(organization.iconUrl),

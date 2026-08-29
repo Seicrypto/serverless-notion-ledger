@@ -4,12 +4,8 @@ function normalizeOrganizationValue(value: string | null | undefined) {
 	return typeof value === 'string' && value.trim() ? value.trim() : null;
 }
 
-export function getOrganizationReference(organization: Pick<OrganizationCardResponse, 'slug' | 'vanity' | 'id'>) {
-	return (
-		normalizeOrganizationValue(organization.slug) ??
-		normalizeOrganizationValue(organization.vanity) ??
-		String(organization.id)
-	);
+export function getOrganizationReference(organization: Pick<OrganizationCardResponse, 'vanity' | 'id'>) {
+	return normalizeOrganizationValue(organization.vanity) ?? String(organization.id);
 }
 
 export function readOrganizationQueryFromLocation() {

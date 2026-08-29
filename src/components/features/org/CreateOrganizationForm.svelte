@@ -6,15 +6,13 @@
 	import { getErrorMessage } from '../../../libs/api/auth/session.ts';
 	import { refreshMyOrganizationsCache } from '../../../libs/api/organizations/my-organizations-cache.ts';
 
-	interface GameOption {
-		id: number;
-		name: string;
-		slug: string;
-	}
+interface GameOption {
+	id: number;
+	name: string;
+}
 
 	interface Labels {
 		nameLabel: string;
-		slugLabel: string;
 		descriptionLabel: string;
 		iconUrlLabel: string;
 		gameLabel: string;
@@ -25,7 +23,6 @@
 		optionalHint: string;
 		submitLabel: string;
 		namePlaceholder: string;
-		slugPlaceholder: string;
 		descriptionPlaceholder: string;
 		iconUrlPlaceholder: string;
 		characterNamePlaceholder: string;
@@ -51,10 +48,10 @@
 		goManageLabelPrefix: string;
 	}
 
-	type FieldErrors = Record<string, string>;
+type FieldErrors = Record<string, string>;
 
-	const SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
-	const CREATE_TIMEOUT_MS = 15000;
+const SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+const CREATE_TIMEOUT_MS = 15000;
 
 	export let lang: string;
 	export let labels: Labels;
@@ -64,7 +61,6 @@
 	let gamesError = '';
 
 	let name = '';
-	let slug = '';
 	let description = '';
 	let iconUrl = '';
 	let gameId = '';
@@ -132,15 +128,6 @@
 			nextErrors.name = labels.validationNameLength;
 		}
 
-		const normalizedSlug = slug.trim();
-		if (!normalizedSlug) {
-			nextErrors.slug = labels.validationRequired;
-		} else if (normalizedSlug.length < 2 || normalizedSlug.length > 80) {
-			nextErrors.slug = labels.validationSlugLength;
-		} else if (!SLUG_PATTERN.test(normalizedSlug)) {
-			nextErrors.slug = labels.validationSlug;
-		}
-
 		if (description.trim().length > 500) {
 			nextErrors.description = labels.validationDescriptionLength;
 		}
@@ -191,7 +178,6 @@
 				.map((game) => ({
 					id: game.id,
 					name: game.name,
-					slug: game.slug,
 				}));
 			if (!gameId && games[0]) {
 				gameId = String(games[0].id);
@@ -205,7 +191,6 @@
 
 	const resetForm = () => {
 		name = '';
-		slug = '';
 		description = '';
 		iconUrl = '';
 		initialCharacterName = '';
@@ -231,7 +216,6 @@
 		try {
 			const response = await getApiAdapter().createOrganization({
 				name: name.trim(),
-				slug: slug.trim(),
 				description: description.trim() || undefined,
 				iconUrl: iconUrl.trim() || undefined,
 				initialCharacter: {
@@ -255,8 +239,7 @@
 			}
 			openSuccessDialog(
 				response.organization.name,
-				response.organization.slug ||
-					(typeof response.organization.vanity === 'string' ? response.organization.vanity : '') ||
+				(typeof response.organization.vanity === 'string' ? response.organization.vanity : '') ||
 					String(response.organization.id),
 			);
 		} catch (error) {
@@ -289,13 +272,6 @@
 				<input class:error={Boolean(errors.name)} bind:value={name} type="text" maxlength="100" placeholder={labels.namePlaceholder} />
 				<small>{labels.requiredHint}</small>
 				{#if errors.name}<em>{errors.name}</em>{/if}
-			</label>
-
-			<label class="create-org-field">
-				<span>{labels.slugLabel}</span>
-				<input class:error={Boolean(errors.slug)} bind:value={slug} type="text" maxlength="80" placeholder={labels.slugPlaceholder} />
-				<small>{labels.requiredHint}</small>
-				{#if errors.slug}<em>{errors.slug}</em>{/if}
 			</label>
 
 			<label class="create-org-field create-org-field-wide">

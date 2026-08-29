@@ -50,7 +50,6 @@
 		inviteSearchCancelLabel: string;
 		editOrgTitle: string;
 		editOrgNameLabel: string;
-		editOrgSlugLabel: string;
 		editOrgDescriptionLabel: string;
 		editOrgIconUrlLabel: string;
 		editOrgSubmitLabel: string;
@@ -93,10 +92,8 @@
 		confirmLabel: string;
 		closeLabel: string;
 		validationRequired: string;
-		validationSlug: string;
 		validationUrl: string;
 		validationNameLength: string;
-		validationSlugLength: string;
 		validationDescriptionLength: string;
 		emptyCharactersTitle: string;
 		emptyMembersTitle: string;
@@ -107,14 +104,12 @@
 
 	interface FieldErrors {
 		name?: string;
-		slug?: string;
 		description?: string;
 		iconUrl?: string;
 		characterName?: string;
 		characterDescription?: string;
 	}
 
-	const SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 	const MANUAL_REFRESH_COOLDOWN_MS = 60 * 1000;
 	const REFRESH_KEY_PREFIX = 'raid-ledger.org-manage-last-refresh';
 
@@ -134,7 +129,6 @@
 
 	let editOrgOpen = false;
 	let editName = '';
-	let editSlug = '';
 	let editDescription = '';
 	let editIconUrl = '';
 
@@ -202,7 +196,6 @@
 		}
 
 		editName = organization.name;
-		editSlug = organization.slug;
 		editDescription = organization.description ?? '';
 		editIconUrl = organization.iconUrl ?? '';
 		fieldErrors = {};
@@ -278,15 +271,6 @@
 			nextErrors.name = labels.validationNameLength;
 		}
 
-		const normalizedSlug = editSlug.trim();
-		if (!normalizedSlug) {
-			nextErrors.slug = labels.validationRequired;
-		} else if (normalizedSlug.length < 2 || normalizedSlug.length > 80) {
-			nextErrors.slug = labels.validationSlugLength;
-		} else if (!SLUG_PATTERN.test(normalizedSlug)) {
-			nextErrors.slug = labels.validationSlug;
-		}
-
 		if (editDescription.trim().length > 500) {
 			nextErrors.description = labels.validationDescriptionLength;
 		}
@@ -314,7 +298,6 @@
 		try {
 			await getApiAdapter().updateOrganization(orgVanity, {
 				name: editName.trim(),
-				slug: editSlug.trim(),
 				description: editDescription.trim() || undefined,
 				iconUrl: editIconUrl.trim() || undefined,
 			});
@@ -486,7 +469,9 @@
 						{/if}
 
 						<div class="org-manage-card-copy">
-							<p class="org-manage-card-slug">/{organization.slug}</p>
+							{#if organization.vanity}
+								<p class="org-manage-card-slug">@{organization.vanity}</p>
+							{/if}
 							<h2>{organization.name}</h2>
 						</div>
 					</div>
@@ -703,11 +688,6 @@
 							<span>{labels.editOrgNameLabel}</span>
 							<input bind:value={editName} class:error={Boolean(fieldErrors.name)} type="text" maxlength="100" />
 							{#if fieldErrors.name}<em>{fieldErrors.name}</em>{/if}
-						</label>
-						<label class="manage-field">
-							<span>{labels.editOrgSlugLabel}</span>
-							<input bind:value={editSlug} class:error={Boolean(fieldErrors.slug)} type="text" maxlength="80" />
-							{#if fieldErrors.slug}<em>{fieldErrors.slug}</em>{/if}
 						</label>
 						<label class="manage-field">
 							<span>{labels.editOrgDescriptionLabel}</span>
