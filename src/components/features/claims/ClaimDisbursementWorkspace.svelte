@@ -153,6 +153,10 @@
 		}).format(date);
 	}
 
+	function formatUnknownDateTime(value: unknown) {
+		return typeof value === 'string' || value == null ? formatDateTime(value) : '—';
+	}
+
 	function describeRecentTime(value: string | null | undefined) {
 		if (!value) {
 			return '—';
@@ -173,6 +177,10 @@
 			minute: '2-digit',
 		}).format(date);
 		return isYesterday ? `${labels.yesterdayPrefix} ${time}` : time;
+	}
+
+	function describeUnknownRecentTime(value: unknown) {
+		return typeof value === 'string' || value == null ? describeRecentTime(value) : '—';
 	}
 
 	function withTimeout<T>(promise: Promise<T>, timeoutMs: number) {
@@ -307,7 +315,7 @@
 				claimAmounts = {};
 			}
 		} catch (error) {
-			recipientsError = getErrorMessage(error);
+			recipientsError = getErrorMessage(error, labels.recipientsEmptyBody);
 		} finally {
 			recipientsLoading = false;
 		}
@@ -339,7 +347,7 @@
 			siblingDetails = [];
 			selectedAllocationIds = new Set<number>();
 			claimAmounts = {};
-			detailError = getErrorMessage(error);
+			detailError = getErrorMessage(error, labels.detailBody);
 		} finally {
 			detailLoading = false;
 		}
@@ -348,7 +356,9 @@
 	async function ensureSiblingDetails() {
 		if (!organization || !currentDetail?.siblingCharacters.length) {
 			siblingDetails = [];
-			syncAllocationSelection(buildActiveAllocations(currentDetail, [], false));
+			if (currentDetail) {
+				syncAllocationSelection(buildActiveAllocations(currentDetail, [], false));
+			}
 			return;
 		}
 
@@ -378,7 +388,7 @@
 		} catch (error) {
 			includeSiblingCharacters = false;
 			siblingDetails = [];
-			detailError = getErrorMessage(error);
+			detailError = getErrorMessage(error, labels.detailBody);
 		} finally {
 			detailLoading = false;
 		}
@@ -490,7 +500,7 @@
 			dialogTitle = labels.errorSubmitTitle;
 			dialogMessage = error instanceof Error && error.message === 'timeout'
 				? labels.errorSubmitTimeoutBody
-				: getErrorMessage(error);
+				: getErrorMessage(error, labels.errorSubmitTitle);
 			dialogPrimaryAction = {
 				label: labels.errorRetryLabel,
 				onClick: () => {
@@ -638,7 +648,9 @@
 								}
 
 								siblingDetails = [];
-								syncAllocationSelection(buildActiveAllocations(currentDetail, [], false));
+								if (currentDetail) {
+									syncAllocationSelection(buildActiveAllocations(currentDetail, [], false));
+								}
 							}}
 						/>
 						<span>
@@ -698,7 +710,7 @@
 								<div class="allocation-meta">
 									<span>{labels.allocationSettlementLabel}: #{allocation.settlementId}</span>
 									<span>{labels.allocationEventLabel}: {allocation.eventTitle ?? `#${allocation.eventId ?? '—'}`}</span>
-									<span>{labels.allocationOccurredAtLabel}: {formatDateTime(allocation.eventOccurredAt)}</span>
+									<span>{labels.allocationOccurredAtLabel}: {formatUnknownDateTime(allocation.eventOccurredAt)}</span>
 									<span>{labels.allocationUnitLabel}: {allocation.unitAssetName ?? `Asset #${allocation.unitAssetId ?? '—'}`}</span>
 								</div>
 							</div>
@@ -712,7 +724,7 @@
 										bind:value={claimAmounts[allocation.allocationId]}
 									/>
 								</label>
-								<small>{describeRecentTime(allocation.settlementDecidedAt)}</small>
+								<small>{describeUnknownRecentTime(allocation.settlementDecidedAt)}</small>
 								{#if errors[`allocation-${allocation.allocationId}`]}
 									<p class="field-error">{errors[`allocation-${allocation.allocationId}`]}</p>
 								{/if}

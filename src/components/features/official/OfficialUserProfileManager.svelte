@@ -2,7 +2,7 @@
 	import { onMount } from 'svelte';
 
 	import AccessNoticeCard from '../shared/AccessNoticeCard.svelte';
-	import UserInfoCard, { type UserInfoCardItem } from '../shared/UserInfoCard.svelte';
+	import UserInfoCard from '../shared/UserInfoCard.svelte';
 	import RequestStatusDialog from '../org/RequestStatusDialog.svelte';
 	import { getApiAdapter } from '../../../libs/api/adapters/api.adapter.ts';
 	import {
@@ -74,6 +74,16 @@
 		emailVerifiedAt: string | null;
 		status: 'pending_verification' | 'pending_approval' | 'active' | 'disabled';
 		vanity: string | null;
+	}
+
+	interface UserInfoCardItem {
+		key: string;
+		label: string;
+		value: string;
+		action?: {
+			ariaLabel: string;
+			onClick: () => void;
+		};
 	}
 
 	type StatusActionKind = 'approve' | 'enable' | 'disable';
@@ -504,7 +514,14 @@
 						<button
 							type="button"
 							class="official-user-status-action"
-							on:click={() => void submitStatusAction(getStatusActionKind(selectedUser.status))}
+							on:click={() => {
+								const user = selectedUser;
+								if (!user) {
+									return;
+								}
+
+								void submitStatusAction(getStatusActionKind(user.status));
+							}}
 						>
 							{getStatusActionLabel(selectedUser.status)}
 						</button>

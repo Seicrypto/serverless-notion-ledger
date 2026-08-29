@@ -1143,8 +1143,7 @@
 		gap: 14px;
 	}
 
-	.manage-modal-card h2,
-	.manage-modal-card p {
+	.manage-modal-card h2 {
 		margin: 0;
 	}
 

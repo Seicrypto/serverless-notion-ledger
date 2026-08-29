@@ -2,7 +2,7 @@
 	import { onMount } from 'svelte';
 
 	import AccessNoticeCard from '../shared/AccessNoticeCard.svelte';
-	import UserInfoCard, { type UserInfoCardItem } from '../shared/UserInfoCard.svelte';
+	import UserInfoCard from '../shared/UserInfoCard.svelte';
 	import RequestStatusDialog from '../org/RequestStatusDialog.svelte';
 	import {
 		ensureAuthSession,
@@ -49,6 +49,16 @@
 		loginLabel: string;
 		homeLabel: string;
 		loadingLabel: string;
+	}
+
+	interface UserInfoCardItem {
+		key: string;
+		label: string;
+		value: string;
+		action?: {
+			ariaLabel: string;
+			onClick: () => void;
+		};
 	}
 
 	const DISPLAY_NAME_PATTERN = /^[\p{L}\p{N}\s._-]+$/u;
