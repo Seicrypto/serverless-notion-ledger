@@ -10,6 +10,7 @@
 		recordRecentEventCreations,
 		type RecentEventCreationEntry,
 	} from '../../../libs/events/recent-event-creations.ts';
+	import { resolveOrganizationQuery } from '../../../libs/organizations/reference.ts';
 	import type { CreateLedgerEventRequest } from '../../../libs/api/openapi/generated/schema';
 
 	interface GameOption {
@@ -456,6 +457,7 @@
 	}
 
 	onMount(() => {
+		organization = resolveOrganizationQuery(organization);
 		occurredAt = toLocalDateTimeValue(new Date());
 		refreshRecentEntries();
 		if (quickCreateId) {

@@ -7,6 +7,7 @@
 	import type { OrganizationCardResponse } from '../../../libs/api/organizations/organization-card.ts';
 	import { getApiAdapter } from '../../../libs/api/adapters/api.adapter.ts';
 	import { getOrganizationRecentEventCreations, loadRecentEventCreations, type RecentEventCreationEntry } from '../../../libs/events/recent-event-creations.ts';
+	import { getOrganizationReference } from '../../../libs/organizations/reference.ts';
 	import { getLatestActiveOrganization, readPreferredOrganization, writePreferredOrganization } from '../../../libs/ledger/workspace-preferences.ts';
 	import type { LedgerEvent } from '../../../libs/api/openapi/generated/schema';
 
@@ -67,10 +68,6 @@
 	let dialogMessage = '';
 	let dialogPrimaryAction: { label: string; href?: string; onClick?: () => void; variant?: 'primary' | 'secondary' } | null = null;
 	let dialogSecondaryAction: { label: string; href?: string; onClick?: () => void; variant?: 'primary' | 'secondary' } | null = null;
-
-	function getOrganizationReference(organization: OrganizationCardResponse) {
-		return organization.vanity?.trim() || String(organization.id);
-	}
 
 	function findOrganizationByReference(reference: string) {
 		return organizations.find((organization) => getOrganizationReference(organization) === reference) ?? null;

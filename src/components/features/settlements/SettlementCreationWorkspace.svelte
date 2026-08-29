@@ -4,6 +4,7 @@
 	import RequestStatusDialog from '../org/RequestStatusDialog.svelte';
 	import { getApiAdapter } from '../../../libs/api/adapters/api.adapter.ts';
 	import { getErrorMessage } from '../../../libs/api/auth/session.ts';
+	import { resolveOrganizationQuery } from '../../../libs/organizations/reference.ts';
 	import { readSettlementDefaultsCache, writeSettlementDefaultsCache } from '../../../libs/settlements/settlement-defaults-cache.ts';
 	import {
 		getLatestSettlementCreationForOrganization,
@@ -531,6 +532,7 @@
 	$: recalculateNetAmount();
 
 	onMount(() => {
+		organization = resolveOrganizationQuery(organization);
 		decidedAt = toLocalDateTimeValue(new Date());
 		if (typeof window !== 'undefined') {
 			recentSettlements = loadRecentSettlementCreations(window.sessionStorage);

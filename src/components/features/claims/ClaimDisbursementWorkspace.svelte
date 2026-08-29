@@ -5,6 +5,7 @@
 	import { getApiAdapter } from '../../../libs/api/adapters/api.adapter.ts';
 	import { getErrorMessage } from '../../../libs/api/auth/session.ts';
 	import { recordRecentClaimCreation } from '../../../libs/claims/recent-claim-creations.ts';
+	import { resolveOrganizationQuery } from '../../../libs/organizations/reference.ts';
 	import type {
 		CreateLedgerBatchClaimsRequest,
 		LedgerClaimableRecipientAllocation,
@@ -518,6 +519,7 @@
 	}
 
 	onMount(() => {
+		organization = resolveOrganizationQuery(organization);
 		claimedAt = toLocalDateTimeValue(new Date());
 		if (organization) {
 			void loadRecipients({ keepSelection: false });

@@ -4,6 +4,7 @@
 	import OrganizationCard from './OrganizationCard.svelte';
 	import { getApiAdapter } from '../../../libs/api/adapters/api.adapter.ts';
 	import { mapApiOrganizationCardToOrganizationCardResponse } from '../../../libs/api/organizations/organization-card.ts';
+	import { getOrganizationReference } from '../../../libs/organizations/reference.ts';
 
 	interface GameOption {
 		label: string;
@@ -47,10 +48,6 @@
 	let loading = false;
 	let hasLoadedOnce = false;
 	let errorMessage = '';
-
-	const getOrganizationReference = (
-		organization: ReturnType<typeof mapApiOrganizationCardToOrganizationCardResponse>,
-	) => organization.vanity?.trim() || String(organization.id);
 
 	const getCurrentPage = () => Math.floor(offset / pageSize) + 1;
 

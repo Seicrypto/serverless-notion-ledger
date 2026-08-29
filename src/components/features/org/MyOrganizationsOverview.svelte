@@ -7,6 +7,7 @@
 	import { ensureAuthSession, isAuthenticatedSession, subscribeAuthSession, type AuthSession } from '../../../libs/api/auth/session.ts';
 	import type { OrganizationCardResponse } from '../../../libs/api/organizations/organization-card.ts';
 	import { getErrorMessage } from '../../../libs/api/auth/session.ts';
+	import { getOrganizationReference } from '../../../libs/organizations/reference.ts';
 
 	interface Labels {
 		title: string;
@@ -35,9 +36,6 @@
 	let organizations: OrganizationCardResponse[] = [];
 	let loading = true;
 	let errorMessage = '';
-
-	const getOrganizationReference = (organization: OrganizationCardResponse) =>
-		organization.vanity?.trim() || String(organization.id);
 
 	const loadOrganizations = async (forceRefresh = false) => {
 		if (!isAuthenticatedSession(session)) {
