@@ -274,7 +274,6 @@
 		color: var(--text-soft);
 	}
 
-	.org-search-field p,
 	.org-results-head p,
 	.org-results-state p {
 		margin: 0;
