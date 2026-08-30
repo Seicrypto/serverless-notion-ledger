@@ -2,7 +2,7 @@
 	import { onMount } from 'svelte';
 
 	import RequestStatusDialog from '../org/RequestStatusDialog.svelte';
-	import IconOptionPicker from '../../shared/IconOptionPicker.svelte';
+	import GuildOptionPicker from '../../shared/GuildOptionPicker.svelte';
 	import { ensureAuthSession, getErrorMessage, isAuthenticatedSession, type AuthSession } from '../../../libs/api/auth/session.ts';
 	import { ensureMyOrganizationsCache } from '../../../libs/api/organizations/my-organizations-cache.ts';
 	import type { OrganizationCardResponse } from '../../../libs/api/organizations/organization-card.ts';
@@ -294,13 +294,12 @@
 		{:else}
 			<label class="workspace-field ledger-context-field">
 				<span>{labels.organizationLabel}</span>
-				<IconOptionPicker
+				<GuildOptionPicker
 					value={selectedOrganization}
 					ariaLabel={labels.organizationLabel}
 					placeholder={labels.organizationLabel}
 					searchPlaceholder={labels.organizationLabel}
 					emptyLabel={labels.noOrganizationsBody}
-					theme="guild"
 					items={organizationOptions}
 					on:change={handleOrganizationChange}
 				/>

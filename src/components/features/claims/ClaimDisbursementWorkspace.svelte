@@ -1,11 +1,15 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 
+	import GuildOptionPicker from '../../shared/GuildOptionPicker.svelte';
 	import RequestStatusDialog from '../org/RequestStatusDialog.svelte';
 	import { getApiAdapter } from '../../../libs/api/adapters/api.adapter.ts';
 	import { getErrorMessage } from '../../../libs/api/auth/session.ts';
+	import { ensureMyOrganizationsCache } from '../../../libs/api/organizations/my-organizations-cache.ts';
+	import type { OrganizationCardResponse } from '../../../libs/api/organizations/organization-card.ts';
 	import { recordRecentClaimCreation } from '../../../libs/claims/recent-claim-creations.ts';
-	import { resolveOrganizationQuery } from '../../../libs/organizations/reference.ts';
+	import { getLatestActiveOrganization, readPreferredOrganization, writePreferredOrganization } from '../../../libs/ledger/workspace-preferences.ts';
+	import { getOrganizationReference, resolveOrganizationQuery } from '../../../libs/organizations/reference.ts';
 	import type {
 		CreateLedgerBatchClaimsRequest,
 		LedgerClaimableRecipientAllocation,
@@ -18,6 +22,11 @@
 		eyebrow: string;
 		title: string;
 		intro: string;
+		contextTitle: string;
+		contextBody: string;
+		contextSelectLabel: string;
+		contextSelectPlaceholder: string;
+		contextSelectEmpty: string;
 		orgRequiredTitle: string;
 		orgRequiredBody: string;
 		recipientsTitle: string;
@@ -99,6 +108,7 @@
 	export let organization: string | null = null;
 	export let labels: Labels;
 
+	let organizations: OrganizationCardResponse[] = [];
 	let recipients: LedgerClaimableRecipientSummary[] = [];
 	let recipientsLoading = false;
 	let recipientsError = '';
@@ -126,6 +136,28 @@
 	let dialogMessage = '';
 	let dialogPrimaryAction: { label: string; onClick?: () => void } | null = null;
 	let dialogSecondaryAction: { label: string; onClick?: () => void } | null = null;
+
+	function findOrganizationByReference(reference: string) {
+		return organizations.find((entry) => getOrganizationReference(entry) === reference) ?? null;
+	}
+
+	function resetWorkspaceState() {
+		recipients = [];
+		recipientsLoading = false;
+		recipientsError = '';
+		emptyStateMode = 'default';
+		selectedCharacterId = '';
+		includeSiblingCharacters = false;
+		detailLoading = false;
+		detailError = '';
+		currentDetail = null;
+		siblingDetails = [];
+		detailCache = new Map();
+		selectedAllocationIds = new Set<number>();
+		claimAmounts = {};
+		notes = '';
+		errors = {};
+	}
 
 	function toLocalDateTimeValue(date: Date) {
 		const year = date.getFullYear();
@@ -191,6 +223,48 @@
 
 	function describeUnknownRecentTime(value: unknown) {
 		return typeof value === 'string' || value == null ? describeRecentTime(value) : '—';
+	}
+
+	async function syncOrganizationContext() {
+		if (!organization || typeof window === 'undefined') {
+			return;
+		}
+
+		writePreferredOrganization(window.localStorage, organization);
+		resetWorkspaceState();
+		const url = new URL(window.location.href);
+		url.searchParams.set('orgVanity', organization);
+		window.history.replaceState({}, '', url);
+		await loadRecipients({ keepSelection: false });
+	}
+
+	async function initializeOrganizations() {
+		const normalizedOrganization = resolveOrganizationQuery(organization);
+		const snapshot = await ensureMyOrganizationsCache();
+		organizations = snapshot.organizations;
+		if (!organizations.length) {
+			organization = normalizedOrganization;
+			return;
+		}
+
+		const recentOrganization =
+			typeof window !== 'undefined'
+				? getLatestActiveOrganization(window.localStorage, window.sessionStorage)
+				: null;
+		const preferredOrganization =
+			typeof window !== 'undefined' ? readPreferredOrganization(window.localStorage) : null;
+		const nextOrganization =
+			(normalizedOrganization && findOrganizationByReference(normalizedOrganization)
+				? normalizedOrganization
+				: null) ||
+			(recentOrganization && findOrganizationByReference(recentOrganization) ? recentOrganization : null) ||
+			(preferredOrganization && findOrganizationByReference(preferredOrganization)
+				? preferredOrganization
+				: null) ||
+			getOrganizationReference(organizations[0]);
+
+		organization = nextOrganization;
+		await syncOrganizationContext();
 	}
 
 	function withTimeout<T>(promise: Promise<T>, timeoutMs: number) {
@@ -380,6 +454,13 @@
 	$: newSettlementHref = organization
 		? `/${lang}/guilds/settlements/new?orgVanity=${encodeURIComponent(organization)}`
 		: `/${lang}/guilds/settlements/new`;
+	$: selectedOrganizationCard = organization ? findOrganizationByReference(organization) : null;
+	$: organizationOptions = organizations.map((entry) => ({
+		value: getOrganizationReference(entry),
+		label: entry.name,
+		metaLabel: entry.vanity ? `@${entry.vanity}` : `${entry.stats.memberCount} members`,
+		iconUrl: entry.iconUrl,
+	}));
 
 	async function loadRecipientDetail(characterId: number, options: { force?: boolean } = {}) {
 		if (!organization) {
@@ -463,6 +544,15 @@
 		}
 
 		void loadRecipientDetail(Number(selectedCharacterId), { force: false });
+	}
+
+	function handleOrganizationChange(event: CustomEvent<{ value: string }>) {
+		if (event.detail.value === organization) {
+			return;
+		}
+
+		organization = event.detail.value;
+		void syncOrganizationContext();
 	}
 
 	function toggleAllocationSelection(allocationId: number) {
@@ -578,11 +668,8 @@
 	}
 
 	onMount(() => {
-		organization = resolveOrganizationQuery(organization);
 		claimedAt = toLocalDateTimeValue(new Date());
-		if (organization) {
-			void loadRecipients({ keepSelection: false });
-		}
+		void initializeOrganizations();
 	});
 </script>
 
@@ -598,6 +685,40 @@
 		<p class="app-status-value">{formatAmount(selectedAmountTotal)}</p>
 		<p class="app-intro">{labels.totalAllocationsLabel}: {selectedItems.length}</p>
 	</aside>
+</section>
+
+<section class="app-section">
+	<article class="workspace-card workspace-context-card">
+		<div class="workspace-head">
+			<div>
+				<p class="app-card-label">{labels.contextTitle}</p>
+				<h2>{labels.contextTitle}</h2>
+				<p>
+					{labels.contextBody}
+					{#if selectedOrganizationCard}
+						<strong>{selectedOrganizationCard.name}</strong>
+					{/if}
+				</p>
+			</div>
+		</div>
+
+		{#if organizations.length}
+			<label class="context-field">
+				<span>{labels.contextSelectLabel}</span>
+				<GuildOptionPicker
+					value={organization ?? ''}
+					ariaLabel={labels.contextSelectLabel}
+					placeholder={labels.contextSelectPlaceholder}
+					searchPlaceholder={labels.contextSelectPlaceholder}
+					emptyLabel={labels.contextSelectEmpty}
+					items={organizationOptions}
+					on:change={handleOrganizationChange}
+				/>
+			</label>
+		{:else}
+			<p class="workspace-meta">{labels.orgRequiredBody}</p>
+		{/if}
+	</article>
 </section>
 
 {#if !organization}
@@ -870,6 +991,12 @@
 		gap: 18px;
 	}
 
+	.workspace-context-card {
+		background:
+			radial-gradient(circle at top right, color-mix(in srgb, var(--ledger-accent) 12%, transparent), transparent 38%),
+			linear-gradient(180deg, color-mix(in srgb, var(--surface) 94%, white), var(--surface));
+	}
+
 	.workspace-main {
 		min-width: 0;
 	}
@@ -880,6 +1007,16 @@
 		justify-content: space-between;
 		gap: 16px;
 		align-items: start;
+	}
+
+	.context-field {
+		display: grid;
+		gap: 8px;
+	}
+
+	.context-field span {
+		font-size: 0.94rem;
+		font-weight: 700;
 	}
 
 	.workspace-head h2,

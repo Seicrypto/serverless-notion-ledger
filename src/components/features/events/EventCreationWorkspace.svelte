@@ -2,7 +2,8 @@
 	import { onMount } from 'svelte';
 
 	import RequestStatusDialog from '../org/RequestStatusDialog.svelte';
-	import IconOptionPicker from '../../shared/IconOptionPicker.svelte';
+	import GameOptionPicker from '../../shared/GameOptionPicker.svelte';
+	import GuildOptionPicker from '../../shared/GuildOptionPicker.svelte';
 	import SearchSelect from '../../shared/SearchSelect.svelte';
 	import { getApiAdapter } from '../../../libs/api/adapters/api.adapter.ts';
 	import { ensureAuthSession, getErrorMessage, isAuthenticatedSession, type AuthSession } from '../../../libs/api/auth/session.ts';
@@ -1012,14 +1013,13 @@
 			{#if organizationOptions.length > 0}
 				<label class="event-field">
 					<span>{labels.contextSelectLabel}</span>
-					<IconOptionPicker
+					<GuildOptionPicker
 						value={organization}
 						ariaLabel={labels.contextSelectLabel}
 						placeholder={labels.contextSelectPlaceholder}
 						searchPlaceholder={labels.contextSelectPlaceholder}
 						emptyLabel={labels.contextSelectEmpty}
 						disabled={contextLoading}
-						theme="guild"
 						items={organizationOptions}
 						on:change={(event) => {
 							void changeOrganization(event.detail.value);
@@ -1079,14 +1079,13 @@
 
 			<label class="event-field">
 				<span>{labels.gameIdLabel}</span>
-				<IconOptionPicker
+				<GameOptionPicker
 					value={gameId}
 					ariaLabel={labels.gameIdLabel}
 					placeholder={contextLoading ? labels.loadingGames : labels.gameRequiredHint}
 					searchPlaceholder={labels.gameRequiredHint}
 					disabled={!organization || contextLoading}
 					error={Boolean(errors.gameId)}
-					theme="game"
 					items={gameOptions}
 					on:change={(event) => {
 						gameId = event.detail.value;

@@ -121,7 +121,12 @@
 
 <svelte:document on:click={handleDocumentClick} on:keydown={handleDocumentKeydown} />
 
-<div class:list={['icon-option-picker', `theme-${theme}`]} data-icon-option-picker-root={instanceId}>
+<div
+	class="icon-option-picker"
+	class:theme-game={theme === 'game'}
+	class:theme-guild={theme === 'guild'}
+	data-icon-option-picker-root={instanceId}
+>
 	<button
 		type="button"
 		class:error
@@ -149,7 +154,7 @@
 				{/if}
 			</span>
 			<span class="icon-option-picker-copy">
-				<span class:list={['icon-option-picker-label', !selectedItem && 'is-placeholder']}>
+				<span class="icon-option-picker-label" class:is-placeholder={!selectedItem}>
 					{selectedItem?.label ?? placeholder}
 				</span>
 				{#if selectedItem?.metaLabel}

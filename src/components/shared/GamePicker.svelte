@@ -97,7 +97,12 @@
 
 <svelte:document on:click={handleDocumentClick} on:keydown={handleDocumentKeydown} />
 
-<div class:list={['game-picker', `game-picker-${variant}`]} data-game-picker-root={instanceId}>
+<div
+	class="game-picker"
+	class:game-picker-dropdown={variant === 'dropdown'}
+	class:game-picker-inline={variant === 'inline'}
+	data-game-picker-root={instanceId}
+>
 	{#if variant === 'dropdown'}
 		<button
 			type="button"
@@ -125,7 +130,7 @@
 						<span class="game-picker-icon-blank"></span>
 					{/if}
 				</span>
-				<span class:list={['game-picker-label', !selectedItem && 'is-placeholder']}>
+				<span class="game-picker-label" class:is-placeholder={!selectedItem}>
 					{selectedItem?.label ?? placeholder}
 				</span>
 			</span>
