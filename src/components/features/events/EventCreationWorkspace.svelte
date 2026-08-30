@@ -795,40 +795,42 @@
 			return;
 		}
 
+		if (!Number.isFinite(Number(gameId)) || Number(gameId) <= 0) {
+			createItemError = labels.validationRequired;
+			return;
+		}
+
 		createItemSubmitting = true;
 		createItemError = '';
 		duplicateSuggestions = [];
 
 		try {
-			if (!createItemResolved && Number.isFinite(Number(gameId)) && Number(gameId) > 0) {
-				try {
-					const resolveResponse = await getApiAdapter().resolveOrganizationAsset(organizationReference, {
-						gameId: Number(gameId),
-						name: createItemName.trim(),
-					});
-					duplicateSuggestions = [
-						resolveResponse.duplicate.exactMatch,
-						...resolveResponse.duplicate.possibleMatches,
-					].flatMap((candidate) => {
-						if (typeof candidate?.asset?.id !== 'number' || typeof candidate.asset.name !== 'string') {
-							return [];
-						}
-						rememberKnownAsset(candidate.asset);
-						return [{ assetId: candidate.asset.id, name: candidate.asset.name }];
-					}).filter(
-						(suggestion, index, array) =>
-							array.findIndex((candidate) => candidate.assetId === suggestion.assetId) === index,
-					);
-					if (duplicateSuggestions.length > 0 && resolveResponse.duplicate.recommendedAction !== 'allow_create') {
-						createItemResolved = true;
-						createItemError = labels.createItemResolveReviewBody;
-						return;
+			if (!createItemResolved) {
+				const resolveResponse = await getApiAdapter().resolveOrganizationAsset(organizationReference, {
+					gameId: Number(gameId),
+					name: createItemName.trim(),
+				});
+				duplicateSuggestions = [
+					resolveResponse.duplicate.exactMatch,
+					...resolveResponse.duplicate.possibleMatches,
+				].flatMap((candidate) => {
+					if (typeof candidate?.asset?.id !== 'number' || typeof candidate.asset.name !== 'string') {
+						return [];
 					}
+					rememberKnownAsset(candidate.asset);
+					return [{ assetId: candidate.asset.id, name: candidate.asset.name }];
+				}).filter(
+					(suggestion, index, array) =>
+						array.findIndex((candidate) => candidate.assetId === suggestion.assetId) === index,
+				);
+
+				if (duplicateSuggestions.length > 0 || resolveResponse.duplicate.recommendedAction !== 'allow_create') {
 					createItemResolved = true;
-				} catch {
-					// If duplicate resolution fails on the backend, keep the flow usable and let direct create handle it.
-					createItemResolved = true;
+					createItemError = labels.createItemResolveReviewBody;
+					return;
 				}
+
+				createItemResolved = true;
 			}
 
 			const response = await getApiAdapter().createOrganizationAsset(organizationReference, {
