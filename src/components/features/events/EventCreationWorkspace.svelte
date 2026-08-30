@@ -36,12 +36,25 @@
 
 	interface AssetInputRow {
 		id: string;
-		value: string;
+		assetId: string;
+		selectedLabel: string;
 	}
 
 	interface AssetDuplicateSuggestion {
 		assetId: number;
 		name: string;
+	}
+
+	interface SearchOption {
+		value: string;
+		label: string;
+		metaLabel?: string | null;
+	}
+
+	interface KnownAssetRecord {
+		assetId: number;
+		name: string;
+		assetType: RecentOrganizationAssetEntry['assetType'];
 	}
 
 	interface Labels {
@@ -79,6 +92,13 @@
 		holderRefEmpty: string;
 		holderRefHint: string;
 		holderRefManualHint: string;
+		holderRefUnclaimedMeta: string;
+		holderRefSelectedLabel: string;
+		participantsLabel: string;
+		participantsPlaceholder: string;
+		participantsEmpty: string;
+		participantsHint: string;
+		participantsSelectedLabel: string;
 		notesLabel: string;
 		notesPlaceholder: string;
 		assetSectionLabel: string;
@@ -90,6 +110,8 @@
 		assetIdLabel: string;
 		assetIdPlaceholder: string;
 		assetManualHint: string;
+		assetSelectedLabel: string;
+		clearSelectionLabel: string;
 		addAssetLabel: string;
 		removeAssetLabel: string;
 		createItemLabel: string;
@@ -100,6 +122,8 @@
 		createItemCancelLabel: string;
 		createItemKnownDuplicateTitle: string;
 		createItemKnownDuplicateBody: string;
+		createItemResolveReviewBody: string;
+		createItemCreateAnywayLabel: string;
 		useExistingItemLabel: string;
 		submitLabel: string;
 		requiredHint: string;
@@ -181,8 +205,13 @@
 	let gameId = '';
 	let holderType: HolderType = 'character';
 	let holderRef = '';
+	let holderCharacterId = '';
+	let participantPickerValue = '';
+	let participantCharacterIds: string[] = [];
 	let notes = '';
 	let assetRows: AssetInputRow[] = [createAssetRow()];
+	let assetSearchOptionsByRowId: Record<string, SearchOption[]> = {};
+	let knownAssetsById: Record<string, KnownAssetRecord> = {};
 
 	let recentEntries: RecentEventCreationEntry[] = [];
 	let recentAssets: RecentOrganizationAssetEntry[] = [];
@@ -195,6 +224,7 @@
 	let createItemError = '';
 	let createItemTargetRowId = '';
 	let duplicateSuggestions: AssetDuplicateSuggestion[] = [];
+	let createItemResolved = false;
 
 	let errors: FieldErrors = {};
 	let isSubmitting = false;
@@ -206,10 +236,11 @@
 	let dialogPrimaryAction: { label: string; onClick?: () => void } | null = null;
 	let dialogSecondaryAction: { label: string; onClick?: () => void } | null = null;
 
-	function createAssetRow(value = ''): AssetInputRow {
+	function createAssetRow(assetId = '', selectedLabel = ''): AssetInputRow {
 		return {
 			id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-			value,
+			assetId,
+			selectedLabel,
 		};
 	}
 
@@ -312,27 +343,33 @@
 	}
 
 	function addAssetRow() {
-		assetRows = [...assetRows, createAssetRow()];
+		const row = createAssetRow();
+		assetRows = [...assetRows, row];
+		assetSearchOptionsByRowId = { ...assetSearchOptionsByRowId, [row.id]: recentAssetOptions };
 	}
 
-	function updateAssetRow(rowId: string, value: string) {
-		assetRows = assetRows.map((row) => (row.id === rowId ? { ...row, value } : row));
+	function updateAssetRow(rowId: string, assetId: string, selectedLabel = '') {
+		assetRows = assetRows.map((row) => (row.id === rowId ? { ...row, assetId, selectedLabel } : row));
 	}
 
 	function removeAssetRow(rowId: string) {
 		if (assetRows.length === 1) {
 			assetRows = [createAssetRow()];
+			assetSearchOptionsByRowId = {};
 			return;
 		}
 
 		assetRows = assetRows.filter((row) => row.id !== rowId);
+		const nextOptions = { ...assetSearchOptionsByRowId };
+		delete nextOptions[rowId];
+		assetSearchOptionsByRowId = nextOptions;
 	}
 
 	function getNormalizedAssetIds() {
 		const values: number[] = [];
 
 		for (const row of assetRows) {
-			const trimmed = row.value.trim();
+			const trimmed = row.assetId.trim();
 			if (!trimmed) {
 				continue;
 			}
@@ -366,7 +403,7 @@
 		return primaryGame ? String(primaryGame.gameId) : '';
 	}
 
-	function getDefaultHolderRef(
+	function getDefaultHolderCharacterId(
 		nextGameId: string,
 		characters: OrganizationManageCharacter[],
 		currentSession: AuthSession | null,
@@ -382,11 +419,52 @@
 				(character) => character.claimedBy?.userId === currentSession.user.id,
 			);
 			if (claimedByCurrentUser) {
-				return claimedByCurrentUser.name;
+				return String(claimedByCurrentUser.id);
 			}
 		}
 
 		return '';
+	}
+
+	function getCharacterById(characterId: string) {
+		return organizationCharacters.find((character) => String(character.id) === characterId) ?? null;
+	}
+
+	function getCharacterMetaLabel(character: OrganizationManageCharacter) {
+		return character.claimedBy?.displayName ?? labels.holderRefUnclaimedMeta;
+	}
+
+	function syncHolderFromCharacterId(characterId: string) {
+		holderCharacterId = characterId;
+		holderRef = getCharacterById(characterId)?.name ?? '';
+	}
+
+	function addParticipantCharacterId(characterId: string) {
+		if (!characterId || participantCharacterIds.includes(characterId)) {
+			participantPickerValue = '';
+			return;
+		}
+
+		participantCharacterIds = [...participantCharacterIds, characterId];
+		participantPickerValue = '';
+	}
+
+	function removeParticipantCharacterId(characterId: string) {
+		participantCharacterIds = participantCharacterIds.filter((value) => value !== characterId);
+	}
+
+	function normalizeParticipantCharacterIdsForGame(nextGameId: string) {
+		const normalizedGameId = Number(nextGameId);
+		if (!Number.isFinite(normalizedGameId)) {
+			participantCharacterIds = [];
+			participantPickerValue = '';
+			return;
+		}
+
+		participantCharacterIds = participantCharacterIds.filter(
+			(characterId) => getCharacterById(characterId)?.gameId === normalizedGameId,
+		);
+		participantPickerValue = '';
 	}
 
 	function applyRecentEntry(entry: RecentEventCreationEntry) {
@@ -399,12 +477,33 @@
 				: '';
 		holderType = entry.payload.holderType ?? 'character';
 		holderRef = typeof entry.payload.holderRef === 'string' ? entry.payload.holderRef : '';
+		holderCharacterId =
+			holderType === 'character'
+				? String(
+						organizationCharacters.find(
+							(character) =>
+								character.gameId === Number(gameId) && character.name === entry.payload.holderRef,
+						)?.id ?? '',
+					)
+				: '';
+		participantCharacterIds = (entry.payload.participants ?? [])
+			.map((participant) =>
+				typeof participant.characterId === 'number' && Number.isFinite(participant.characterId)
+					? String(participant.characterId)
+					: '',
+			)
+			.filter(Boolean);
+		participantPickerValue = '';
 		notes = typeof entry.payload.notes === 'string' ? entry.payload.notes : '';
 		assetRows =
 			typeof entry.payload.assetId === 'number' && Number.isFinite(entry.payload.assetId)
-				? [createAssetRow(String(entry.payload.assetId))]
+				? [createAssetRow(String(entry.payload.assetId), getKnownAssetName(entry.payload.assetId) ?? '')]
 				: [createAssetRow()];
 		errors = {};
+	}
+
+	function getKnownAssetName(assetId: number) {
+		return knownAssetsById[String(assetId)]?.name ?? getCurrentRecentAssets().find((asset) => asset.assetId === assetId)?.name ?? '';
 	}
 
 	function confirmQuickCreate() {
@@ -474,6 +573,13 @@
 			payload.notes = notes.trim();
 		}
 
+		if (participantCharacterIds.length > 0) {
+			payload.participants = participantCharacterIds
+				.map((characterId) => Number(characterId))
+				.filter((characterId) => Number.isInteger(characterId) && characterId > 0)
+				.map((characterId) => ({ characterId }));
+		}
+
 		return payload;
 	}
 
@@ -501,8 +607,9 @@
 			if (!gameId) {
 				gameId = getPreferredGameId(snapshot.characters, snapshot.organization, session);
 			}
+			normalizeParticipantCharacterIdsForGame(gameId);
 			if (holderType === 'character' && !holderRef) {
-				holderRef = getDefaultHolderRef(gameId, snapshot.characters, session);
+				syncHolderFromCharacterId(getDefaultHolderCharacterId(gameId, snapshot.characters, session));
 			}
 		} catch (error) {
 			contextError = getErrorMessage(error, labels.errorCreateTitle);
@@ -542,6 +649,7 @@
 		createItemError = '';
 		createItemSubmitting = false;
 		duplicateSuggestions = [];
+		createItemResolved = false;
 		createItemOpen = true;
 	}
 
@@ -550,8 +658,83 @@
 			return;
 		}
 
-		updateAssetRow(createItemTargetRowId, String(assetId));
+		updateAssetRow(createItemTargetRowId, String(assetId), getKnownAssetName(assetId));
 		createItemOpen = false;
+	}
+
+	function rememberKnownAsset(asset: { id: number; name: string; assetType: RecentOrganizationAssetEntry['assetType'] }) {
+		knownAssetsById = {
+			...knownAssetsById,
+			[String(asset.id)]: {
+				assetId: asset.id,
+				name: asset.name,
+				assetType: asset.assetType,
+			},
+		};
+	}
+
+	function rememberAssetSelection(assetId: number) {
+		if (typeof window === 'undefined' || !organization) {
+			return;
+		}
+
+		const knownAsset = knownAssetsById[String(assetId)];
+		if (!knownAsset) {
+			return;
+		}
+
+		recentAssets = recordRecentOrganizationAsset(window.localStorage, {
+			organization,
+			assetId: knownAsset.assetId,
+			name: knownAsset.name,
+			assetType: knownAsset.assetType,
+			createdAt: new Date().toISOString(),
+		});
+	}
+
+	function getAssetOptionsForRow(rowId: string) {
+		const mappedRecent = recentAssetOptions.filter(
+			(option, index, array) => array.findIndex((candidate) => candidate.value === option.value) === index,
+		);
+		const rowOptions = assetSearchOptionsByRowId[rowId] ?? [];
+		return [...rowOptions, ...mappedRecent].filter(
+			(option, index, array) => array.findIndex((candidate) => candidate.value === option.value) === index,
+		);
+	}
+
+	async function loadAssetSearchOptions(rowId: string, query = '') {
+		if (!organizationReference) {
+			return;
+		}
+
+		if (!query.trim()) {
+			assetSearchOptionsByRowId = { ...assetSearchOptionsByRowId, [rowId]: recentAssetOptions };
+			return;
+		}
+
+		try {
+			const response = await getApiAdapter().searchOrganizationAssets(organizationReference, {
+				q: query.trim(),
+				gameId: Number(gameId) || undefined,
+				assetType: 'item',
+				limit: 8,
+			});
+			const options = response.assets.map((asset) => {
+				rememberKnownAsset(asset);
+				return {
+					value: String(asset.id),
+					label: asset.name,
+					metaLabel: `#${asset.id}`,
+				};
+			});
+			assetSearchOptionsByRowId = { ...assetSearchOptionsByRowId, [rowId]: options };
+		} catch {
+			assetSearchOptionsByRowId = { ...assetSearchOptionsByRowId, [rowId]: recentAssetOptions };
+		}
+	}
+
+	function clearAssetSelection(rowId: string) {
+		updateAssetRow(rowId, '', '');
 	}
 
 	async function submitCreateItem() {
@@ -565,10 +748,37 @@
 		duplicateSuggestions = [];
 
 		try {
+			if (!createItemResolved && Number.isFinite(Number(gameId)) && Number(gameId) > 0) {
+				const resolveResponse = await getApiAdapter().resolveOrganizationAsset(organizationReference, {
+					gameId: Number(gameId),
+					name: createItemName.trim(),
+				});
+				duplicateSuggestions = [
+					resolveResponse.duplicate.exactMatch,
+					...resolveResponse.duplicate.possibleMatches,
+				].flatMap((candidate) => {
+					if (typeof candidate?.asset?.id !== 'number' || typeof candidate.asset.name !== 'string') {
+						return [];
+					}
+					rememberKnownAsset(candidate.asset);
+					return [{ assetId: candidate.asset.id, name: candidate.asset.name }];
+				}).filter(
+					(suggestion, index, array) =>
+						array.findIndex((candidate) => candidate.assetId === suggestion.assetId) === index,
+				);
+				if (duplicateSuggestions.length > 0 && resolveResponse.duplicate.recommendedAction !== 'allow_create') {
+					createItemResolved = true;
+					createItemError = labels.createItemResolveReviewBody;
+					return;
+				}
+				createItemResolved = true;
+			}
+
 			const response = await getApiAdapter().createOrganizationAsset(organizationReference, {
 				name: createItemName.trim(),
 				assetType: 'item',
 			});
+			rememberKnownAsset(response.asset);
 			if (typeof window !== 'undefined') {
 				recentAssets = recordRecentOrganizationAsset(window.localStorage, {
 					organization,
@@ -579,7 +789,7 @@
 				});
 			}
 			if (createItemTargetRowId) {
-				updateAssetRow(createItemTargetRowId, String(response.asset.id));
+				updateAssetRow(createItemTargetRowId, String(response.asset.id), response.asset.name);
 			}
 			createItemOpen = false;
 		} catch (error) {
@@ -644,16 +854,31 @@
 	$: filteredHolderCharacters = organizationCharacters
 		.filter((character) => character.gameId === Number(gameId))
 		.map((character) => ({
-			value: character.name,
+			value: String(character.id),
 			label: character.name,
-			metaLabel: character.claimedBy?.displayName ?? character.vanity ?? character.slug ?? null,
+			metaLabel: getCharacterMetaLabel(character),
 		}));
+
+	$: participantCharacterOptions = organizationCharacters
+		.filter((character) => character.gameId === Number(gameId))
+		.filter((character) => !participantCharacterIds.includes(String(character.id)))
+		.map((character) => ({
+			value: String(character.id),
+			label: character.name,
+			metaLabel: getCharacterMetaLabel(character),
+		}));
+
+	$: selectedParticipantCharacters = participantCharacterIds
+		.map((characterId) => getCharacterById(characterId))
+		.filter((character): character is OrganizationManageCharacter => Boolean(character));
 
 	$: recentAssetOptions = getCurrentRecentAssets().map((asset) => ({
 		value: String(asset.assetId),
 		label: asset.name,
 		metaLabel: `#${asset.assetId}`,
 	}));
+
+	$: selectedHolderCharacter = getCharacterById(holderCharacterId);
 
 	onMount(() => {
 		organization = resolveOrganizationQuery(organization);
@@ -777,8 +1002,9 @@
 					}))}
 					on:change={(event) => {
 						gameId = event.detail.value;
+						normalizeParticipantCharacterIdsForGame(event.detail.value);
 						if (holderType === 'character') {
-							holderRef = getDefaultHolderRef(event.detail.value, organizationCharacters, session);
+							syncHolderFromCharacterId(getDefaultHolderCharacterId(event.detail.value, organizationCharacters, session));
 						}
 					}}
 				/>
@@ -793,8 +1019,9 @@
 					disabled={!organization || contextLoading}
 					on:change={() => {
 						if (holderType === 'character') {
-							holderRef = getDefaultHolderRef(gameId, organizationCharacters, session);
+							syncHolderFromCharacterId(getDefaultHolderCharacterId(gameId, organizationCharacters, session));
 						} else {
+							holderCharacterId = '';
 							holderRef = '';
 						}
 					}}
@@ -810,20 +1037,76 @@
 				<span>{labels.holderRefLabel}</span>
 				{#if holderType === 'character'}
 					<SearchSelect
-						bind:value={holderRef}
+						value={holderCharacterId}
 						ariaLabel={labels.holderRefLabel}
 						placeholder={labels.holderRefPlaceholder}
 						emptyLabel={labels.holderRefEmpty}
 						disabled={!organization || !gameId || contextLoading}
 						error={Boolean(errors.holderRef)}
 						items={filteredHolderCharacters}
+						on:change={(event) => {
+							syncHolderFromCharacterId(event.detail.value);
+						}}
 					/>
+					{#if selectedHolderCharacter}
+						<div class="event-selected-chip-row">
+							<span>{labels.holderRefSelectedLabel}</span>
+							<button
+								type="button"
+								class="event-selected-chip"
+								on:click={() => {
+									holderCharacterId = '';
+									holderRef = '';
+								}}
+							>
+								<strong>{selectedHolderCharacter.name}</strong>
+								<small>{selectedHolderCharacter.claimedBy?.displayName ?? labels.holderRefUnclaimedMeta}</small>
+								<b aria-hidden="true">x</b>
+								<span class="sr-only">{labels.clearSelectionLabel}</span>
+							</button>
+						</div>
+					{/if}
 					<small>{labels.holderRefHint}</small>
 				{:else}
 					<input bind:value={holderRef} type="text" maxlength="120" placeholder={labels.holderRefPlaceholder} disabled={!organization || contextLoading} />
 					<small>{labels.holderRefManualHint}</small>
 				{/if}
 				{#if errors.holderRef}<em>{errors.holderRef}</em>{/if}
+			</label>
+
+			<label class="event-field event-field-wide">
+				<span>{labels.participantsLabel}</span>
+				<SearchSelect
+					value={participantPickerValue}
+					ariaLabel={labels.participantsLabel}
+					placeholder={labels.participantsPlaceholder}
+					emptyLabel={labels.participantsEmpty}
+					disabled={!organization || !gameId || contextLoading}
+					items={participantCharacterOptions}
+					on:change={(event) => {
+						addParticipantCharacterId(event.detail.value);
+					}}
+				/>
+				{#if selectedParticipantCharacters.length > 0}
+					<div class="event-selected-chip-row">
+						<span>{labels.participantsSelectedLabel}</span>
+						<div class="event-selected-chip-list">
+							{#each selectedParticipantCharacters as character}
+								<button
+									type="button"
+									class="event-selected-chip"
+									on:click={() => removeParticipantCharacterId(String(character.id))}
+								>
+									<strong>{character.name}</strong>
+									<small>{getCharacterMetaLabel(character)}</small>
+									<b aria-hidden="true">x</b>
+									<span class="sr-only">{labels.clearSelectionLabel}</span>
+								</button>
+							{/each}
+						</div>
+					</div>
+				{/if}
+				<small>{labels.participantsHint}</small>
 			</label>
 
 			<label class="event-field event-field-wide">
@@ -845,20 +1128,35 @@
 					<div class="event-asset-row">
 						<label class="event-field">
 							<span>{labels.assetQuickPickLabel} #{index + 1}</span>
-							{#if recentAssetOptions.length > 0}
-								<SearchSelect
-									value={row.value}
-									ariaLabel={`${labels.assetQuickPickLabel} ${index + 1}`}
-									placeholder={labels.assetQuickPickPlaceholder}
-									emptyLabel={labels.assetQuickPickEmpty}
-									disabled={!organization || contextLoading}
-									items={recentAssetOptions}
-									on:change={(event) => {
-										updateAssetRow(row.id, event.detail.value);
-									}}
-								/>
-							{:else}
-								<input type="text" value="" placeholder={labels.assetQuickPickPlaceholder} disabled />
+							<SearchSelect
+								value={row.assetId}
+								ariaLabel={`${labels.assetQuickPickLabel} ${index + 1}`}
+								placeholder={labels.assetQuickPickPlaceholder}
+								emptyLabel={labels.assetQuickPickEmpty}
+								disabled={!organization || contextLoading}
+								items={getAssetOptionsForRow(row.id)}
+								on:focus={() => {
+									void loadAssetSearchOptions(row.id);
+								}}
+								on:search={(event) => {
+									void loadAssetSearchOptions(row.id, event.detail.query);
+								}}
+								on:change={(event) => {
+									const selectedOption = getAssetOptionsForRow(row.id).find((option) => option.value === event.detail.value);
+									updateAssetRow(row.id, event.detail.value, selectedOption?.label ?? '');
+									rememberAssetSelection(Number(event.detail.value));
+								}}
+							/>
+							{#if row.assetId && row.selectedLabel}
+								<div class="event-selected-chip-row">
+									<span>{labels.assetSelectedLabel}</span>
+									<button type="button" class="event-selected-chip" on:click={() => clearAssetSelection(row.id)}>
+										<strong>{row.selectedLabel}</strong>
+										<small>#{row.assetId}</small>
+										<b aria-hidden="true">x</b>
+										<span class="sr-only">{labels.clearSelectionLabel}</span>
+									</button>
+								</div>
 							{/if}
 							<small>{labels.optionalHint}</small>
 						</label>
@@ -866,19 +1164,11 @@
 							<span>{labels.assetIdLabel} #{index + 1}</span>
 							<input
 								class:error={Boolean(errors.assetIds)}
-								type="number"
-								min="1"
-								step="1"
-								inputmode="numeric"
-								value={row.value}
+								type="text"
+								value={row.assetId}
 								placeholder={labels.assetIdPlaceholder}
+								readonly
 								disabled={!organization || contextLoading}
-								on:input={(event) => {
-									const target = event.currentTarget;
-									if (target instanceof HTMLInputElement) {
-										updateAssetRow(row.id, target.value);
-									}
-								}}
 							/>
 							<small>{labels.assetManualHint}</small>
 						</label>
@@ -979,7 +1269,7 @@
 						{labels.createItemCancelLabel}
 					</button>
 					<button type="button" class="quick-create-confirm" on:click={() => void submitCreateItem()} disabled={createItemSubmitting}>
-						{labels.createItemCreateLabel}
+						{createItemResolved ? labels.createItemCreateAnywayLabel : labels.createItemCreateLabel}
 					</button>
 				</div>
 			</div>
@@ -1169,6 +1459,61 @@
 		font-style: normal;
 	}
 
+	.event-selected-chip-row {
+		display: grid;
+		gap: 8px;
+	}
+
+	.event-selected-chip-row span {
+		font-size: 0.84rem;
+		font-weight: 700;
+		color: var(--text-soft);
+	}
+
+	.event-selected-chip {
+		min-height: 44px;
+		padding: 0 14px;
+		border: 1px solid color-mix(in srgb, var(--accent) 16%, var(--line));
+		border-radius: 16px;
+		background: color-mix(in srgb, var(--surface-strong) 82%, white);
+		display: inline-flex;
+		align-items: center;
+		gap: 10px;
+		width: fit-content;
+		max-width: 100%;
+		font: inherit;
+		cursor: pointer;
+	}
+
+	.event-selected-chip-list {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 10px;
+	}
+
+	.event-selected-chip strong,
+	.event-selected-chip small,
+	.event-selected-chip b {
+		display: inline-block;
+	}
+
+	.event-selected-chip strong {
+		max-width: 28ch;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+
+	.event-selected-chip small {
+		color: var(--text-soft);
+	}
+
+	.event-selected-chip b {
+		font-size: 0.86rem;
+		font-weight: 800;
+		text-transform: uppercase;
+	}
+
 	.event-assets-card {
 		padding: 22px;
 		border: 1px solid color-mix(in srgb, var(--line) 90%, white);
@@ -1276,6 +1621,18 @@
 		border: 1px solid color-mix(in srgb, var(--line) 84%, white);
 		border-radius: 20px;
 		background: color-mix(in srgb, var(--surface-strong) 82%, white);
+	}
+
+	.sr-only {
+		position: absolute;
+		width: 1px;
+		height: 1px;
+		padding: 0;
+		margin: -1px;
+		overflow: hidden;
+		clip: rect(0, 0, 0, 0);
+		white-space: nowrap;
+		border: 0;
 	}
 
 	.event-session-button:hover,

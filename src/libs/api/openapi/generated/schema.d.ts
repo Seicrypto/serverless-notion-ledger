@@ -245,7 +245,13 @@ export type LedgerEvent = { "assetId": number | unknown; "createdAt": string; "c
 
 export type LedgerPagination = { "hasMore": boolean; "limit": number; "offset": number; };
 
-export type LedgerEventResponse = { "event": LedgerEvent; "message": string; };
+export type LedgerEventResponse = { "event": LedgerEventDetail; "message": string; };
+
+export type LedgerEventDetail = LedgerEvent & { "participants": Array<LedgerEventParticipant>; };
+
+export type LedgerEventParticipant = { "character": LedgerEventParticipantCharacter; "characterId": number | unknown; "createdAt": string; "eventId": number; "id": number; "joinedAt": string | unknown; "leftAt": string | unknown; "roleLabel": string | unknown; "updatedAt": string; "weight": number; };
+
+export type LedgerEventParticipantCharacter = { "id": number; "name": string; "slug": string | unknown; "vanity": string | unknown; } | { "id": number; "name": string; "slug": string | unknown; "vanity": string | unknown; };
 
 export type LedgerClaimableRecipientSummaryListResponse = { "recipients": Array<LedgerClaimableRecipientSummary>; };
 
@@ -257,19 +263,19 @@ export type LedgerClaimableRecipientDetailResponse = { "allocations": Array<Ledg
 
 export type LedgerClaimableRecipientAllocation = { "allocationId": number; "amount": number; "eventId": number | unknown; "eventKey": string | unknown; "eventOccurredAt": string | unknown; "eventStatus": "open" | "ready_for_settlement" | "partially_settled" | "settled" | "cancelled" | null; "eventTitle": string | unknown; "eventType": "loot" | "raid" | "activity" | "bonus" | "salary" | "guild_event" | "other" | null; "ratio": number | unknown; "settlementDecidedAt": string; "settlementId": number; "settlementKey": string; "settlementStatus": "draft" | "calculated" | "paying" | "paid" | "cancelled"; "settlementTitle": string; "settlementType": "sale" | "bonus" | "salary" | "reward" | "subsidy" | "adjustment"; "unitAssetId": number | unknown; "unitAssetName": string | unknown; "weight": number; };
 
-export type CreateLedgerEventRequest = { "assetId"?: number | unknown; "eventType"?: "loot" | "raid" | "activity" | "bonus" | "salary" | "guild_event" | "other"; "gameId"?: number | unknown; "holderRef"?: string | unknown; "holderType"?: "character" | "org_treasury" | "market" | "external" | "custom"; "notes"?: string | unknown; "occurredAt": string; "sourceType"?: "manual" | "api" | "import"; "title": string; };
+export type CreateLedgerEventRequest = { "assetId"?: number | unknown; "eventType"?: "loot" | "raid" | "activity" | "bonus" | "salary" | "guild_event" | "other"; "gameId"?: number | unknown; "holderRef"?: string | unknown; "holderType"?: "character" | "org_treasury" | "market" | "external" | "custom"; "notes"?: string | unknown; "occurredAt": string; "participants"?: Array<{ "characterId"?: number | unknown; "joinedAt"?: string | unknown; "leftAt"?: string | unknown; "roleLabel"?: string | unknown; "weight"?: number; }>; "sourceType"?: "manual" | "api" | "import"; "title": string; };
 
-export type CreateLedgerEventBatchResponse = { "events": Array<LedgerEvent>; "message": string; };
+export type CreateLedgerEventBatchResponse = { "events": Array<LedgerEventDetail>; "message": string; };
 
 export type CreateLedgerEventBatchRequest = { "events": Array<CreateLedgerEventRequest>; };
 
-export type UpdateLedgerEventRequest = { "assetId"?: number | unknown; "gameId"?: number | unknown; "holderRef"?: string | unknown; "holderType"?: "character" | "org_treasury" | "market" | "external" | "custom"; "notes"?: string | unknown; "occurredAt"?: string; "title"?: string; };
+export type UpdateLedgerEventRequest = { "assetId"?: number | unknown; "gameId"?: number | unknown; "holderRef"?: string | unknown; "holderType"?: "character" | "org_treasury" | "market" | "external" | "custom"; "notes"?: string | unknown; "occurredAt"?: string; "participants"?: Array<{ "characterId"?: number | unknown; "joinedAt"?: string | unknown; "leftAt"?: string | unknown; "roleLabel"?: string | unknown; "weight"?: number; }>; "title"?: string; };
 
 export type UpdateLedgerEventStatusRequest = { "status": "ready_for_settlement" | "cancelled"; };
 
 export type LedgerSettlementListResponse = { "pagination": LedgerPagination; "settlements": Array<LedgerSettlement>; };
 
-export type LedgerSettlement = { "allocationMode": "equal" | "weight" | "manual"; "createdAt": string; "createdByUserId": number | unknown; "decidedAt": string; "eventId": number | unknown; "feeAmount": number | unknown; "feeMode": "none" | "percent" | "fixed" | "rule"; "feePercent": number | unknown; "feeRuleKey": string | unknown; "grossAmount": number; "id": number; "netAmount": number; "notes": string | unknown; "organizationId": number; "payerRef": string | unknown; "payerType": "character" | "org_treasury" | "external" | "custom"; "settlementKey": string; "settlementType": "sale" | "bonus" | "salary" | "reward" | "subsidy" | "adjustment"; "status": "draft" | "calculated" | "paying" | "paid" | "cancelled"; "title": string; "unitAssetId": number | unknown; "updatedAt": string; };
+export type LedgerSettlement = { "allocationMode": "equal" | "weight" | "manual"; "createdAt": string; "createdByUserId": number | unknown; "decidedAt": string; "eventId": number | unknown; "feeAmount": number | unknown; "feeMode": "none" | "percent" | "fixed" | "rule"; "feePercent": number | unknown; "feeRuleKey": string | unknown; "grossAmount": number; "id": number; "netAmount": number; "notes": string | unknown; "organizationId": number; "participantExceptionConfirmed": boolean; "participantExceptionReason": string | unknown; "payerRef": string | unknown; "payerType": "character" | "org_treasury" | "external" | "custom"; "settlementKey": string; "settlementType": "sale" | "bonus" | "salary" | "reward" | "subsidy" | "adjustment"; "status": "draft" | "calculated" | "paying" | "paid" | "cancelled"; "title": string; "unitAssetId": number | unknown; "updatedAt": string; };
 
 export type LedgerSettlementDefaultsResponse = { "defaults": { "defaultAllocationMode": "equal" | "weight" | "manual"; "defaultFeeMode": "none" | "percent" | "fixed" | "rule"; "defaultSettlementUnit": LedgerSettlementDefaultUnit; "supportedAllocationModes": Array<"equal" | "weight" | "manual">; "supportedFeeModes": Array<"none" | "percent" | "fixed" | "rule">; }; "game": { "id": number; "name": string; "organizationDisplayName": string | unknown; "slug": string; "source": "internal" | "steam"; "type": "game" | "activity"; } | { "id": number; "name": string; "organizationDisplayName": string | unknown; "slug": string; "source": "internal" | "steam"; "type": "game" | "activity"; }; };
 
@@ -291,9 +297,13 @@ export type CreateSettlementDisbursementRequest = { "claimedAt": string; "items"
 
 export type LedgerDisbursementItemRequest = { "amount": number; "characterId": number; "ratio"?: number | unknown; "weight"?: number; };
 
-export type LedgerSettlementResponse = { "message": string; "settlement": LedgerSettlement; };
+export type LedgerSettlementResponse = { "message": string; "settlement": LedgerSettlement; "participantValidation": LedgerSettlementParticipantValidation; };
 
-export type CreateLedgerSettlementRequest = { "allocationMode"?: "equal" | "weight" | "manual"; "decidedAt": string; "eventId"?: number | unknown; "feeAmount"?: number | unknown; "feeMode"?: "none" | "percent" | "fixed" | "rule"; "feePercent"?: number | unknown; "feeRuleKey"?: string | unknown; "grossAmount": number; "netAmount": number; "notes"?: string | unknown; "payerRef"?: string | unknown; "payerType"?: "character" | "org_treasury" | "external" | "custom"; "settlementType"?: "sale" | "bonus" | "salary" | "reward" | "subsidy" | "adjustment"; "title": string; "unitAssetId"?: number | unknown; };
+export type LedgerSettlementParticipantValidation = { "eventParticipantCharacterIds": Array<number>; "eventParticipantCount": number; "hasParticipantMismatch": boolean; "omittedParticipantCharacterIds": Array<number>; "recipientCharacterIds": Array<number>; "requiresConfirmation": boolean; "unexpectedRecipientCharacterIds": Array<number>; } | { "eventParticipantCharacterIds": Array<number>; "eventParticipantCount": number; "hasParticipantMismatch": boolean; "omittedParticipantCharacterIds": Array<number>; "recipientCharacterIds": Array<number>; "requiresConfirmation": boolean; "unexpectedRecipientCharacterIds": Array<number>; };
+
+export type LedgerSettlementParticipantConflictResponse = { "code": "SETTLEMENT_PARTICIPANT_CONFIRMATION_REQUIRED"; "error": string; "message": string; "participantValidation": LedgerSettlementParticipantValidation; "requestId": string; };
+
+export type CreateLedgerSettlementRequest = { "allocationMode"?: "equal" | "weight" | "manual"; "decidedAt": string; "eventId"?: number | unknown; "feeAmount"?: number | unknown; "feeMode"?: "none" | "percent" | "fixed" | "rule"; "feePercent"?: number | unknown; "feeRuleKey"?: string | unknown; "grossAmount": number; "netAmount": number; "notes"?: string | unknown; "confirmParticipantException"?: boolean; "payerRef"?: string | unknown; "payerType"?: "character" | "org_treasury" | "external" | "custom"; "participantExceptionReason"?: string | unknown; "recipientCharacterIds"?: Array<number>; "settlementType"?: "sale" | "bonus" | "salary" | "reward" | "subsidy" | "adjustment"; "title": string; "unitAssetId"?: number | unknown; };
 
 export type UpdateLedgerSettlementStatusRequest = { "status": "calculated" | "paying" | "paid" | "cancelled"; };
 
