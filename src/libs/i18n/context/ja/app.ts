@@ -334,6 +334,9 @@ export const app = {
 	events_title: 'イベント作成',
 	events_intro:
 		'このページは現在の ledger event 作成 payload に直接合わせ、まずは quick duplicate と複数 asset の順次作成を frontend 側で支えます。',
+	events_auth_required_title: '先にログインが必要です',
+	events_auth_required_body:
+		'イベントを作成する前にログインしてください。利用可能な guild を読み込み、正しい組織にイベントを送るために必要です。',
 	events_status: 'org query が必要',
 	events_session_title: '12 時間 quick duplicate',
 	events_session_body:
@@ -361,11 +364,17 @@ export const app = {
 	settlements_context_select_label: 'ギルドを選択',
 	settlements_context_select_placeholder: '所属している guild から選択',
 	settlements_context_select_empty: '選択できる guild がまだありません。',
+	settlements_auth_required_title: '先にログインが必要です',
+	settlements_auth_required_body:
+		'精算を作成する前にログインしてください。利用可能な guild、精算可能な event、既定値を読み込むために必要です。',
 	claim_context_title: '現在の guild context',
 	claim_context_body: '現在この guild の受け取り対象を確認しています: ',
 	claim_context_select_label: 'ギルドを選択',
 	claim_context_select_placeholder: '所属している guild から選択',
 	claim_context_select_empty: '選択できる guild がまだありません。',
+	claim_auth_required_title: '先にログインが必要です',
+	claim_auth_required_body:
+		'配布フローを開く前にログインしてください。利用可能な guild、受け取り対象、claimable allocation を読み込むために必要です。',
 	events_form_title_label: 'イベント名',
 	events_form_title_placeholder: '例: 木曜夜レイドのドロップ記録',
 	events_form_occurred_at_label: '発生日時',

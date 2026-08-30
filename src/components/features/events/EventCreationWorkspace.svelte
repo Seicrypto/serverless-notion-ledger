@@ -65,6 +65,10 @@
 		eyebrow: string;
 		title: string;
 		intro: string;
+		authRequiredTitle: string;
+		authRequiredBody: string;
+		loginLabel: string;
+		homeLabel: string;
 		sessionTitle: string;
 		sessionBody: string;
 		sessionCountLabel: string;
@@ -244,8 +248,8 @@
 	let dialogState: 'pending' | 'success' | 'error' = 'pending';
 	let dialogTitle = '';
 	let dialogMessage = '';
-	let dialogPrimaryAction: { label: string; onClick?: () => void } | null = null;
-	let dialogSecondaryAction: { label: string; onClick?: () => void } | null = null;
+	let dialogPrimaryAction: { label: string; href?: string; onClick?: () => void } | null = null;
+	let dialogSecondaryAction: { label: string; href?: string; onClick?: () => void } | null = null;
 
 	function createAssetRow(assetId = '', selectedLabel = ''): AssetInputRow {
 		return {
@@ -338,6 +342,15 @@
 			},
 		};
 		dialogSecondaryAction = null;
+	}
+
+	function openLoginDialog() {
+		dialogOpen = true;
+		dialogState = 'error';
+		dialogTitle = labels.authRequiredTitle;
+		dialogMessage = labels.authRequiredBody;
+		dialogPrimaryAction = { label: labels.loginLabel, href: `/${lang}/login` };
+		dialogSecondaryAction = { label: labels.homeLabel, href: `/${lang}/` };
 	}
 
 	function openSuccessDialog(totalEvents: number) {
@@ -604,6 +617,10 @@
 
 		try {
 			session = await ensureAuthSession();
+			if (!isAuthenticatedSession(session)) {
+				openLoginDialog();
+				return;
+			}
 			const organizationSnapshot = await ensureMyOrganizationsCache();
 			organizations = organizationSnapshot.organizations;
 			if (!organization && organizations.length > 0 && typeof window !== 'undefined') {

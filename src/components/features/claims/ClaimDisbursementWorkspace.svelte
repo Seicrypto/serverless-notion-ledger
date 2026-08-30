@@ -4,7 +4,7 @@
 	import GuildOptionPicker from '../../shared/GuildOptionPicker.svelte';
 	import RequestStatusDialog from '../org/RequestStatusDialog.svelte';
 	import { getApiAdapter } from '../../../libs/api/adapters/api.adapter.ts';
-	import { getErrorMessage } from '../../../libs/api/auth/session.ts';
+	import { ensureAuthSession, getErrorMessage, isAuthenticatedSession, type AuthSession } from '../../../libs/api/auth/session.ts';
 	import { ensureMyOrganizationsCache } from '../../../libs/api/organizations/my-organizations-cache.ts';
 	import type { OrganizationCardResponse } from '../../../libs/api/organizations/organization-card.ts';
 	import { recordRecentClaimCreation } from '../../../libs/claims/recent-claim-creations.ts';
@@ -22,6 +22,10 @@
 		eyebrow: string;
 		title: string;
 		intro: string;
+		authRequiredTitle: string;
+		authRequiredBody: string;
+		loginLabel: string;
+		homeLabel: string;
 		contextTitle: string;
 		contextBody: string;
 		contextSelectLabel: string;
@@ -109,6 +113,7 @@
 	export let labels: Labels;
 
 	let organizations: OrganizationCardResponse[] = [];
+	let session: AuthSession | null = null;
 	let recipients: LedgerClaimableRecipientSummary[] = [];
 	let recipientsLoading = false;
 	let recipientsError = '';
@@ -134,8 +139,8 @@
 	let dialogState: 'pending' | 'success' | 'error' = 'pending';
 	let dialogTitle = '';
 	let dialogMessage = '';
-	let dialogPrimaryAction: { label: string; onClick?: () => void } | null = null;
-	let dialogSecondaryAction: { label: string; onClick?: () => void } | null = null;
+	let dialogPrimaryAction: { label: string; href?: string; onClick?: () => void } | null = null;
+	let dialogSecondaryAction: { label: string; href?: string; onClick?: () => void } | null = null;
 
 	function findOrganizationByReference(reference: string) {
 		return organizations.find((entry) => getOrganizationReference(entry) === reference) ?? null;
@@ -157,6 +162,15 @@
 		claimAmounts = {};
 		notes = '';
 		errors = {};
+	}
+
+	function openLoginDialog() {
+		dialogOpen = true;
+		dialogState = 'error';
+		dialogTitle = labels.authRequiredTitle;
+		dialogMessage = labels.authRequiredBody;
+		dialogPrimaryAction = { label: labels.loginLabel, href: `/${lang}/login` };
+		dialogSecondaryAction = { label: labels.homeLabel, href: `/${lang}/` };
 	}
 
 	function toLocalDateTimeValue(date: Date) {
@@ -240,6 +254,12 @@
 
 	async function initializeOrganizations() {
 		const normalizedOrganization = resolveOrganizationQuery(organization);
+		session = await ensureAuthSession();
+		if (!isAuthenticatedSession(session)) {
+			organization = normalizedOrganization;
+			openLoginDialog();
+			return;
+		}
 		const snapshot = await ensureMyOrganizationsCache();
 		organizations = snapshot.organizations;
 		if (!organizations.length) {
