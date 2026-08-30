@@ -21,6 +21,10 @@
 	export let disabled = false;
 	export let error = false;
 	export let ariaLabel = 'Search select';
+	export let triggerMode: 'input' | 'button' = 'input';
+	export let buttonIdleLabel = 'Add selection';
+	export let buttonActiveLabel = 'Change selection';
+	export let searchPlaceholder = '';
 
 	let open = false;
 	let query = '';
@@ -49,6 +53,18 @@
 	function handleFocus() {
 		if (!disabled) {
 			open = true;
+			dispatch('focus', { query });
+		}
+	}
+
+	function handleButtonClick() {
+		if (disabled) {
+			return;
+		}
+
+		open = !open;
+		if (open) {
+			query = '';
 			dispatch('focus', { query });
 		}
 	}
@@ -82,7 +98,7 @@
 				return haystacks.some((candidate) => candidate.toLocaleLowerCase().includes(normalizedQuery));
 			})
 		: items;
-	$: if (!open) {
+	$: if (!open && triggerMode === 'input') {
 		query = selectedItem?.label ?? '';
 	}
 </script>
@@ -90,22 +106,49 @@
 <svelte:document on:click={handleDocumentClick} on:keydown={handleDocumentKeydown} />
 
 <div class="search-select" data-search-select-root={instanceId}>
-	<input
-		class:error
-		class="search-select-input"
-		type="search"
-		autocomplete="off"
-		bind:value={query}
-		placeholder={selectedItem?.label ?? placeholder}
-		aria-label={ariaLabel}
-		aria-expanded={open ? 'true' : 'false'}
-		disabled={disabled}
-		on:input={handleInput}
-		on:focus={handleFocus}
-	/>
+	{#if triggerMode === 'button'}
+		<button
+			type="button"
+			class:error
+			class="search-select-trigger"
+			aria-label={ariaLabel}
+			aria-expanded={open ? 'true' : 'false'}
+			disabled={disabled}
+			on:click={handleButtonClick}
+		>
+			<span>{selectedItem ? buttonActiveLabel : buttonIdleLabel}</span>
+			<b aria-hidden="true">{open ? '−' : '+'}</b>
+		</button>
+	{:else}
+		<input
+			class:error
+			class="search-select-input"
+			type="search"
+			autocomplete="off"
+			bind:value={query}
+			placeholder={selectedItem?.label ?? placeholder}
+			aria-label={ariaLabel}
+			aria-expanded={open ? 'true' : 'false'}
+			disabled={disabled}
+			on:input={handleInput}
+			on:focus={handleFocus}
+		/>
+	{/if}
 
 	{#if open && !disabled}
 		<div class="search-select-menu" role="listbox" aria-label={ariaLabel}>
+			{#if triggerMode === 'button'}
+				<input
+					class:error
+					class="search-select-input search-select-menu-input"
+					type="search"
+					autocomplete="off"
+					bind:value={query}
+					placeholder={searchPlaceholder || placeholder}
+					aria-label={ariaLabel}
+					on:input={handleInput}
+				/>
+			{/if}
 			{#if filteredItems.length > 0}
 				{#each filteredItems as item}
 					<button
@@ -138,7 +181,8 @@
 	}
 
 	.search-select-input,
-	.search-select-option {
+	.search-select-option,
+	.search-select-trigger {
 		font: inherit;
 	}
 
@@ -155,6 +199,36 @@
 	.search-select-input.error {
 		border-color: rgba(203, 80, 80, 0.8);
 		box-shadow: 0 0 0 1px rgba(203, 80, 80, 0.14);
+	}
+
+	.search-select-trigger {
+		width: 100%;
+		min-height: 48px;
+		padding: 0 16px;
+		border-radius: 16px;
+		border: 1px dashed color-mix(in srgb, var(--accent) 20%, var(--line));
+		background: color-mix(in srgb, var(--surface-strong) 80%, white);
+		color: var(--text-main);
+		display: inline-flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 12px;
+		cursor: pointer;
+	}
+
+	.search-select-trigger.error {
+		border-color: rgba(203, 80, 80, 0.8);
+		box-shadow: 0 0 0 1px rgba(203, 80, 80, 0.14);
+	}
+
+	.search-select-trigger:disabled {
+		opacity: 0.6;
+		cursor: not-allowed;
+	}
+
+	.search-select-trigger b {
+		font-size: 1rem;
+		line-height: 1;
 	}
 
 	.search-select-input:disabled {
@@ -177,6 +251,10 @@
 		z-index: 30;
 		max-height: min(320px, calc(100vh - 180px));
 		overflow: auto;
+	}
+
+	.search-select-menu-input {
+		margin-bottom: 4px;
 	}
 
 	.search-select-option {
