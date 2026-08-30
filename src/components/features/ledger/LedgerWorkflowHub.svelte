@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 
-	import RequestStatusDialog from '../org/RequestStatusDialog.svelte';
 	import GuildOptionPicker from '../../shared/GuildOptionPicker.svelte';
 	import { ensureAuthSession, getErrorMessage, isAuthenticatedSession, type AuthSession } from '../../../libs/api/auth/session.ts';
 	import { ensureMyOrganizationsCache } from '../../../libs/api/organizations/my-organizations-cache.ts';
@@ -14,12 +13,9 @@
 
 	interface Labels {
 		title: string;
-		authRequiredTitle: string;
 		authRequiredBody: string;
 		loginLabel: string;
-		homeLabel: string;
 		loadErrorTitle: string;
-		noOrganizationsTitle: string;
 		noOrganizationsBody: string;
 		findOrganizationsLabel: string;
 		organizationLabel: string;
@@ -64,36 +60,8 @@
 	let selectedSettleableEventId = '';
 	let pageError = '';
 
-	let dialogOpen = false;
-	let dialogTitle = '';
-	let dialogMessage = '';
-	let dialogPrimaryAction: { label: string; href?: string; onClick?: () => void; variant?: 'primary' | 'secondary' } | null = null;
-	let dialogSecondaryAction: { label: string; href?: string; onClick?: () => void; variant?: 'primary' | 'secondary' } | null = null;
-
 	function findOrganizationByReference(reference: string) {
 		return organizations.find((organization) => getOrganizationReference(organization) === reference) ?? null;
-	}
-
-	function closeDialog() {
-		dialogOpen = false;
-		dialogPrimaryAction = null;
-		dialogSecondaryAction = null;
-	}
-
-	function openLoginDialog() {
-		dialogOpen = true;
-		dialogTitle = labels.authRequiredTitle;
-		dialogMessage = labels.authRequiredBody;
-		dialogPrimaryAction = { label: labels.loginLabel, href: `/${lang}/login`, variant: 'primary' };
-		dialogSecondaryAction = { label: labels.homeLabel, href: `/${lang}/`, variant: 'secondary' };
-	}
-
-	function openNoOrganizationsDialog() {
-		dialogOpen = true;
-		dialogTitle = labels.noOrganizationsTitle;
-		dialogMessage = labels.noOrganizationsBody;
-		dialogPrimaryAction = { label: labels.findOrganizationsLabel, href: `/${lang}/guilds`, variant: 'primary' };
-		dialogSecondaryAction = { label: labels.homeLabel, href: `/${lang}/`, variant: 'secondary' };
 	}
 
 	function formatRecentEntryLabel(entry: RecentEventCreationEntry) {
@@ -171,11 +139,7 @@
 	async function initializeOrganizations() {
 		const snapshot = await ensureMyOrganizationsCache();
 		organizations = snapshot.organizations;
-
-		if (!organizations.length) {
-			openNoOrganizationsDialog();
-			return;
-		}
+		if (!organizations.length) return;
 
 		const recentOrganization =
 			typeof window !== 'undefined'
@@ -249,7 +213,6 @@
 		void ensureAuthSession().then(async (nextSession) => {
 			session = nextSession;
 			if (!isAuthenticatedSession(nextSession)) {
-				openLoginDialog();
 				return;
 			}
 
@@ -287,11 +250,17 @@
 
 		{#if pageError}
 			<p class="workspace-error">{pageError}</p>
-		{:else if !isAuthenticatedSession(session)}
+	{:else if !isAuthenticatedSession(session)}
+		<div class="ledger-guest-state">
 			<p class="workspace-meta">{labels.authRequiredBody}</p>
-		{:else if !organizations.length}
+			<a class="primary-action" href={`/${lang}/login`}>{labels.loginLabel}</a>
+		</div>
+	{:else if !organizations.length}
+		<div class="ledger-guest-state">
 			<p class="workspace-meta">{labels.noOrganizationsBody}</p>
-		{:else}
+			<a class="secondary-action" href={`/${lang}/guilds`}>{labels.findOrganizationsLabel}</a>
+		</div>
+	{:else}
 			<label class="workspace-field ledger-context-field">
 				<span>{labels.organizationLabel}</span>
 				<GuildOptionPicker
@@ -375,16 +344,6 @@
 	</article>
 </section>
 
-<RequestStatusDialog
-	open={dialogOpen}
-	state="success"
-	title={dialogTitle}
-	message={dialogMessage}
-	primaryAction={dialogPrimaryAction}
-	secondaryAction={dialogSecondaryAction}
-	onClose={closeDialog}
-/>
-
 <style>
 	.workspace-card {
 		padding: 24px;
@@ -458,6 +417,13 @@
 
 	.ledger-context-field {
 		margin-top: 2px;
+	}
+
+	.ledger-guest-state {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 12px;
 	}
 
 	.ledger-grid {

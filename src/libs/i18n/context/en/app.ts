@@ -334,6 +334,8 @@ export const app = {
 	events_title: 'Create events',
 	events_intro:
 		'This page maps directly to the current ledger event create payload, with quick duplicate and multi-asset queued creation handled on the frontend first.',
+	events_auth_required_title: 'Login required',
+	events_auth_required_body: 'Please sign in before creating an event so the app can load your guild access and submit the record under the correct organization.',
 	events_status: 'Requires org query',
 	events_session_title: '12-hour quick duplicate',
 	events_session_body:
@@ -361,11 +363,17 @@ export const app = {
 	settlements_context_select_label: 'Choose guild',
 	settlements_context_select_placeholder: 'Choose from your current guilds',
 	settlements_context_select_empty: 'There are no guilds available yet.',
+	settlements_auth_required_title: 'Login required',
+	settlements_auth_required_body:
+		'Please sign in before creating a settlement so the app can load your guild access, event list, and settlement defaults.',
 	claim_context_title: 'Current guild context',
 	claim_context_body: 'These claimable rewards are being reviewed under ',
 	claim_context_select_label: 'Choose guild',
 	claim_context_select_placeholder: 'Choose from your current guilds',
 	claim_context_select_empty: 'There are no guilds available yet.',
+	claim_auth_required_title: 'Login required',
+	claim_auth_required_body:
+		'Please sign in before opening reward disbursement so the app can load your guild recipients and claimable allocations.',
 	events_form_title_label: 'Event title',
 	events_form_title_placeholder: 'For example: Thursday raid loot record',
 	events_form_occurred_at_label: 'Occurred at',
