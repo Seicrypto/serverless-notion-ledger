@@ -688,6 +688,19 @@
 		await loadOrganizationContext();
 	}
 
+	function handleOrganizationPickerChange(event: CustomEvent<{ value: string }>) {
+		void changeOrganization(event.detail.value);
+	}
+
+	function handleGamePickerChange(event: CustomEvent<{ value: string }>) {
+		const nextGameId = event.detail.value;
+		gameId = nextGameId;
+		normalizeParticipantCharacterIdsForGame(nextGameId);
+		if (holderType === 'character') {
+			syncHolderFromCharacterId(getDefaultHolderCharacterId(nextGameId, organizationCharacters, session));
+		}
+	}
+
 	function parseDuplicateSuggestions(error: unknown) {
 		if (!(error instanceof Error)) {
 			return [];
@@ -1039,9 +1052,7 @@ async function submitCreateItem() {
 						emptyLabel={labels.contextSelectEmpty}
 						disabled={contextLoading}
 						items={organizationOptions}
-						on:change={(event) => {
-							void changeOrganization(event.detail.value);
-						}}
+						on:change={handleOrganizationPickerChange}
 					/>
 				</label>
 			{:else}
@@ -1105,13 +1116,7 @@ async function submitCreateItem() {
 					disabled={!organization || contextLoading}
 					error={Boolean(errors.gameId)}
 					items={gameOptions}
-					on:change={(event) => {
-						gameId = event.detail.value;
-						normalizeParticipantCharacterIdsForGame(event.detail.value);
-						if (holderType === 'character') {
-							syncHolderFromCharacterId(getDefaultHolderCharacterId(event.detail.value, organizationCharacters, session));
-						}
-					}}
+					on:change={handleGamePickerChange}
 				/>
 				<small>{labels.gameRequiredHint}</small>
 				{#if errors.gameId}<em>{errors.gameId}</em>{/if}
@@ -1368,15 +1373,7 @@ async function submitCreateItem() {
 						searchPlaceholder={labels.gameRequiredHint}
 						disabled={!organization || contextLoading}
 						items={gameOptions}
-						on:change={(event) => {
-							gameId = event.detail.value;
-							normalizeParticipantCharacterIdsForGame(event.detail.value);
-							if (holderType === 'character') {
-								syncHolderFromCharacterId(
-									getDefaultHolderCharacterId(event.detail.value, organizationCharacters, session),
-								);
-							}
-						}}
+						on:change={handleGamePickerChange}
 					/>
 					<small>{labels.gameRequiredHint}</small>
 				</label>

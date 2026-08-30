@@ -63,7 +63,10 @@
 	}
 
 	function selectItem(nextValue: string) {
-		value = nextValue;
+		if (!items.some((item) => item.value === nextValue)) {
+			return;
+		}
+
 		open = false;
 		query = '';
 		dispatch('change', { value: nextValue });

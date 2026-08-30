@@ -13,9 +13,24 @@
 	export let summary: CharacterLedgerDashboardSummaryItem;
 	export let labels: Labels;
 	export let onOpenDetail: (() => void) | null = null;
+	export let lang = 'en';
+
+	const localeByLang: Record<string, string> = {
+		en: 'en-US',
+		ja: 'ja-JP',
+		'zh-tw': 'zh-TW',
+	};
+
+	function getLocale() {
+		return localeByLang[lang] ?? lang;
+	}
 
 	function formatAmount(value: number) {
-		return new Intl.NumberFormat(undefined, { maximumFractionDigits: 2 }).format(value);
+		return new Intl.NumberFormat(getLocale(), {
+			notation: 'compact',
+			compactDisplay: 'short',
+			maximumFractionDigits: 1,
+		}).format(value);
 	}
 
 	function totalAmount(items: Array<{ amountTotal: number }>) {
@@ -32,7 +47,7 @@
 			return value;
 		}
 
-		return new Intl.DateTimeFormat(undefined, {
+		return new Intl.DateTimeFormat(getLocale(), {
 			dateStyle: 'medium',
 			timeStyle: 'short',
 		}).format(date);
@@ -50,7 +65,13 @@
 
 	<div class="character-grid">
 		<section class="character-tile">
-			<span>{labels.receivableLabel}</span>
+			<span class="metric-label">
+				<svg viewBox="0 0 24 24" aria-hidden="true" class="metric-icon metric-icon-receivable">
+					<path d="M12 4v12"></path>
+					<path d="M7 11l5 5 5-5"></path>
+				</svg>
+				{labels.receivableLabel}
+			</span>
 			<strong>{formatAmount(totalAmount(summary.receivableUnitBreakdown))}</strong>
 			{#if summary.receivableUnitBreakdown.length}
 				<ul>
@@ -64,7 +85,13 @@
 		</section>
 
 		<section class="character-tile">
-			<span>{labels.payableLabel}</span>
+			<span class="metric-label">
+				<svg viewBox="0 0 24 24" aria-hidden="true" class="metric-icon metric-icon-payable">
+					<path d="M12 20V8"></path>
+					<path d="M17 13l-5-5-5 5"></path>
+				</svg>
+				{labels.payableLabel}
+			</span>
 			<strong>{formatAmount(totalAmount(summary.payableUnitBreakdown))}</strong>
 			{#if summary.payableUnitBreakdown.length}
 				<ul>
@@ -144,7 +171,8 @@
 	}
 
 	.character-tile strong {
-		font-size: 1.05rem;
+		font-size: 1.2rem;
+		line-height: 1.1;
 	}
 
 	.character-tile ul {
@@ -152,6 +180,32 @@
 		padding-left: 18px;
 		display: grid;
 		gap: 6px;
+	}
+
+	.metric-label {
+		display: inline-flex;
+		align-items: center;
+		gap: 8px;
+		font-weight: 700;
+	}
+
+	.metric-icon {
+		width: 18px;
+		height: 18px;
+		fill: none;
+		stroke: currentColor;
+		stroke-width: 2;
+		stroke-linecap: round;
+		stroke-linejoin: round;
+		flex: 0 0 auto;
+	}
+
+	.metric-icon-receivable {
+		color: #2f9e44;
+	}
+
+	.metric-icon-payable {
+		color: #d94841;
 	}
 
 	@media (max-width: 720px) {

@@ -2,7 +2,7 @@
 	import { onMount } from 'svelte';
 
 	import RequestStatusDialog from './RequestStatusDialog.svelte';
-	import GamePicker from '../../shared/GamePicker.svelte';
+	import GameOptionPicker from '../../shared/GameOptionPicker.svelte';
 	import { getApiAdapter } from '../../../libs/api/adapters/api.adapter.ts';
 	import { getErrorMessage } from '../../../libs/api/auth/session.ts';
 	import { refreshMyOrganizationsCache } from '../../../libs/api/organizations/my-organizations-cache.ts';
@@ -206,6 +206,10 @@ const CREATE_TIMEOUT_MS = 15000;
 		errors = {};
 	};
 
+	const handleGamePickerChange = (event: CustomEvent<{ value: string }>) => {
+		gameId = event.detail.value;
+	};
+
 	const submit = async () => {
 		if (isSubmitting || !validate()) {
 			return;
@@ -297,10 +301,12 @@ const CREATE_TIMEOUT_MS = 15000;
 
 			<label class="create-org-field">
 				<span>{labels.gameLabel}</span>
-				<GamePicker
-					bind:value={gameId}
+				<GameOptionPicker
+					value={gameId}
 					ariaLabel={labels.gameLabel}
 					placeholder={gamesLoading ? labels.loadingGames : labels.gameLabel}
+					searchPlaceholder={labels.gameLabel}
+					emptyLabel={labels.validationGameRequired}
 					disabled={gamesLoading || games.length === 0}
 					error={Boolean(errors.gameId)}
 					items={games.map((game) => ({
@@ -310,6 +316,7 @@ const CREATE_TIMEOUT_MS = 15000;
 						officialSiteUrl: game.officialSiteUrl,
 						resolvedIconUrl: game.resolvedIconUrl,
 					}))}
+					on:change={handleGamePickerChange}
 				/>
 				<small>{labels.requiredHint}</small>
 				{#if errors.gameId}<em>{errors.gameId}</em>{/if}

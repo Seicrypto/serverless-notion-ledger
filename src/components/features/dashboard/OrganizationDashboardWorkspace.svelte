@@ -113,6 +113,7 @@
 	let refreshClock = Date.now();
 	let summaryRequestKey = '';
 	let previousNormalizedQuery = '';
+	let summariesLoading = false;
 
 	function isActiveMember() {
 		return isAuthenticatedSession(session);
@@ -246,12 +247,17 @@
 			}
 		}
 
-		const response = await getApiAdapter().queryOrganizationCharacterLedgerDashboardSummaries(organization, {
-			characterIds,
-		});
-		summaries = response.summaries;
-		summaryRequestKey = currentSummaryKey;
-		writeDashboardCharacterSummariesCache(window.sessionStorage, organization, characterIds, response.summaries);
+		summariesLoading = true;
+		try {
+			const response = await getApiAdapter().queryOrganizationCharacterLedgerDashboardSummaries(organization, {
+				characterIds,
+			});
+			summaries = response.summaries;
+			summaryRequestKey = currentSummaryKey;
+			writeDashboardCharacterSummariesCache(window.sessionStorage, organization, characterIds, response.summaries);
+		} finally {
+			summariesLoading = false;
+		}
 	}
 
 	async function loadDashboard(force = false) {
@@ -264,16 +270,26 @@
 		pageLoading = true;
 		errorMessage = '';
 
-		try {
-			await loadSummary(force);
-			await loadCharacters(force);
-			await loadSummaries(force);
-			syncUrlOrganization();
-		} catch (error) {
-			errorMessage = getErrorMessage(error, labels.errorTitle);
-		} finally {
-			loading = false;
-			pageLoading = false;
+		const [summaryResult, charactersResult] = await Promise.allSettled([
+			loadSummary(force),
+			loadCharacters(force),
+		]);
+
+		if (summaryResult.status === 'rejected' && charactersResult.status === 'rejected') {
+			errorMessage = getErrorMessage(
+				charactersResult.reason instanceof Error ? charactersResult.reason : summaryResult.reason,
+				labels.errorTitle,
+			);
+		}
+
+		syncUrlOrganization();
+		loading = false;
+		pageLoading = false;
+
+		if (charactersResult.status === 'fulfilled' && pagedCharacters.length > 0) {
+			void loadSummaries(force).catch(() => {
+				summariesLoading = false;
+			});
 		}
 	}
 
@@ -349,7 +365,7 @@
 		await loadDashboard(true);
 	}
 
-	$: if (!loading && organization && currentSummaryKey && currentSummaryKey !== summaryRequestKey) {
+	$: if (!loading && !summariesLoading && organization && currentSummaryKey && currentSummaryKey !== summaryRequestKey) {
 		void loadSummaries(false);
 	}
 
@@ -409,20 +425,17 @@
 			<OrganizationLedgerOverviewCard
 				summary={summary}
 				organizationName={getOrganizationDisplayName()}
+				lang={lang}
 				labels={{
 					title: labels.overviewTitle,
 					dashboardSuffix: labels.dashboardSuffix,
 					revenueLabel: labels.revenueLabel,
 					revenueEmptyLabel: labels.revenueEmptyLabel,
-					revenueHelperLabel: labels.revenueHelperLabel,
 					settlementCountLabel: labels.settlementCountLabel,
-					settlementCountHelperLabel: labels.settlementCountHelperLabel,
 					unsettledEventCountLabel: labels.unsettledEventCountLabel,
-					unsettledEventCountHelperLabel: labels.unsettledEventCountHelperLabel,
 					disbursementStatusLabel: labels.disbursementStatusLabel,
 					disbursementInProgressLabel: labels.disbursementInProgressLabel,
 					disbursementNotStartedLabel: labels.disbursementNotStartedLabel,
-					disbursementStatusHelperLabel: labels.disbursementStatusHelperLabel,
 					lastUpdatedLabel: labels.lastUpdatedLabel,
 				}}
 			/>
@@ -480,6 +493,7 @@
 						{#if entry.summary}
 							<CharacterLedgerSummaryCard
 								summary={entry.summary}
+								lang={lang}
 								labels={{
 									receivableLabel: labels.receivableLabel,
 									payableLabel: labels.payableLabel,

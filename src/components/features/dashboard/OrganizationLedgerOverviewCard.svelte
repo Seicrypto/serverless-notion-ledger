@@ -6,28 +6,47 @@
 		dashboardSuffix: string;
 		revenueLabel: string;
 		revenueEmptyLabel: string;
-		revenueHelperLabel: string;
 		settlementCountLabel: string;
-		settlementCountHelperLabel: string;
 		unsettledEventCountLabel: string;
-		unsettledEventCountHelperLabel: string;
 		disbursementStatusLabel: string;
 		disbursementInProgressLabel: string;
 		disbursementNotStartedLabel: string;
-		disbursementStatusHelperLabel: string;
 		lastUpdatedLabel: string;
 	}
 
 	export let summary: OrganizationLedgerDashboardSummaryResponse | null = null;
 	export let organizationName: string | null = null;
 	export let labels: Labels;
+	export let lang = 'en';
+
+	const localeByLang: Record<string, string> = {
+		en: 'en-US',
+		ja: 'ja-JP',
+		'zh-tw': 'zh-TW',
+	};
+
+	function getLocale() {
+		return localeByLang[lang] ?? lang;
+	}
 
 	function formatAmount(value: number) {
-		return new Intl.NumberFormat(undefined, { maximumFractionDigits: 2 }).format(value);
+		return new Intl.NumberFormat(getLocale(), { maximumFractionDigits: 2 }).format(value);
+	}
+
+	function formatCompactAmount(value: number) {
+		return new Intl.NumberFormat(getLocale(), {
+			notation: 'compact',
+			compactDisplay: 'short',
+			maximumFractionDigits: 1,
+		}).format(value);
+	}
+
+	function formatCount(value: number) {
+		return new Intl.NumberFormat(getLocale()).format(value);
 	}
 
 	function formatDateTime(value: string) {
-		return new Intl.DateTimeFormat(undefined, {
+		return new Intl.DateTimeFormat(getLocale(), {
 			dateStyle: 'medium',
 			timeStyle: 'short',
 		}).format(new Date(value));
@@ -39,8 +58,8 @@
 
 <article class="overview-card">
 	<div class="overview-head">
-		<div>
-			<p class="overview-kicker">{labels.title}</p>
+		<div class="overview-title-block">
+			<p class="overview-kicker">📊 {labels.title}</p>
 			<h1>{headingName} {labels.dashboardSuffix}</h1>
 		</div>
 		{#if summary}
@@ -48,75 +67,59 @@
 		{/if}
 	</div>
 
-	<div class="overview-grid">
-		<section class="overview-tile overview-tile-wide">
-			<div class="overview-tile-head">
-				<span>{labels.revenueLabel}</span>
-				<small>{labels.revenueHelperLabel}</small>
+	<ul class="overview-list">
+		<li class="overview-row overview-row-revenue">
+			<div class="overview-row-copy">
+				<p class="overview-label">💰 {labels.revenueLabel}</p>
+				{#if revenueItems.length > 0}
+					<div class="revenue-stack">
+						{#each revenueItems as unit}
+							<p
+								class="revenue-item"
+								title={`${unit.unitAssetName ?? `Asset #${unit.unitAssetId ?? '—'}`}: ${formatAmount(unit.netAmountTotal)}`}
+							>
+								<span>{unit.unitAssetName ?? `Asset #${unit.unitAssetId ?? '—'}`}</span>
+								<strong>{formatCompactAmount(unit.netAmountTotal)}</strong>
+							</p>
+						{/each}
+					</div>
+				{:else}
+					<p class="overview-empty">{labels.revenueEmptyLabel}</p>
+				{/if}
 			</div>
-			{#if revenueItems.length > 0}
-				<ul>
-					{#each revenueItems as unit}
-						<li>
-							<div class="overview-metric-copy">
-								<strong>{unit.unitAssetName ?? `Asset #${unit.unitAssetId ?? '—'}`}</strong>
-								<small>{unit.settlementCount} settlements</small>
-							</div>
-							<strong class="overview-metric-value">{formatAmount(unit.netAmountTotal)}</strong>
-						</li>
-					{/each}
-				</ul>
-			{:else}
-				<p class="overview-empty">{labels.revenueEmptyLabel}</p>
-			{/if}
-		</section>
+		</li>
 
-		<section class="overview-tile">
-			<div class="overview-tile-head">
-				<span>{labels.settlementCountLabel}</span>
-				<small>{labels.settlementCountHelperLabel}</small>
-			</div>
-			<strong class="overview-stat-value">{summary?.summary.settlementCount ?? 0}</strong>
-		</section>
+		<li class="overview-row">
+			<p class="overview-label">📦 {labels.settlementCountLabel}</p>
+			<strong class="overview-value">{formatCount(summary?.summary.settlementCount ?? 0)}</strong>
+		</li>
 
-		<section class="overview-tile">
-			<div class="overview-tile-head">
-				<span>{labels.unsettledEventCountLabel}</span>
-				<small>{labels.unsettledEventCountHelperLabel}</small>
-			</div>
-			<strong class="overview-stat-value">{summary?.summary.unsettledEventCount ?? 0}</strong>
-		</section>
+		<li class="overview-row">
+			<p class="overview-label">⏳ {labels.unsettledEventCountLabel}</p>
+			<strong class="overview-value">{formatCount(summary?.summary.unsettledEventCount ?? 0)}</strong>
+		</li>
 
-		<section class="overview-tile">
-			<div class="overview-tile-head">
-				<span>{labels.disbursementStatusLabel}</span>
-				<small>{labels.disbursementStatusHelperLabel}</small>
+		<li class="overview-row">
+			<p class="overview-label">{labels.disbursementStatusLabel}</p>
+			<div class="status-inline">
+				<span>🟡 {labels.disbursementInProgressLabel}: {formatCount(summary?.summary.disbursementInProgressCount ?? 0)}</span>
+				<span>🔴 {labels.disbursementNotStartedLabel}: {formatCount(summary?.summary.disbursementNotStartedCount ?? 0)}</span>
 			</div>
-			<div class="status-stack">
-				<div class="status-pill">
-					<span>{labels.disbursementInProgressLabel}</span>
-					<strong>{summary?.summary.disbursementInProgressCount ?? 0}</strong>
-				</div>
-				<div class="status-pill">
-					<span>{labels.disbursementNotStartedLabel}</span>
-					<strong>{summary?.summary.disbursementNotStartedCount ?? 0}</strong>
-				</div>
-			</div>
-		</section>
-	</div>
+		</li>
+	</ul>
 </article>
 
 <style>
 	.overview-card {
-		padding: 24px;
-		border: 1px solid color-mix(in srgb, var(--line) 92%, white);
+		padding: 26px;
+		border: 1px solid color-mix(in srgb, var(--line) 90%, white);
 		border-radius: var(--radius-lg);
 		background:
-			radial-gradient(circle at top right, color-mix(in srgb, var(--ledger-accent) 18%, transparent), transparent 44%),
+			radial-gradient(circle at top right, color-mix(in srgb, var(--ledger-accent) 14%, transparent), transparent 42%),
 			var(--surface);
 		box-shadow: var(--shadow);
 		display: grid;
-		gap: 18px;
+		gap: 22px;
 	}
 
 	.overview-head {
@@ -126,121 +129,85 @@
 		align-items: start;
 	}
 
+	.overview-title-block,
+	.overview-row-copy {
+		display: grid;
+		gap: 8px;
+	}
+
 	.overview-kicker,
 	.overview-updated,
-	.overview-tile span,
-	.overview-tile small {
+	.overview-label,
+	.overview-empty,
+	.revenue-item span,
+	.status-inline span {
 		margin: 0;
 		color: var(--text-soft);
 	}
 
-	.overview-head h2 {
-		margin: 10px 0 0;
-		letter-spacing: -0.03em;
-	}
-
 	.overview-head h1 {
-		margin: 10px 0 0;
+		margin: 0;
 		letter-spacing: -0.03em;
 		font-size: clamp(1.9rem, 3vw, 2.8rem);
 		line-height: 1.05;
 	}
 
-	.overview-grid {
-		display: grid;
-		grid-template-columns: repeat(4, minmax(0, 1fr));
-		gap: 14px;
-	}
-
-	.overview-tile {
-		padding: 16px;
-		border: 1px solid var(--line);
-		border-radius: 20px;
-		background: color-mix(in srgb, var(--surface-strong) 80%, white);
-		display: grid;
-		gap: 10px;
-	}
-
-	.overview-tile-head {
-		display: grid;
-		gap: 6px;
-	}
-
-	.overview-tile-wide {
-		grid-column: span 2;
-	}
-
-	.overview-stat-value {
-		font-size: clamp(1.8rem, 3vw, 2.4rem);
-		line-height: 1;
-	}
-
-	.overview-empty {
-		margin: 0;
-		color: var(--text-soft);
-		padding: 18px;
-		border-radius: 16px;
-		background: color-mix(in srgb, var(--ledger-accent-soft) 38%, white);
-	}
-
-	.overview-tile ul {
+	.overview-list {
 		margin: 0;
 		padding: 0;
 		list-style: none;
 		display: grid;
-		gap: 10px;
+		gap: 14px;
 	}
 
-	.overview-tile li {
+	.overview-row {
 		display: flex;
-		justify-content: space-between;
-		gap: 12px;
 		align-items: start;
-		padding: 12px 0;
-		border-top: 1px solid color-mix(in srgb, var(--line) 72%, transparent);
+		justify-content: space-between;
+		gap: 16px;
+		padding: 6px 0;
 	}
 
-	.overview-tile li:first-child {
+	.overview-row-revenue {
 		padding-top: 0;
-		border-top: 0;
 	}
 
-	.overview-metric-copy {
-		display: grid;
-		gap: 4px;
+	.overview-label {
+		font-size: 1rem;
+		font-weight: 600;
 	}
 
-	.overview-metric-value {
-		font-size: 1.15rem;
+	.overview-value {
+		font-size: clamp(1.25rem, 2vw, 1.6rem);
+		line-height: 1.1;
+		text-align: right;
 	}
 
-	.status-stack {
-		display: grid;
-		grid-template-columns: 1fr 1fr;
-		gap: 10px;
+	.revenue-stack {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 10px 14px;
 	}
 
-	.status-pill {
-		padding: 12px 14px;
-		border-radius: 16px;
-		background: color-mix(in srgb, var(--ledger-accent-soft) 32%, white);
-		border: 1px solid color-mix(in srgb, var(--ledger-accent) 20%, var(--line));
-		display: grid;
-		gap: 6px;
+	.revenue-item {
+		margin: 0;
+		display: inline-flex;
+		align-items: baseline;
+		gap: 8px;
+		padding: 0;
 	}
 
-	.status-pill strong {
-		font-size: 1.4rem;
+	.revenue-item strong {
+		font-size: 1.05rem;
+		color: var(--text-main);
 	}
 
-	@media (max-width: 980px) {
-		.overview-grid {
-			grid-template-columns: 1fr 1fr;
-		}
-
-		.overview-tile-wide {
-			grid-column: 1 / -1;
-		}
+	.status-inline {
+		display: flex;
+		flex-wrap: wrap;
+		justify-content: flex-end;
+		gap: 10px 14px;
+		text-align: right;
 	}
 
 	@media (max-width: 720px) {
@@ -249,14 +216,14 @@
 		}
 
 		.overview-head,
-		.overview-grid,
-		.overview-tile li {
-			grid-template-columns: 1fr;
+		.overview-row {
 			flex-direction: column;
 		}
 
-		.status-stack {
-			grid-template-columns: 1fr;
+		.overview-value,
+		.status-inline {
+			text-align: left;
+			justify-content: flex-start;
 		}
 	}
 </style>
