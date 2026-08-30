@@ -2,6 +2,7 @@
 	import { onMount } from 'svelte';
 
 	import CharacterLedgerDetailDialog from './CharacterLedgerDetailDialog.svelte';
+	import DashboardPagination from './DashboardPagination.svelte';
 	import CharacterLedgerSummaryCard from './CharacterLedgerSummaryCard.svelte';
 	import OrganizationLedgerOverviewCard from './OrganizationLedgerOverviewCard.svelte';
 	import {
@@ -57,12 +58,18 @@
 		prevLabel: string;
 		nextLabel: string;
 		overviewTitle: string;
+		dashboardSuffix: string;
 		revenueLabel: string;
+		revenueEmptyLabel: string;
+		revenueHelperLabel: string;
 		settlementCountLabel: string;
+		settlementCountHelperLabel: string;
 		unsettledEventCountLabel: string;
+		unsettledEventCountHelperLabel: string;
 		disbursementStatusLabel: string;
 		disbursementInProgressLabel: string;
 		disbursementNotStartedLabel: string;
+		disbursementStatusHelperLabel: string;
 		lastUpdatedLabel: string;
 		receivableLabel: string;
 		payableLabel: string;
@@ -117,6 +124,10 @@
 
 	function findCharacterSummary(characterId: number) {
 		return summaries.find((summaryItem) => summaryItem.characterId === characterId) ?? null;
+	}
+
+	function getOrganizationDisplayName() {
+		return summary?.organization.name ?? organization ?? labels.overviewTitle;
 	}
 
 	$: normalizedQuery = normalizeSearch(query);
@@ -366,14 +377,6 @@
 	});
 </script>
 
-<section class="app-hero">
-	<div class="app-hero-copy">
-		<p class="app-eyebrow">{labels.eyebrow}</p>
-		<h1>{labels.title}</h1>
-		<p class="app-intro">{labels.intro}</p>
-	</div>
-</section>
-
 {#if !authResolved && loading}
 	<section class="app-section">
 		<article class="state-card">
@@ -405,14 +408,21 @@
 		{:else}
 			<OrganizationLedgerOverviewCard
 				summary={summary}
+				organizationName={getOrganizationDisplayName()}
 				labels={{
 					title: labels.overviewTitle,
+					dashboardSuffix: labels.dashboardSuffix,
 					revenueLabel: labels.revenueLabel,
+					revenueEmptyLabel: labels.revenueEmptyLabel,
+					revenueHelperLabel: labels.revenueHelperLabel,
 					settlementCountLabel: labels.settlementCountLabel,
+					settlementCountHelperLabel: labels.settlementCountHelperLabel,
 					unsettledEventCountLabel: labels.unsettledEventCountLabel,
+					unsettledEventCountHelperLabel: labels.unsettledEventCountHelperLabel,
 					disbursementStatusLabel: labels.disbursementStatusLabel,
 					disbursementInProgressLabel: labels.disbursementInProgressLabel,
 					disbursementNotStartedLabel: labels.disbursementNotStartedLabel,
+					disbursementStatusHelperLabel: labels.disbursementStatusHelperLabel,
 					lastUpdatedLabel: labels.lastUpdatedLabel,
 				}}
 			/>
@@ -443,46 +453,65 @@
 	</section>
 
 	<section class="app-section">
+		<article class="characters-panel">
 			<div class="section-head">
 				<h2>{labels.charactersTitle}</h2>
-			<p>{labels.pageLabel}: {visiblePage} / {totalPages}</p>
-		</div>
-
-		{#if filteredCharacters.length === 0}
-			<article class="state-card">
-				<h2>{labels.charactersEmptyTitle}</h2>
-				<p>{labels.charactersEmptyBody}</p>
-			</article>
-		{:else}
-			<div class="character-card-grid">
-				{#each pagedCharacterCards as entry}
-					{#if entry.summary}
-						<CharacterLedgerSummaryCard
-							summary={entry.summary}
-							labels={{
-								receivableLabel: labels.receivableLabel,
-								payableLabel: labels.payableLabel,
-								pendingClaimCountLabel: labels.pendingClaimCountLabel,
-								lastActivityLabel: labels.lastActivityLabel,
-								openDetailLabel: labels.openDetailLabel,
-								noBreakdownLabel: labels.noBreakdownLabel,
-							}}
-							onOpenDetail={() => void openCharacterDetail(entry.character.id)}
-						/>
-					{:else}
-						<article class="state-card compact">
-							<h2>{entry.character.name}</h2>
-							<p>{labels.loadingLabel}</p>
-						</article>
-					{/if}
-				{/each}
+				<DashboardPagination
+					page={visiblePage}
+					totalPages={totalPages}
+					onPrevious={previousPage}
+					onNext={nextPage}
+					labels={{
+						pageLabel: labels.pageLabel,
+						prevLabel: labels.prevLabel,
+						nextLabel: labels.nextLabel,
+					}}
+				/>
 			</div>
 
-			<div class="pagination">
-				<button type="button" on:click={previousPage} disabled={visiblePage === 1}>{labels.prevLabel}</button>
-				<button type="button" on:click={nextPage} disabled={visiblePage === totalPages}>{labels.nextLabel}</button>
-			</div>
-		{/if}
+			{#if filteredCharacters.length === 0}
+				<article class="state-card">
+					<h2>{labels.charactersEmptyTitle}</h2>
+					<p>{labels.charactersEmptyBody}</p>
+				</article>
+			{:else}
+				<div class="character-card-grid">
+					{#each pagedCharacterCards as entry}
+						{#if entry.summary}
+							<CharacterLedgerSummaryCard
+								summary={entry.summary}
+								labels={{
+									receivableLabel: labels.receivableLabel,
+									payableLabel: labels.payableLabel,
+									pendingClaimCountLabel: labels.pendingClaimCountLabel,
+									lastActivityLabel: labels.lastActivityLabel,
+									openDetailLabel: labels.openDetailLabel,
+									noBreakdownLabel: labels.noBreakdownLabel,
+								}}
+								onOpenDetail={() => void openCharacterDetail(entry.character.id)}
+							/>
+						{:else}
+							<article class="state-card compact">
+								<h2>{entry.character.name}</h2>
+								<p>{labels.loadingLabel}</p>
+							</article>
+						{/if}
+					{/each}
+				</div>
+
+				<DashboardPagination
+					page={visiblePage}
+					totalPages={totalPages}
+					onPrevious={previousPage}
+					onNext={nextPage}
+					labels={{
+						pageLabel: labels.pageLabel,
+						prevLabel: labels.prevLabel,
+						nextLabel: labels.nextLabel,
+					}}
+				/>
+			{/if}
+		</article>
 	</section>
 {/if}
 
@@ -530,8 +559,7 @@
 	}
 
 	.state-action,
-	.toolbar-refresh,
-	.pagination button {
+	.toolbar-refresh {
 		min-height: 46px;
 		padding: 0 18px;
 		border-radius: 999px;
@@ -550,12 +578,21 @@
 	}
 
 	.dashboard-toolbar,
-	.section-head,
-	.pagination {
+	.section-head {
 		display: flex;
 		justify-content: space-between;
 		gap: 16px;
 		align-items: end;
+	}
+
+	.characters-panel {
+		padding: 28px;
+		border: 1px solid color-mix(in srgb, var(--line) 92%, white);
+		border-radius: var(--radius-lg);
+		background: var(--surface);
+		box-shadow: var(--shadow);
+		display: grid;
+		gap: 24px;
 	}
 
 	.toolbar-search {
@@ -588,11 +625,6 @@
 		min-height: 160px;
 	}
 
-	.pagination button {
-		border: 1px solid var(--line);
-		background: color-mix(in srgb, var(--surface-strong) 78%, white);
-	}
-
 	@media (max-width: 980px) {
 		.character-card-grid {
 			grid-template-columns: 1fr;
@@ -601,10 +633,13 @@
 
 	@media (max-width: 720px) {
 		.dashboard-toolbar,
-		.section-head,
-		.pagination {
+		.section-head {
 			flex-direction: column;
 			align-items: stretch;
+		}
+
+		.characters-panel {
+			padding: 20px;
 		}
 	}
 </style>
