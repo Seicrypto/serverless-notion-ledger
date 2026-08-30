@@ -2,6 +2,7 @@
 	import { onMount } from 'svelte';
 
 	import RequestStatusDialog from '../org/RequestStatusDialog.svelte';
+	import IconOptionPicker from '../../shared/IconOptionPicker.svelte';
 	import { ensureAuthSession, getErrorMessage, isAuthenticatedSession, type AuthSession } from '../../../libs/api/auth/session.ts';
 	import { ensureMyOrganizationsCache } from '../../../libs/api/organizations/my-organizations-cache.ts';
 	import type { OrganizationCardResponse } from '../../../libs/api/organizations/organization-card.ts';
@@ -216,17 +217,18 @@
 		window.history.replaceState({}, '', url);
 	}
 
-	function handleOrganizationChange(event: Event) {
-		const target = event.currentTarget;
-		if (!(target instanceof HTMLSelectElement)) {
-			return;
-		}
-
-		selectedOrganization = target.value;
+	function handleOrganizationChange(event: CustomEvent<{ value: string }>) {
+		selectedOrganization = event.detail.value;
 		void syncOrganizationContext();
 	}
 
 	$: selectedOrganizationCard = getSelectedOrganizationCard();
+	$: organizationOptions = organizations.map((organization) => ({
+		value: getOrganizationReference(organization),
+		label: organization.name,
+		metaLabel: organization.vanity ? `@${organization.vanity}` : `${organization.stats.memberCount} members`,
+		iconUrl: organization.iconUrl,
+	}));
 	$: eventCreateHref = selectedOrganization ? `/${lang}/guilds/events/new?orgVanity=${encodeURIComponent(selectedOrganization)}` : `/${lang}/login`;
 	$: eventDuplicateHref =
 		selectedOrganization && selectedRecentEventId
@@ -292,11 +294,16 @@
 		{:else}
 			<label class="workspace-field ledger-context-field">
 				<span>{labels.organizationLabel}</span>
-				<select bind:value={selectedOrganization} on:change={handleOrganizationChange}>
-					{#each organizations as organization}
-						<option value={getOrganizationReference(organization)}>{organization.name}</option>
-					{/each}
-				</select>
+				<IconOptionPicker
+					value={selectedOrganization}
+					ariaLabel={labels.organizationLabel}
+					placeholder={labels.organizationLabel}
+					searchPlaceholder={labels.organizationLabel}
+					emptyLabel={labels.noOrganizationsBody}
+					theme="guild"
+					items={organizationOptions}
+					on:change={handleOrganizationChange}
+				/>
 			</label>
 		{/if}
 	</article>
@@ -452,16 +459,6 @@
 
 	.ledger-context-field {
 		margin-top: 2px;
-	}
-
-	.workspace-field select {
-		width: 100%;
-		padding: 12px 14px;
-		border: 1px solid var(--line);
-		border-radius: 16px;
-		background: color-mix(in srgb, var(--surface-strong) 82%, white);
-		color: var(--text-main);
-		font: inherit;
 	}
 
 	.ledger-grid {

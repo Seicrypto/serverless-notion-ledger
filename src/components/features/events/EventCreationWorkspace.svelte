@@ -2,10 +2,12 @@
 	import { onMount } from 'svelte';
 
 	import RequestStatusDialog from '../org/RequestStatusDialog.svelte';
-	import GamePicker from '../../shared/GamePicker.svelte';
+	import IconOptionPicker from '../../shared/IconOptionPicker.svelte';
 	import SearchSelect from '../../shared/SearchSelect.svelte';
 	import { getApiAdapter } from '../../../libs/api/adapters/api.adapter.ts';
 	import { ensureAuthSession, getErrorMessage, isAuthenticatedSession, type AuthSession } from '../../../libs/api/auth/session.ts';
+	import { ensureMyOrganizationsCache } from '../../../libs/api/organizations/my-organizations-cache.ts';
+	import type { OrganizationCardResponse } from '../../../libs/api/organizations/organization-card.ts';
 	import {
 		ensureOrganizationManageCache,
 		type OrganizationManageCharacter,
@@ -23,7 +25,8 @@
 		recordRecentEventCreations,
 		type RecentEventCreationEntry,
 	} from '../../../libs/events/recent-event-creations.ts';
-	import { resolveOrganizationQuery } from '../../../libs/organizations/reference.ts';
+	import { getOrganizationReference, resolveOrganizationQuery } from '../../../libs/organizations/reference.ts';
+	import { getLatestActiveOrganization, readPreferredOrganization, writePreferredOrganization } from '../../../libs/ledger/workspace-preferences.ts';
 	import type { CreateLedgerEventRequest } from '../../../libs/api/openapi/generated/schema';
 
 	interface GameOption {
@@ -78,6 +81,9 @@
 		orgRequiredBody: string;
 		contextTitle: string;
 		contextBodyPrefix: string;
+		contextSelectLabel: string;
+		contextSelectPlaceholder: string;
+		contextSelectEmpty: string;
 		titleLabel: string;
 		titlePlaceholder: string;
 		occurredAtLabel: string;
@@ -94,11 +100,14 @@
 		holderRefManualHint: string;
 		holderRefUnclaimedMeta: string;
 		holderRefSelectedLabel: string;
+		holderRefAddLabel: string;
+		holderRefChangeLabel: string;
 		participantsLabel: string;
 		participantsPlaceholder: string;
 		participantsEmpty: string;
 		participantsHint: string;
 		participantsSelectedLabel: string;
+		participantsAddLabel: string;
 		notesLabel: string;
 		notesPlaceholder: string;
 		assetSectionLabel: string;
@@ -192,6 +201,7 @@
 	export let labels: Labels;
 
 	let session: AuthSession | null = null;
+	let organizations: OrganizationCardResponse[] = [];
 	let organizationSummary: OrganizationManageSummary | null = null;
 	let organizationCharacters: OrganizationManageCharacter[] = [];
 	let organizationReference: string | null = null;
@@ -259,6 +269,10 @@
 
 	function getCurrentRecentAssets() {
 		return organization ? getRecentOrganizationAssetsByOrganization(recentAssets, organization) : [];
+	}
+
+	function findOrganizationByReference(reference: string) {
+		return organizations.find((entry) => getOrganizationReference(entry) === reference) ?? null;
 	}
 
 	function refreshRecentEntries() {
@@ -589,6 +603,18 @@
 
 		try {
 			session = await ensureAuthSession();
+			const organizationSnapshot = await ensureMyOrganizationsCache();
+			organizations = organizationSnapshot.organizations;
+			if (!organization && organizations.length > 0 && typeof window !== 'undefined') {
+				const recentOrganization = getLatestActiveOrganization(window.localStorage, window.sessionStorage);
+				const preferredOrganization = readPreferredOrganization(window.localStorage);
+				const nextOrganization =
+					(recentOrganization && findOrganizationByReference(recentOrganization) && recentOrganization) ||
+					(preferredOrganization && findOrganizationByReference(preferredOrganization) && preferredOrganization) ||
+					getOrganizationReference(organizations[0]);
+				organization = nextOrganization;
+			}
+
 			if (!organization) {
 				return;
 			}
@@ -611,11 +637,37 @@
 			if (holderType === 'character' && !holderRef) {
 				syncHolderFromCharacterId(getDefaultHolderCharacterId(gameId, snapshot.characters, session));
 			}
+			if (typeof window !== 'undefined') {
+				writePreferredOrganization(window.localStorage, organization);
+				const url = new URL(window.location.href);
+				url.searchParams.set('orgVanity', organization);
+				window.history.replaceState({}, '', url);
+			}
 		} catch (error) {
 			contextError = getErrorMessage(error, labels.errorCreateTitle);
 		} finally {
 			contextLoading = false;
 		}
+	}
+
+	async function changeOrganization(nextOrganization: string) {
+		if (!nextOrganization || nextOrganization === organization) {
+			return;
+		}
+
+		organization = nextOrganization;
+		organizationSummary = null;
+		organizationCharacters = [];
+		organizationReference = null;
+		games = [];
+		gameId = '';
+		holderRef = '';
+		holderCharacterId = '';
+		participantCharacterIds = [];
+		participantPickerValue = '';
+		assetRows = [createAssetRow()];
+		assetSearchOptionsByRowId = {};
+		await loadOrganizationContext();
 	}
 
 	function parseDuplicateSuggestions(error: unknown) {
@@ -743,12 +795,17 @@
 			return;
 		}
 
+		if (!Number.isFinite(Number(gameId)) || Number(gameId) <= 0) {
+			createItemError = labels.validationRequired;
+			return;
+		}
+
 		createItemSubmitting = true;
 		createItemError = '';
 		duplicateSuggestions = [];
 
 		try {
-			if (!createItemResolved && Number.isFinite(Number(gameId)) && Number(gameId) > 0) {
+			if (!createItemResolved) {
 				const resolveResponse = await getApiAdapter().resolveOrganizationAsset(organizationReference, {
 					gameId: Number(gameId),
 					name: createItemName.trim(),
@@ -766,11 +823,13 @@
 					(suggestion, index, array) =>
 						array.findIndex((candidate) => candidate.assetId === suggestion.assetId) === index,
 				);
-				if (duplicateSuggestions.length > 0 && resolveResponse.duplicate.recommendedAction !== 'allow_create') {
+
+				if (duplicateSuggestions.length > 0 || resolveResponse.duplicate.recommendedAction !== 'allow_create') {
 					createItemResolved = true;
 					createItemError = labels.createItemResolveReviewBody;
 					return;
 				}
+
 				createItemResolved = true;
 			}
 
@@ -879,6 +938,19 @@
 	}));
 
 	$: selectedHolderCharacter = getCharacterById(holderCharacterId);
+	$: organizationOptions = organizations.map((entry) => ({
+		value: getOrganizationReference(entry),
+		label: entry.name,
+		metaLabel: entry.vanity ? `@${entry.vanity}` : `${entry.stats.memberCount} members`,
+		iconUrl: entry.iconUrl,
+	}));
+	$: gameOptions = games.map((game) => ({
+		value: String(game.id),
+		label: game.name,
+		iconUrl: game.iconUrl,
+		resolvedIconUrl: game.resolvedIconUrl,
+		officialSiteUrl: game.officialSiteUrl,
+	}));
 
 	onMount(() => {
 		organization = resolveOrganizationQuery(organization);
@@ -936,7 +1008,27 @@
 	{:else}
 		<section class="event-context-card">
 			<h2>{labels.contextTitle}</h2>
-			<p>{labels.contextBodyPrefix} {organizationSummary?.name ?? `@${organization}`}</p>
+			<p>{labels.contextBodyPrefix}</p>
+			{#if organizationOptions.length > 0}
+				<label class="event-field">
+					<span>{labels.contextSelectLabel}</span>
+					<IconOptionPicker
+						value={organization}
+						ariaLabel={labels.contextSelectLabel}
+						placeholder={labels.contextSelectPlaceholder}
+						searchPlaceholder={labels.contextSelectPlaceholder}
+						emptyLabel={labels.contextSelectEmpty}
+						disabled={contextLoading}
+						theme="guild"
+						items={organizationOptions}
+						on:change={(event) => {
+							void changeOrganization(event.detail.value);
+						}}
+					/>
+				</label>
+			{:else}
+				<p>{organizationSummary?.name ?? `@${organization}`}</p>
+			{/if}
 			{#if contextError}<em>{contextError}</em>{/if}
 		</section>
 	{/if}
@@ -987,19 +1079,15 @@
 
 			<label class="event-field">
 				<span>{labels.gameIdLabel}</span>
-				<GamePicker
-					bind:value={gameId}
+				<IconOptionPicker
+					value={gameId}
 					ariaLabel={labels.gameIdLabel}
 					placeholder={contextLoading ? labels.loadingGames : labels.gameRequiredHint}
+					searchPlaceholder={labels.gameRequiredHint}
 					disabled={!organization || contextLoading}
 					error={Boolean(errors.gameId)}
-					items={games.map((game) => ({
-						value: String(game.id),
-						label: game.name,
-						iconUrl: game.iconUrl,
-						officialSiteUrl: game.officialSiteUrl,
-						resolvedIconUrl: game.resolvedIconUrl,
-					}))}
+					theme="game"
+					items={gameOptions}
 					on:change={(event) => {
 						gameId = event.detail.value;
 						normalizeParticipantCharacterIdsForGame(event.detail.value);
@@ -1036,18 +1124,6 @@
 			<label class="event-field event-field-wide">
 				<span>{labels.holderRefLabel}</span>
 				{#if holderType === 'character'}
-					<SearchSelect
-						value={holderCharacterId}
-						ariaLabel={labels.holderRefLabel}
-						placeholder={labels.holderRefPlaceholder}
-						emptyLabel={labels.holderRefEmpty}
-						disabled={!organization || !gameId || contextLoading}
-						error={Boolean(errors.holderRef)}
-						items={filteredHolderCharacters}
-						on:change={(event) => {
-							syncHolderFromCharacterId(event.detail.value);
-						}}
-					/>
 					{#if selectedHolderCharacter}
 						<div class="event-selected-chip-row">
 							<span>{labels.holderRefSelectedLabel}</span>
@@ -1066,6 +1142,22 @@
 							</button>
 						</div>
 					{/if}
+					<SearchSelect
+						value={holderCharacterId}
+						ariaLabel={labels.holderRefLabel}
+						placeholder={labels.holderRefPlaceholder}
+						searchPlaceholder={labels.holderRefPlaceholder}
+						emptyLabel={labels.holderRefEmpty}
+						disabled={!organization || !gameId || contextLoading}
+						error={Boolean(errors.holderRef)}
+						triggerMode="button"
+						buttonIdleLabel={labels.holderRefAddLabel}
+						buttonActiveLabel={labels.holderRefChangeLabel}
+						items={filteredHolderCharacters}
+						on:change={(event) => {
+							syncHolderFromCharacterId(event.detail.value);
+						}}
+					/>
 					<small>{labels.holderRefHint}</small>
 				{:else}
 					<input bind:value={holderRef} type="text" maxlength="120" placeholder={labels.holderRefPlaceholder} disabled={!organization || contextLoading} />
@@ -1076,17 +1168,6 @@
 
 			<label class="event-field event-field-wide">
 				<span>{labels.participantsLabel}</span>
-				<SearchSelect
-					value={participantPickerValue}
-					ariaLabel={labels.participantsLabel}
-					placeholder={labels.participantsPlaceholder}
-					emptyLabel={labels.participantsEmpty}
-					disabled={!organization || !gameId || contextLoading}
-					items={participantCharacterOptions}
-					on:change={(event) => {
-						addParticipantCharacterId(event.detail.value);
-					}}
-				/>
 				{#if selectedParticipantCharacters.length > 0}
 					<div class="event-selected-chip-row">
 						<span>{labels.participantsSelectedLabel}</span>
@@ -1106,6 +1187,21 @@
 						</div>
 					</div>
 				{/if}
+				<SearchSelect
+					value={participantPickerValue}
+					ariaLabel={labels.participantsLabel}
+					placeholder={labels.participantsPlaceholder}
+					searchPlaceholder={labels.participantsPlaceholder}
+					emptyLabel={labels.participantsEmpty}
+					disabled={!organization || !gameId || contextLoading}
+					triggerMode="button"
+					buttonIdleLabel={labels.participantsAddLabel}
+					buttonActiveLabel={labels.participantsAddLabel}
+					items={participantCharacterOptions}
+					on:change={(event) => {
+						addParticipantCharacterId(event.detail.value);
+					}}
+				/>
 				<small>{labels.participantsHint}</small>
 			</label>
 
