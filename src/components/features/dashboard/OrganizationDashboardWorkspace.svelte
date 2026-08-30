@@ -8,6 +8,7 @@
 		ensureAuthSession,
 		getErrorMessage,
 		isAuthenticatedSession,
+		readAuthSession,
 		type AuthSession,
 	} from '../../../libs/api/auth/session.ts';
 	import { getApiAdapter } from '../../../libs/api/adapters/api.adapter.ts';
@@ -125,6 +126,10 @@
 	$: totalPages = Math.max(1, Math.ceil(filteredCharacters.length / PAGE_SIZE));
 	$: visiblePage = Math.min(page, totalPages);
 	$: pagedCharacters = filteredCharacters.slice((visiblePage - 1) * PAGE_SIZE, visiblePage * PAGE_SIZE);
+	$: pagedCharacterCards = pagedCharacters.map((character) => ({
+		character,
+		summary: findCharacterSummary(character.id),
+	}));
 	$: currentSummaryKey = organization
 		? `${organization}:${pagedCharacters.map((character) => character.id).join(',')}`
 		: '';
@@ -138,6 +143,39 @@
 		const url = new URL(window.location.href);
 		url.searchParams.set('orgVanity', organization);
 		window.history.replaceState({}, '', url);
+	}
+
+	function hydrateDashboardFromCache() {
+		if (!organization || typeof window === 'undefined') {
+			return;
+		}
+
+		const cachedSummary = readDashboardSummaryCache(window.sessionStorage, organization);
+		if (cachedSummary) {
+			summary = cachedSummary.data;
+		}
+
+		const cachedCharacters = readDashboardCharactersCache(window.sessionStorage, organization);
+		if (cachedCharacters) {
+			characters = cachedCharacters.data;
+		}
+
+		const characterIds = pagedCharacters.map((character) => character.id);
+		if (characterIds.length > 0) {
+			const cachedSummaries = readDashboardCharacterSummariesCache(
+				window.sessionStorage,
+				organization,
+				characterIds,
+			);
+			if (cachedSummaries) {
+				summaries = cachedSummaries.data;
+				summaryRequestKey = currentSummaryKey;
+			}
+		}
+
+		if (cachedSummary || cachedCharacters) {
+			loading = false;
+		}
 	}
 
 	async function loadSummary(force = false) {
@@ -306,6 +344,9 @@
 
 	onMount(() => {
 		organization = resolveOrganizationQuery(organization);
+		session = readAuthSession();
+		authResolved = Boolean(session);
+		hydrateDashboardFromCache();
 		const intervalId = window.setInterval(() => {
 			refreshClock = Date.now();
 		}, 1000);
@@ -333,7 +374,7 @@
 	</div>
 </section>
 
-{#if !authResolved || loading}
+{#if !authResolved && loading}
 	<section class="app-section">
 		<article class="state-card">
 			<h2>{labels.loadingLabel}</h2>
@@ -414,10 +455,10 @@
 			</article>
 		{:else}
 			<div class="character-card-grid">
-				{#each pagedCharacters as character}
-					{#if findCharacterSummary(character.id) as summaryItem}
+				{#each pagedCharacterCards as entry}
+					{#if entry.summary}
 						<CharacterLedgerSummaryCard
-							summary={summaryItem}
+							summary={entry.summary}
 							labels={{
 								receivableLabel: labels.receivableLabel,
 								payableLabel: labels.payableLabel,
@@ -426,11 +467,11 @@
 								openDetailLabel: labels.openDetailLabel,
 								noBreakdownLabel: labels.noBreakdownLabel,
 							}}
-							onOpenDetail={() => void openCharacterDetail(character.id)}
+							onOpenDetail={() => void openCharacterDetail(entry.character.id)}
 						/>
 					{:else}
 						<article class="state-card compact">
-							<h2>{character.name}</h2>
+							<h2>{entry.character.name}</h2>
 							<p>{labels.loadingLabel}</p>
 						</article>
 					{/if}
