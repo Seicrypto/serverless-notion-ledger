@@ -128,7 +128,6 @@
 			bind:value={query}
 			placeholder={selectedItem?.label ?? placeholder}
 			aria-label={ariaLabel}
-			aria-expanded={open ? 'true' : 'false'}
 			disabled={disabled}
 			on:input={handleInput}
 			on:focus={handleFocus}
