@@ -15,7 +15,7 @@
 
 <IconOptionPicker
 	items={items}
-	value={value}
+	bind:value
 	placeholder={placeholder}
 	searchPlaceholder={searchPlaceholder}
 	emptyLabel={emptyLabel}
