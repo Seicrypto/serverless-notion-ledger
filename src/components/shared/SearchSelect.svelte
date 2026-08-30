@@ -7,7 +7,11 @@
 		metaLabel?: string | null;
 	}
 
-	const dispatch = createEventDispatcher<{ change: { value: string } }>();
+	const dispatch = createEventDispatcher<{
+		change: { value: string };
+		search: { query: string };
+		focus: { query: string };
+	}>();
 	const instanceId = `search-select-${Math.random().toString(36).slice(2, 10)}`;
 
 	export let items: SearchSelectItem[] = [];
@@ -39,11 +43,13 @@
 
 		query = target.value;
 		open = true;
+		dispatch('search', { query });
 	}
 
 	function handleFocus() {
 		if (!disabled) {
 			open = true;
+			dispatch('focus', { query });
 		}
 	}
 

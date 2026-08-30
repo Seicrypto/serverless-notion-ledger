@@ -3,24 +3,35 @@ import type { ApiRuntimeConfig } from '../runtime/api-config.ts';
 import type {
 	AddOrganizationMemberRequest,
 	ApplyOrganizationMemberRequest,
+	CreateCharacterClaimRequest,
 	CreateCharacterRequest,
 	CreateAssetRequest,
 	CreateLedgerAllocationRequest,
 	CreateLedgerBatchClaimsRequest,
+	CreateLedgerEventBatchRequest,
 	CreateLedgerClaimRequest,
 	CreateLedgerEventRequest,
 	CreateLedgerSettlementRequest,
+	CreateOrganizationGameRequest,
+	OfficialUpdateGameMetadataRequest,
 	QueryCharacterLedgerDashboardSummariesRequest,
 	CreateOrganizationRequest,
 	ForgotPasswordRequest,
 	InviteOrganizationMemberRequest,
 	LoginRequest,
 	MergeAssetRequest,
+	OrganizationCharacterClaimRequest,
 	RegisterConflictResponse,
 	RegisterRequest,
 	RegisterResponse,
+	ResolveOrganizationAssetRequest,
 	ResetPasswordRequest,
+	SetPrimaryOrganizationGameRequest,
+	UpdateLedgerEventRequest,
 	UpdateUserVanityRequest,
+	UpdateOrganizationAssetRequest,
+	UpdateOrganizationCharacterRequest,
+	UpdateOrganizationGameRequest,
 	UpdateLedgerAllocationStatusRequest,
 	UpdateLedgerClaimStatusRequest,
 	UpdateLedgerEventStatusRequest,
@@ -96,6 +107,22 @@ export interface ListOrganizationLedgerSettlementsOptions {
 
 export interface GetOrganizationClaimableRecipientDetailOptions {
 	includeSiblingCharacters?: boolean;
+}
+
+export interface SearchOrganizationCharactersOptions {
+	isActive?: boolean;
+	limit?: number;
+	offset?: number;
+	q: string;
+}
+
+export interface SearchOrganizationAssetsOptions {
+	assetType?: CreateAssetRequest['assetType'];
+	gameId?: number;
+	limit?: number;
+	offset?: number;
+	q?: string;
+	status?: 'candidate' | 'org_verified' | 'active' | 'merged' | 'deprecated';
 }
 
 export interface ListDisabledUsersOptions {
@@ -351,6 +378,67 @@ export class ApiAdapter {
 		});
 	}
 
+	searchOrganizationCharacters(organization: OrganizationReference, options: SearchOrganizationCharactersOptions) {
+		return this.client.getOrganizationsByOrganizationCharactersSearch({
+			pathParams: { organization: normalizeOrganizationReference(organization) },
+			query: {
+				...options,
+				isActive: typeof options.isActive === 'boolean' ? String(options.isActive) as 'true' | 'false' : undefined,
+			},
+		});
+	}
+
+	getOrganizationCharacter(organization: OrganizationReference, characterId: number) {
+		return this.client.getOrganizationsByOrganizationCharactersByCharacterId({
+			pathParams: { organization: normalizeOrganizationReference(organization), characterId },
+		});
+	}
+
+	updateOrganizationCharacter(
+		organization: OrganizationReference,
+		characterId: number,
+		payload: UpdateOrganizationCharacterRequest,
+	) {
+		return this.client.patchOrganizationsByOrganizationCharactersByCharacterId({
+			pathParams: { organization: normalizeOrganizationReference(organization), characterId },
+			body: payload,
+		});
+	}
+
+	deleteOrganizationCharacter(organization: OrganizationReference, characterId: number) {
+		return this.client.deleteOrganizationsByOrganizationCharactersByCharacterId({
+			pathParams: { organization: normalizeOrganizationReference(organization), characterId },
+		});
+	}
+
+	updateOrganizationCharacterClaim(
+		organization: OrganizationReference,
+		characterId: number,
+		payload: OrganizationCharacterClaimRequest,
+	) {
+		return this.client.patchOrganizationsByOrganizationCharactersByCharacterIdClaim({
+			pathParams: { organization: normalizeOrganizationReference(organization), characterId },
+			body: payload,
+		});
+	}
+
+	createOrganizationCharacterClaimRequest(
+		organization: OrganizationReference,
+		characterId: number,
+		payload: CreateCharacterClaimRequest,
+	) {
+		return this.client.postOrganizationsByOrganizationCharactersByCharacterIdClaimRequest({
+			pathParams: { organization: normalizeOrganizationReference(organization), characterId },
+			body: payload,
+		});
+	}
+
+	unclaimOrganizationCharacter(organization: OrganizationReference, characterId: number) {
+		return this.client.postOrganizationsByOrganizationCharactersByCharacterIdUnclaim({
+			pathParams: { organization: normalizeOrganizationReference(organization), characterId },
+		});
+	}
+
 	listOrganizationMembers(organization: OrganizationReference) {
 		return this.client.getOrganizationsByOrganizationMembers({
 			pathParams: { organization: normalizeOrganizationReference(organization) },
@@ -385,6 +473,35 @@ export class ApiAdapter {
 	listOrganizationAvailableCharacters(organization: OrganizationReference) {
 		return this.client.getOrganizationsByOrganizationCharactersAvailable({
 			pathParams: { organization: normalizeOrganizationReference(organization) },
+		});
+	}
+
+	addOrganizationGame(organization: OrganizationReference, payload: CreateOrganizationGameRequest) {
+		return this.client.postOrganizationsByOrganizationGames({
+			pathParams: { organization: normalizeOrganizationReference(organization) },
+			body: payload,
+		});
+	}
+
+	updateOrganizationGame(
+		organization: OrganizationReference,
+		gameId: number,
+		payload: UpdateOrganizationGameRequest,
+	) {
+		return this.client.patchOrganizationsByOrganizationGamesByGameId({
+			pathParams: { organization: normalizeOrganizationReference(organization), gameId },
+			body: payload,
+		});
+	}
+
+	setPrimaryOrganizationGame(
+		organization: OrganizationReference,
+		gameId: number,
+		payload: SetPrimaryOrganizationGameRequest = {},
+	) {
+		return this.client.patchOrganizationsByOrganizationGamesByGameIdPrimary({
+			pathParams: { organization: normalizeOrganizationReference(organization), gameId },
+			body: payload,
 		});
 	}
 
@@ -453,6 +570,37 @@ export class ApiAdapter {
 		});
 	}
 
+	searchOrganizationAssets(organization: OrganizationReference, options: SearchOrganizationAssetsOptions = {}) {
+		return this.client.getOrganizationsByOrganizationAssetsSearch({
+			pathParams: { organization: normalizeOrganizationReference(organization) },
+			query: options,
+		});
+	}
+
+	getOrganizationAsset(organization: OrganizationReference, assetId: number) {
+		return this.client.getOrganizationsByOrganizationAssetsByAssetId({
+			pathParams: { organization: normalizeOrganizationReference(organization), assetId },
+		});
+	}
+
+	updateOrganizationAsset(
+		organization: OrganizationReference,
+		assetId: number,
+		payload: UpdateOrganizationAssetRequest,
+	) {
+		return this.client.patchOrganizationsByOrganizationAssetsByAssetId({
+			pathParams: { organization: normalizeOrganizationReference(organization), assetId },
+			body: payload,
+		});
+	}
+
+	resolveOrganizationAsset(organization: OrganizationReference, payload: ResolveOrganizationAssetRequest) {
+		return this.client.postOrganizationsByOrganizationAssetsResolve({
+			pathParams: { organization: normalizeOrganizationReference(organization) },
+			body: payload,
+		});
+	}
+
 	listOrganizationLedgerEvents(
 		organization: OrganizationReference,
 		options: ListOrganizationLedgerEventsOptions = {},
@@ -472,6 +620,27 @@ export class ApiAdapter {
 	createOrganizationLedgerEvent(organization: OrganizationReference, payload: CreateLedgerEventRequest) {
 		return this.client.postOrganizationsByOrganizationLedgerEvents({
 			pathParams: { organization: normalizeOrganizationReference(organization) },
+			body: payload,
+		});
+	}
+
+	createOrganizationLedgerEventsBatch(
+		organization: OrganizationReference,
+		payload: CreateLedgerEventBatchRequest,
+	) {
+		return this.client.postOrganizationsByOrganizationLedgerEventsBatch({
+			pathParams: { organization: normalizeOrganizationReference(organization) },
+			body: payload,
+		});
+	}
+
+	updateOrganizationLedgerEvent(
+		organization: OrganizationReference,
+		eventId: number,
+		payload: UpdateLedgerEventRequest,
+	) {
+		return this.client.patchOrganizationsByOrganizationLedgerEventsByEventId({
+			pathParams: { organization: normalizeOrganizationReference(organization), eventId },
 			body: payload,
 		});
 	}

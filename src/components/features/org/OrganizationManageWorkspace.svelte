@@ -3,6 +3,7 @@
 
 	import AccessNoticeCard from '../shared/AccessNoticeCard.svelte';
 	import GamePicker from '../../shared/GamePicker.svelte';
+	import SearchSelect from '../../shared/SearchSelect.svelte';
 	import RequestStatusDialog from './RequestStatusDialog.svelte';
 	import { getApiAdapter } from '../../../libs/api/adapters/api.adapter.ts';
 	import { ensureAuthSession, getErrorMessage, isAuthenticatedSession, subscribeAuthSession, type AuthSession } from '../../../libs/api/auth/session.ts';
@@ -15,6 +16,13 @@
 		type OrganizationManageSummary,
 	} from '../../../libs/api/organizations/manage-workspace-cache.ts';
 	import { refreshMyOrganizationsCache } from '../../../libs/api/organizations/my-organizations-cache.ts';
+	import {
+		clearRecentCharacterClaimRequest,
+		getRecentCharacterClaimRequestsByOrganization,
+		loadRecentCharacterClaimRequests,
+		recordRecentCharacterClaimRequest,
+		type RecentCharacterClaimRequestEntry,
+	} from '../../../libs/organizations/recent-character-claim-requests.ts';
 	import { resolveOrganizationQuery } from '../../../libs/organizations/reference.ts';
 
 	interface Labels {
@@ -55,6 +63,10 @@
 		editOrgIconUrlLabel: string;
 		editOrgSubmitLabel: string;
 		editOrgCancelLabel: string;
+		editCharacterTitle: string;
+		editCharacterSubmitLabel: string;
+		editCharacterCancelLabel: string;
+		editCharacterActiveLabel: string;
 		createCharacterTitle: string;
 		createCharacterNameLabel: string;
 		createCharacterDescriptionLabel: string;
@@ -75,6 +87,19 @@
 		claimStateUnclaimed: string;
 		claimStatePending: string;
 		claimCharacterLabel: string;
+		manageClaimLabel: string;
+		claimCharacterTitle: string;
+		claimCharacterTargetLabel: string;
+		claimCharacterTargetHint: string;
+		claimCharacterSearchPlaceholder: string;
+		claimCharacterSearchEmpty: string;
+		claimCharacterCurrentHolderLabel: string;
+		claimCharacterPendingNote: string;
+		claimCharacterRequestSubmitLabel: string;
+		claimCharacterAssignSubmitLabel: string;
+		claimCharacterTransferSubmitLabel: string;
+		claimCharacterUnclaimLabel: string;
+		claimCharacterRemovePendingLabel: string;
 		editLabel: string;
 		deleteLabel: string;
 		removeMemberLabel: string;
@@ -95,6 +120,17 @@
 		saveSuccessTitle: string;
 		saveSuccessBody: string;
 		saveErrorTitle: string;
+		deletePendingTitle: string;
+		deletePendingBody: string;
+		deleteSuccessTitle: string;
+		deleteSuccessBody: string;
+		deleteErrorTitle: string;
+		claimPendingTitle: string;
+		claimPendingBody: string;
+		claimSuccessTitle: string;
+		claimSuccessBody: string;
+		claimErrorTitle: string;
+		claimValidationTargetRequired: string;
 		createPendingTitle: string;
 		createPendingBody: string;
 		createSuccessTitle: string;
@@ -120,6 +156,8 @@
 		iconUrl?: string;
 		characterName?: string;
 		characterDescription?: string;
+		characterGame?: string;
+		claimTarget?: string;
 	}
 
 	const MANUAL_REFRESH_COOLDOWN_MS = 60 * 1000;
@@ -149,6 +187,17 @@
 	let createCharacterDescription = '';
 	let createCharacterGameId = '';
 
+	let editCharacterOpen = false;
+	let editingCharacterId: number | null = null;
+	let editCharacterName = '';
+	let editCharacterDescription = '';
+	let editCharacterGameId = '';
+	let editCharacterActive = true;
+
+	let claimCharacterOpen = false;
+	let claimCharacterId: number | null = null;
+	let claimTargetMemberId = '';
+
 	let inviteMemberOpen = false;
 	let inviteSearchField: 'displayName' | 'email' = 'displayName';
 	let inviteSearchQuery = '';
@@ -164,6 +213,7 @@
 	let statusPrimaryAction: { label: string; onClick?: () => void; href?: string } | null = null;
 
 	let selectedCharacterGameId = '';
+	let recentClaimRequests: RecentCharacterClaimRequestEntry[] = [];
 
 	const toRefreshKey = (targetOrgVanity: string) => `${REFRESH_KEY_PREFIX}:${targetOrgVanity}`;
 
@@ -229,6 +279,10 @@
 	};
 
 	const getClaimStateLabel = (character: OrganizationManageCharacter) => {
+		if (getPendingClaimRequest(character.id)) {
+			return labels.claimStatePending;
+		}
+
 		if (character.isClaimed) {
 			return labels.claimStateClaimed;
 		}
@@ -237,6 +291,11 @@
 	};
 
 	const getCharacterClaimDisplay = (character: OrganizationManageCharacter) => {
+		const pendingRequest = getPendingClaimRequest(character.id);
+		if (pendingRequest) {
+			return `${getMemberDisplayNameByUserId(pendingRequest.targetUserId)} (${labels.claimStatePending})`;
+		}
+
 		if (!character.claimedBy) {
 			return null;
 		}
@@ -260,6 +319,32 @@
 
 		const firstCharacterGameId = characters.find((character) => typeof character.gameId === 'number')?.gameId;
 		return typeof firstCharacterGameId === 'number' ? String(firstCharacterGameId) : '';
+	};
+
+	const getMemberDisplayNameByUserId = (userId: number) => {
+		const matchedMember = members.find((member) => member.userId === userId);
+		if (matchedMember) {
+			return getMemberDisplayName(matchedMember);
+		}
+
+		if (isAuthenticatedSession(session) && session.user.id === userId) {
+			return session.user.displayName?.trim() || `${labels.currentUserLabel} @${session.user.vanity ?? userId}`;
+		}
+
+		return `User #${userId}`;
+	};
+
+	const getPendingClaimRequest = (characterId: number) =>
+		currentOrganizationClaimRequests.find(
+			(entry) => entry.characterId === characterId && entry.status === 'pending_confirmation',
+		) ?? null;
+
+	const getCharacterById = (characterId: number | null) =>
+		characterId ? characters.find((character) => character.id === characterId) ?? null : null;
+
+	const getClaimDisplayByCharacterId = (characterId: number | null) => {
+		const character = getCharacterById(characterId);
+		return character ? getCharacterClaimDisplay(character) : null;
 	};
 
 	const getGameLabel = (gameId: number | string | null | undefined) => {
@@ -295,6 +380,16 @@
 		officialSiteUrl: organization?.games.find((game) => game.gameId === gameId)?.officialSiteUrl ?? null,
 		resolvedIconUrl: organization?.games.find((game) => game.gameId === gameId)?.resolvedIconUrl ?? null,
 		primary: organization?.games.some((game) => game.gameId === gameId && game.primary) ?? false,
+	}));
+
+	$: currentOrganizationClaimRequests = orgVanity
+		? getRecentCharacterClaimRequestsByOrganization(recentClaimRequests, orgVanity)
+		: [];
+
+	$: memberSearchItems = members.map((member) => ({
+		value: String(member.memberId),
+		label: getMemberDisplayName(member),
+		metaLabel: member.role,
 	}));
 
 	const openAddGameComingSoon = () => {
@@ -426,11 +521,264 @@
 		}
 
 		if (!createCharacterGameId) {
-			nextErrors.characterDescription = nextErrors.characterDescription ?? labels.validationRequired;
+			nextErrors.characterGame = labels.validationRequired;
 		}
 
 		fieldErrors = nextErrors;
 		return Object.keys(nextErrors).length === 0;
+	};
+
+	const openEditCharacter = (character: OrganizationManageCharacter) => {
+		editingCharacterId = character.id;
+		editCharacterName = character.name;
+		editCharacterDescription = character.description ?? '';
+		editCharacterGameId = typeof character.gameId === 'number' ? String(character.gameId) : selectedCharacterGameId;
+		editCharacterActive = true;
+		fieldErrors = {};
+		editCharacterOpen = true;
+	};
+
+	const validateEditCharacter = () => {
+		const nextErrors: FieldErrors = {};
+
+		if (!editCharacterName.trim()) {
+			nextErrors.characterName = labels.validationRequired;
+		} else if (editCharacterName.trim().length > 100) {
+			nextErrors.characterName = labels.validationNameLength;
+		}
+
+		if (editCharacterDescription.trim().length > 1000) {
+			nextErrors.characterDescription = labels.validationDescriptionLength;
+		}
+
+		if (!editCharacterGameId) {
+			nextErrors.characterGame = labels.validationRequired;
+		}
+
+		fieldErrors = nextErrors;
+		return Object.keys(nextErrors).length === 0;
+	};
+
+	const submitEditCharacter = async () => {
+		if (!orgVanity || !editingCharacterId || !validateEditCharacter()) {
+			return;
+		}
+
+		editCharacterOpen = false;
+		openStatus('pending', labels.savePendingTitle, labels.savePendingBody);
+
+		try {
+			await getApiAdapter().updateOrganizationCharacter(orgVanity, editingCharacterId, {
+				name: editCharacterName.trim(),
+				description: editCharacterDescription.trim() || undefined,
+				notes: editCharacterDescription.trim() || undefined,
+				gameId: Number(editCharacterGameId),
+				isActive: editCharacterActive,
+			});
+			clearOrganizationManageCache(orgVanity);
+			await loadWorkspace(true);
+			openStatus('success', labels.saveSuccessTitle, labels.saveSuccessBody, {
+				label: labels.confirmLabel,
+				onClick: resetStatusDialog,
+			});
+		} catch (error) {
+			openStatus('error', labels.saveErrorTitle, getErrorMessage(error, labels.saveErrorTitle), {
+				label: labels.closeLabel,
+				onClick: resetStatusDialog,
+			});
+		}
+	};
+
+	const openClaimCharacter = (character: OrganizationManageCharacter) => {
+		claimCharacterId = character.id;
+		const currentHolder = members.find((member) => member.userId === character.claimedBy?.userId);
+		const pendingRequest = getPendingClaimRequest(character.id);
+		claimTargetMemberId = pendingRequest?.targetMemberId
+			? String(pendingRequest.targetMemberId)
+			: currentHolder
+				? String(currentHolder.memberId)
+				: '';
+		fieldErrors = {};
+		claimCharacterOpen = true;
+	};
+
+	const validateClaimTarget = () => {
+		if (claimTargetMemberId) {
+			fieldErrors = { ...fieldErrors, claimTarget: undefined };
+			return true;
+		}
+
+		fieldErrors = { ...fieldErrors, claimTarget: labels.claimValidationTargetRequired };
+		return false;
+	};
+
+	const clearLocalClaimRequest = (characterId: number) => {
+		if (typeof window === 'undefined' || !orgVanity) {
+			return;
+		}
+
+		recentClaimRequests = clearRecentCharacterClaimRequest(window.localStorage, orgVanity, characterId);
+	};
+
+	const recordLocalClaimRequest = (
+		character: OrganizationManageCharacter,
+		targetMember: OrganizationManageMember,
+		claimRequest: {
+			requestedByUserId: number;
+			targetUserId: number;
+			targetMemberId: number | null | unknown;
+			status: 'pending_confirmation' | 'accepted' | 'declined' | 'cancelled';
+			createdAt: string;
+			updatedAt: string;
+		},
+	) => {
+		if (typeof window === 'undefined' || !orgVanity) {
+			return;
+		}
+
+		recentClaimRequests = recordRecentCharacterClaimRequest(window.localStorage, {
+			organization: orgVanity,
+			characterId: character.id,
+			characterName: character.name,
+			gameId: character.gameId,
+			requestedByUserId: claimRequest.requestedByUserId,
+			targetUserId: targetMember.userId,
+			targetMemberId: typeof claimRequest.targetMemberId === 'number' ? claimRequest.targetMemberId : targetMember.memberId,
+			status: claimRequest.status,
+			createdAt: claimRequest.createdAt,
+			updatedAt: claimRequest.updatedAt,
+		});
+	};
+
+	const submitClaimRequest = async () => {
+		if (!orgVanity || !claimCharacterId || !validateClaimTarget()) {
+			return;
+		}
+
+		const character = characters.find((entry) => entry.id === claimCharacterId);
+		const targetMember = members.find((member) => String(member.memberId) === claimTargetMemberId);
+		if (!character || !targetMember) {
+			fieldErrors = { ...fieldErrors, claimTarget: labels.claimValidationTargetRequired };
+			return;
+		}
+
+		claimCharacterOpen = false;
+		openStatus('pending', labels.claimPendingTitle, labels.claimPendingBody);
+
+		try {
+			const response = await getApiAdapter().createOrganizationCharacterClaimRequest(orgVanity, claimCharacterId, {
+				memberId: targetMember.memberId,
+				userId: targetMember.userId,
+			});
+			recordLocalClaimRequest(character, targetMember, response.claimRequest);
+			clearOrganizationManageCache(orgVanity);
+			await loadWorkspace(true);
+			openStatus('success', labels.claimSuccessTitle, labels.claimSuccessBody, {
+				label: labels.confirmLabel,
+				onClick: resetStatusDialog,
+			});
+		} catch (error) {
+			openStatus('error', labels.claimErrorTitle, getErrorMessage(error, labels.claimErrorTitle), {
+				label: labels.closeLabel,
+				onClick: resetStatusDialog,
+			});
+		}
+	};
+
+	const submitDirectClaimAssignment = async () => {
+		if (!orgVanity || !claimCharacterId || !validateClaimTarget()) {
+			return;
+		}
+
+		const character = characters.find((entry) => entry.id === claimCharacterId);
+		const targetMember = members.find((member) => String(member.memberId) === claimTargetMemberId);
+		if (!character || !targetMember) {
+			fieldErrors = { ...fieldErrors, claimTarget: labels.claimValidationTargetRequired };
+			return;
+		}
+
+		claimCharacterOpen = false;
+		openStatus('pending', labels.claimPendingTitle, labels.claimPendingBody);
+
+		try {
+			await getApiAdapter().updateOrganizationCharacterClaim(orgVanity, claimCharacterId, {
+				memberId: targetMember.memberId,
+				userId: targetMember.userId,
+				mode: character.isClaimed ? 'transfer' : 'assign',
+				status: 'claimed',
+			});
+			clearLocalClaimRequest(claimCharacterId);
+			clearOrganizationManageCache(orgVanity);
+			await loadWorkspace(true);
+			openStatus('success', labels.claimSuccessTitle, labels.claimSuccessBody, {
+				label: labels.confirmLabel,
+				onClick: resetStatusDialog,
+			});
+		} catch (error) {
+			openStatus('error', labels.claimErrorTitle, getErrorMessage(error, labels.claimErrorTitle), {
+				label: labels.closeLabel,
+				onClick: resetStatusDialog,
+			});
+		}
+	};
+
+	const submitUnclaimCharacter = async () => {
+		if (!orgVanity || !claimCharacterId) {
+			return;
+		}
+
+		claimCharacterOpen = false;
+		openStatus('pending', labels.claimPendingTitle, labels.claimPendingBody);
+
+		try {
+			await getApiAdapter().unclaimOrganizationCharacter(orgVanity, claimCharacterId);
+			clearLocalClaimRequest(claimCharacterId);
+			clearOrganizationManageCache(orgVanity);
+			await loadWorkspace(true);
+			openStatus('success', labels.claimSuccessTitle, labels.claimSuccessBody, {
+				label: labels.confirmLabel,
+				onClick: resetStatusDialog,
+			});
+		} catch (error) {
+			openStatus('error', labels.claimErrorTitle, getErrorMessage(error, labels.claimErrorTitle), {
+				label: labels.closeLabel,
+				onClick: resetStatusDialog,
+			});
+		}
+	};
+
+	const clearPendingClaim = async () => {
+		if (!claimCharacterId) {
+			return;
+		}
+
+		clearLocalClaimRequest(claimCharacterId);
+		claimCharacterOpen = false;
+		await loadWorkspace();
+	};
+
+	const submitDeleteCharacter = async (character: OrganizationManageCharacter) => {
+		if (!orgVanity) {
+			return;
+		}
+
+		openStatus('pending', labels.deletePendingTitle, labels.deletePendingBody);
+
+		try {
+			await getApiAdapter().deleteOrganizationCharacter(orgVanity, character.id);
+			clearLocalClaimRequest(character.id);
+			clearOrganizationManageCache(orgVanity);
+			await loadWorkspace(true);
+			openStatus('success', labels.deleteSuccessTitle, labels.deleteSuccessBody, {
+				label: labels.confirmLabel,
+				onClick: resetStatusDialog,
+			});
+		} catch (error) {
+			openStatus('error', labels.deleteErrorTitle, getErrorMessage(error, labels.deleteErrorTitle), {
+				label: labels.closeLabel,
+				onClick: resetStatusDialog,
+			});
+		}
 	};
 
 	const submitCreateCharacter = async () => {
@@ -526,6 +874,9 @@
 		orgVanity = resolveOrganizationQuery(orgVanity);
 		void (async () => {
 			session = await ensureAuthSession();
+			if (typeof window !== 'undefined') {
+				recentClaimRequests = loadRecentCharacterClaimRequests(window.localStorage);
+			}
 			hydrateRefreshCooldown();
 			await loadWorkspace();
 		})();
@@ -766,26 +1117,35 @@
 										<tr>
 											<td>{character.name}</td>
 											<td>
-												<span class:claimed={character.isClaimed} class="claim-state">
-													{character.isClaimed ? '✓' : '–'}
+												<span class:claimed={character.isClaimed} class:pending={Boolean(getPendingClaimRequest(character.id))} class="claim-state">
+													{#if getPendingClaimRequest(character.id)}
+														…
+													{:else}
+														{character.isClaimed ? '✓' : '–'}
+													{/if}
 												</span>
 												<span class="sr-only">{getClaimStateLabel(character)}</span>
 											</td>
 											<td>
 												{#if getCharacterClaimDisplay(character)}
-													{getCharacterClaimDisplay(character)}
+													<button type="button" class="table-text-action" on:click={() => openClaimCharacter(character)}>
+														{getCharacterClaimDisplay(character)}
+													</button>
 												{:else}
-													<button type="button" class="table-text-action" on:click={triggerPlaceholderAction}>
+													<button type="button" class="table-text-action" on:click={() => openClaimCharacter(character)}>
 														{labels.claimCharacterLabel}
 													</button>
 												{/if}
 											</td>
 											<td>{character.description || '—'}</td>
 											<td class="org-manage-actions-cell">
-												<button type="button" class="table-chip-button" on:click={triggerPlaceholderAction}>
+												<button type="button" class="table-chip-button" on:click={() => openEditCharacter(character)}>
 													{labels.editLabel}
 												</button>
-												<button type="button" class="table-chip-button danger" on:click={triggerPlaceholderAction}>
+												<button type="button" class="table-chip-button" on:click={() => openClaimCharacter(character)}>
+													{labels.manageClaimLabel}
+												</button>
+												<button type="button" class="table-chip-button danger" on:click={() => void submitDeleteCharacter(character)}>
 													{labels.deleteLabel}
 												</button>
 											</td>
@@ -903,6 +1263,7 @@
 									metaLabel: game.primary ? 'Primary' : null,
 								}))}
 							/>
+							{#if fieldErrors.characterGame}<em>{fieldErrors.characterGame}</em>{/if}
 							{#if !availableCharacterGames.length}<em>{labels.createCharacterGameHint}</em>{/if}
 						</label>
 						<label class="manage-field">
@@ -917,6 +1278,126 @@
 							</button>
 							<button type="button" class="modal-primary" on:click={() => void submitCreateCharacter()}>
 								{labels.createCharacterSubmitLabel}
+							</button>
+						</div>
+					</div>
+				</section>
+			</div>
+		{/if}
+
+		{#if editCharacterOpen}
+			<div class="manage-modal-backdrop" role="presentation">
+				<section class="manage-modal" role="dialog" aria-modal="true">
+					<div class="manage-modal-card">
+						<h2>{labels.editCharacterTitle}</h2>
+						<label class="manage-field">
+							<span>{labels.createCharacterNameLabel}</span>
+							<input bind:value={editCharacterName} class:error={Boolean(fieldErrors.characterName)} type="text" maxlength="100" />
+							{#if fieldErrors.characterName}<em>{fieldErrors.characterName}</em>{/if}
+						</label>
+						<label class="manage-field">
+							<span>{labels.createCharacterDescriptionLabel}</span>
+							<textarea
+								bind:value={editCharacterDescription}
+								class:error={Boolean(fieldErrors.characterDescription)}
+								rows="4"
+								maxlength="1000"
+							></textarea>
+							{#if fieldErrors.characterDescription}<em>{fieldErrors.characterDescription}</em>{/if}
+						</label>
+						<label class="manage-field">
+							<span>{labels.createCharacterGameLabel}</span>
+							<GamePicker
+								bind:value={editCharacterGameId}
+								ariaLabel={labels.createCharacterGameLabel}
+								placeholder={labels.createCharacterGameLabel}
+								items={availableCharacterGames.map((game) => ({
+									value: String(game.gameId),
+									label: game.name,
+									iconUrl: game.iconUrl,
+									officialSiteUrl: game.officialSiteUrl,
+									resolvedIconUrl: game.resolvedIconUrl,
+									metaLabel: game.primary ? 'Primary' : null,
+								}))}
+							/>
+							{#if fieldErrors.characterGame}<em>{fieldErrors.characterGame}</em>{/if}
+						</label>
+						<label class="manage-checkbox">
+							<input bind:checked={editCharacterActive} type="checkbox" />
+							<span>{labels.editCharacterActiveLabel}</span>
+						</label>
+						<div class="manage-modal-actions">
+							<button type="button" class="modal-secondary" on:click={() => (editCharacterOpen = false)}>
+								{labels.editCharacterCancelLabel}
+							</button>
+							<button type="button" class="modal-primary" on:click={() => void submitEditCharacter()}>
+								{labels.editCharacterSubmitLabel}
+							</button>
+						</div>
+					</div>
+				</section>
+			</div>
+		{/if}
+
+		{#if claimCharacterOpen}
+			<div class="manage-modal-backdrop" role="presentation">
+				<section class="manage-modal" role="dialog" aria-modal="true">
+					<div class="manage-modal-card">
+						<h2>{labels.claimCharacterTitle}</h2>
+						{#if getCharacterById(claimCharacterId)}
+							<p class="manage-modal-note">
+								<strong>{getCharacterById(claimCharacterId)?.name}</strong>
+								<span> · {getGameLabel(getCharacterById(claimCharacterId)?.gameId)}</span>
+							</p>
+						{/if}
+						{#if claimCharacterId && getPendingClaimRequest(claimCharacterId)}
+							<p class="manage-modal-note">{labels.claimCharacterPendingNote}</p>
+						{/if}
+						{#if getCharacterById(claimCharacterId)?.claimedBy}
+							<p class="manage-modal-note">
+								{labels.claimCharacterCurrentHolderLabel}: {getClaimDisplayByCharacterId(claimCharacterId)}
+							</p>
+						{/if}
+						<label class="manage-field">
+							<span>{labels.claimCharacterTargetLabel}</span>
+							<SearchSelect
+								items={memberSearchItems}
+								value={claimTargetMemberId}
+								placeholder={labels.claimCharacterSearchPlaceholder}
+								emptyLabel={labels.claimCharacterSearchEmpty}
+								error={Boolean(fieldErrors.claimTarget)}
+								ariaLabel={labels.claimCharacterTargetLabel}
+								on:change={(event) => {
+									claimTargetMemberId = event.detail.value;
+									fieldErrors = { ...fieldErrors, claimTarget: undefined };
+								}}
+							/>
+							{#if fieldErrors.claimTarget}<em>{fieldErrors.claimTarget}</em>{/if}
+							<em>{labels.claimCharacterTargetHint}</em>
+						</label>
+						<div class="manage-modal-actions">
+							<button type="button" class="modal-secondary" on:click={() => (claimCharacterOpen = false)}>
+								{labels.closeLabel}
+							</button>
+							{#if claimCharacterId && getPendingClaimRequest(claimCharacterId)}
+								<button type="button" class="modal-secondary" on:click={() => void clearPendingClaim()}>
+									{labels.claimCharacterRemovePendingLabel}
+								</button>
+							{/if}
+							{#if getCharacterById(claimCharacterId)?.isClaimed}
+								<button type="button" class="modal-secondary" on:click={() => void submitUnclaimCharacter()}>
+									{labels.claimCharacterUnclaimLabel}
+								</button>
+							{/if}
+							<button type="button" class="modal-secondary" on:click={() => void submitClaimRequest()}>
+								{labels.claimCharacterRequestSubmitLabel}
+							</button>
+							<button type="button" class="modal-primary" on:click={() => void submitDirectClaimAssignment()}>
+								{#if getCharacterById(claimCharacterId)?.isClaimed}
+									{labels.claimCharacterTransferSubmitLabel}
+								{:else}
+									{labels.claimCharacterAssignSubmitLabel}
+								{/if}
 							</button>
 						</div>
 					</div>
@@ -1376,6 +1857,10 @@
 		color: #188f59;
 	}
 
+	.claim-state.pending {
+		color: #b67717;
+	}
+
 	.table-text-action {
 		padding: 0;
 		border: 0;
@@ -1479,6 +1964,24 @@
 		font-style: normal;
 		font-size: 0.92rem;
 		color: #c24e4e;
+	}
+
+	.manage-checkbox {
+		display: inline-flex;
+		align-items: center;
+		gap: 10px;
+		font-weight: 700;
+	}
+
+	.manage-checkbox input {
+		width: 18px;
+		height: 18px;
+	}
+
+	.manage-modal-note {
+		margin: 0;
+		line-height: 1.6;
+		color: var(--text-soft);
 	}
 
 	.sr-only {
