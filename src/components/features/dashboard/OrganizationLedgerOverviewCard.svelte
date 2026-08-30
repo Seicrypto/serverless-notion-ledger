@@ -3,16 +3,23 @@
 
 	interface Labels {
 		title: string;
+		dashboardSuffix: string;
 		revenueLabel: string;
+		revenueEmptyLabel: string;
+		revenueHelperLabel: string;
 		settlementCountLabel: string;
+		settlementCountHelperLabel: string;
 		unsettledEventCountLabel: string;
+		unsettledEventCountHelperLabel: string;
 		disbursementStatusLabel: string;
 		disbursementInProgressLabel: string;
 		disbursementNotStartedLabel: string;
+		disbursementStatusHelperLabel: string;
 		lastUpdatedLabel: string;
 	}
 
 	export let summary: OrganizationLedgerDashboardSummaryResponse | null = null;
+	export let organizationName: string | null = null;
 	export let labels: Labels;
 
 	function formatAmount(value: number) {
@@ -25,13 +32,16 @@
 			timeStyle: 'short',
 		}).format(new Date(value));
 	}
+
+	$: headingName = summary?.organization.name ?? organizationName ?? labels.title;
+	$: revenueItems = summary?.summary.revenueUnitBreakdown ?? [];
 </script>
 
 <article class="overview-card">
 	<div class="overview-head">
 		<div>
 			<p class="overview-kicker">{labels.title}</p>
-			<h2>{summary?.organization.name ?? '—'}</h2>
+			<h1>{headingName} {labels.dashboardSuffix}</h1>
 		</div>
 		{#if summary}
 			<p class="overview-updated">{labels.lastUpdatedLabel}: {formatDateTime(summary.generatedAt)}</p>
@@ -40,38 +50,58 @@
 
 	<div class="overview-grid">
 		<section class="overview-tile overview-tile-wide">
-			<span>{labels.revenueLabel}</span>
-			{#if summary}
+			<div class="overview-tile-head">
+				<span>{labels.revenueLabel}</span>
+				<small>{labels.revenueHelperLabel}</small>
+			</div>
+			{#if revenueItems.length > 0}
 				<ul>
-					{#each summary.summary.revenueUnitBreakdown as unit}
+					{#each revenueItems as unit}
 						<li>
-							<strong>{unit.unitAssetName ?? `Asset #${unit.unitAssetId ?? '—'}`}</strong>
-							<small>{formatAmount(unit.netAmountTotal)} / {unit.settlementCount}</small>
+							<div class="overview-metric-copy">
+								<strong>{unit.unitAssetName ?? `Asset #${unit.unitAssetId ?? '—'}`}</strong>
+								<small>{unit.settlementCount} settlements</small>
+							</div>
+							<strong class="overview-metric-value">{formatAmount(unit.netAmountTotal)}</strong>
 						</li>
 					{/each}
 				</ul>
 			{:else}
-				<strong>—</strong>
+				<p class="overview-empty">{labels.revenueEmptyLabel}</p>
 			{/if}
 		</section>
 
 		<section class="overview-tile">
-			<span>{labels.settlementCountLabel}</span>
-			<strong>{summary?.summary.settlementCount ?? 0}</strong>
+			<div class="overview-tile-head">
+				<span>{labels.settlementCountLabel}</span>
+				<small>{labels.settlementCountHelperLabel}</small>
+			</div>
+			<strong class="overview-stat-value">{summary?.summary.settlementCount ?? 0}</strong>
 		</section>
 
 		<section class="overview-tile">
-			<span>{labels.unsettledEventCountLabel}</span>
-			<strong>{summary?.summary.unsettledEventCount ?? 0}</strong>
+			<div class="overview-tile-head">
+				<span>{labels.unsettledEventCountLabel}</span>
+				<small>{labels.unsettledEventCountHelperLabel}</small>
+			</div>
+			<strong class="overview-stat-value">{summary?.summary.unsettledEventCount ?? 0}</strong>
 		</section>
 
 		<section class="overview-tile">
-			<span>{labels.disbursementStatusLabel}</span>
-			<strong>
-				{labels.disbursementInProgressLabel}: {summary?.summary.disbursementInProgressCount ?? 0}
-				|
-				{labels.disbursementNotStartedLabel}: {summary?.summary.disbursementNotStartedCount ?? 0}
-			</strong>
+			<div class="overview-tile-head">
+				<span>{labels.disbursementStatusLabel}</span>
+				<small>{labels.disbursementStatusHelperLabel}</small>
+			</div>
+			<div class="status-stack">
+				<div class="status-pill">
+					<span>{labels.disbursementInProgressLabel}</span>
+					<strong>{summary?.summary.disbursementInProgressCount ?? 0}</strong>
+				</div>
+				<div class="status-pill">
+					<span>{labels.disbursementNotStartedLabel}</span>
+					<strong>{summary?.summary.disbursementNotStartedCount ?? 0}</strong>
+				</div>
+			</div>
 		</section>
 	</div>
 </article>
@@ -109,6 +139,13 @@
 		letter-spacing: -0.03em;
 	}
 
+	.overview-head h1 {
+		margin: 10px 0 0;
+		letter-spacing: -0.03em;
+		font-size: clamp(1.9rem, 3vw, 2.8rem);
+		line-height: 1.05;
+	}
+
 	.overview-grid {
 		display: grid;
 		grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -124,12 +161,26 @@
 		gap: 10px;
 	}
 
+	.overview-tile-head {
+		display: grid;
+		gap: 6px;
+	}
+
 	.overview-tile-wide {
 		grid-column: span 2;
 	}
 
-	.overview-tile strong {
-		font-size: 1.1rem;
+	.overview-stat-value {
+		font-size: clamp(1.8rem, 3vw, 2.4rem);
+		line-height: 1;
+	}
+
+	.overview-empty {
+		margin: 0;
+		color: var(--text-soft);
+		padding: 18px;
+		border-radius: 16px;
+		background: color-mix(in srgb, var(--ledger-accent-soft) 38%, white);
 	}
 
 	.overview-tile ul {
@@ -144,6 +195,42 @@
 		display: flex;
 		justify-content: space-between;
 		gap: 12px;
+		align-items: start;
+		padding: 12px 0;
+		border-top: 1px solid color-mix(in srgb, var(--line) 72%, transparent);
+	}
+
+	.overview-tile li:first-child {
+		padding-top: 0;
+		border-top: 0;
+	}
+
+	.overview-metric-copy {
+		display: grid;
+		gap: 4px;
+	}
+
+	.overview-metric-value {
+		font-size: 1.15rem;
+	}
+
+	.status-stack {
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+		gap: 10px;
+	}
+
+	.status-pill {
+		padding: 12px 14px;
+		border-radius: 16px;
+		background: color-mix(in srgb, var(--ledger-accent-soft) 32%, white);
+		border: 1px solid color-mix(in srgb, var(--ledger-accent) 20%, var(--line));
+		display: grid;
+		gap: 6px;
+	}
+
+	.status-pill strong {
+		font-size: 1.4rem;
 	}
 
 	@media (max-width: 980px) {
@@ -166,6 +253,10 @@
 		.overview-tile li {
 			grid-template-columns: 1fr;
 			flex-direction: column;
+		}
+
+		.status-stack {
+			grid-template-columns: 1fr;
 		}
 	}
 </style>

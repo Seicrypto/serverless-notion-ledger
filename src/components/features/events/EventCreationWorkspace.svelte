@@ -807,7 +807,7 @@
 		updateAssetRow(rowId, '', '');
 	}
 
-	async function submitCreateItem() {
+async function submitCreateItem() {
 		if (!organizationReference || !organization || !createItemName.trim() || createItemSubmitting) {
 			createItemError = !organizationReference ? labels.validationContext : labels.validationRequired;
 			return;
@@ -852,6 +852,7 @@
 			}
 
 			const response = await getApiAdapter().createOrganizationAsset(organizationReference, {
+				gameId: Number(gameId),
 				name: createItemName.trim(),
 				assetType: 'item',
 			});
@@ -1358,6 +1359,27 @@
 		<div class="quick-create-backdrop" role="presentation">
 			<div class="quick-create-modal" role="dialog" aria-modal="true">
 				<h2>{labels.createItemTitle}</h2>
+				<label class="event-field">
+					<span>{labels.gameIdLabel}</span>
+					<GameOptionPicker
+						value={gameId}
+						ariaLabel={labels.gameIdLabel}
+						placeholder={contextLoading ? labels.loadingGames : labels.gameRequiredHint}
+						searchPlaceholder={labels.gameRequiredHint}
+						disabled={!organization || contextLoading}
+						items={gameOptions}
+						on:change={(event) => {
+							gameId = event.detail.value;
+							normalizeParticipantCharacterIdsForGame(event.detail.value);
+							if (holderType === 'character') {
+								syncHolderFromCharacterId(
+									getDefaultHolderCharacterId(event.detail.value, organizationCharacters, session),
+								);
+							}
+						}}
+					/>
+					<small>{labels.gameRequiredHint}</small>
+				</label>
 				<label class="event-field">
 					<span>{labels.createItemNameLabel}</span>
 					<input bind:value={createItemName} type="text" maxlength="120" placeholder={labels.createItemNamePlaceholder} />

@@ -207,7 +207,7 @@ export type AssetDuplicateCandidate = { "alias": AssetAlias; "asset": Asset; "ma
 
 export type CreateAssetOperationalConflictResponse = { "code": string; "error": string; "requestId": string; };
 
-export type CreateAssetRequest = { "assetType"?: "item" | "currency" | "ticket" | "reward" | "service" | "other"; "iconUrl"?: string | unknown; "metadataJson"?: string | unknown; "name": string; "rarityLabel"?: string | unknown; };
+export type CreateAssetRequest = { "assetType"?: "item" | "currency" | "ticket" | "reward" | "service" | "other"; "gameId": number; "iconUrl"?: string | unknown; "metadataJson"?: string | unknown; "name": string; "rarityLabel"?: string | unknown; };
 
 export type OrganizationAssetListResponse = { "assets": Array<Asset>; "pagination": { "hasMore": boolean; "limit": number; "offset": number; }; };
 
