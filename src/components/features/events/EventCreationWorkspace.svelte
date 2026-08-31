@@ -37,6 +37,7 @@
 	} from '../../../libs/events/recent-event-creations.ts';
 	import { getOrganizationReference, resolveOrganizationQuery } from '../../../libs/organizations/reference.ts';
 	import { getLatestActiveOrganization, readPreferredOrganization, writePreferredOrganization } from '../../../libs/ledger/workspace-preferences.ts';
+	import { devDebugError, devDebugLog } from '../../../libs/runtime/dev-debug.ts';
 	import type { CreateLedgerEventRequest } from '../../../libs/api/openapi/generated/schema';
 
 	interface GameOption {
@@ -861,21 +862,44 @@
 			return;
 		}
 
+		const payload = {
+			q: query.trim(),
+			gameId: Number(gameId) || undefined,
+			assetType: 'item' as const,
+			limit: 8,
+		};
+
 		try {
 			assetSearchPendingRowId = rowId;
-			const response = await getApiAdapter().searchOrganizationAssets(organizationReference, {
-				q: query.trim(),
-				gameId: Number(gameId) || undefined,
-				assetType: 'item',
-				limit: 8,
+			devDebugLog('assets.search', 'Submitting organization asset search.', {
+				rowId,
+				organization,
+				organizationReference,
+				payload,
 			});
+			const response = await getApiAdapter().searchOrganizationAssets(organizationReference, payload);
 			const options = response.assets.map((asset) => {
 				rememberKnownAsset(asset);
 				return toOrganizationAssetOption(asset);
 			});
+			devDebugLog('assets.search', 'Organization asset search completed.', {
+				rowId,
+				organization,
+				organizationReference,
+				payload,
+				response,
+				options,
+			});
 			appendAssetsToRecentCache(response.assets);
 			assetSearchOptionsByRowId = { ...assetSearchOptionsByRowId, [rowId]: options };
-		} catch {
+		} catch (error) {
+			devDebugError('assets.search', 'Organization asset search failed.', {
+				rowId,
+				organization,
+				organizationReference,
+				payload,
+				errorMessage: error instanceof Error ? error.message : String(error),
+			});
 			assetSearchOptionsByRowId = { ...assetSearchOptionsByRowId, [rowId]: recentAssetOptions };
 		} finally {
 			if (assetSearchPendingRowId === rowId) {
@@ -1002,6 +1026,13 @@ async function submitCreateItem() {
 		}, CREATE_TIMEOUT_MS);
 
 		try {
+			devDebugLog('events.create', 'Submitting ledger events.', {
+				organization,
+				organizationReference,
+				payloadCount: payloads.length,
+				payloads,
+			});
+
 			for (const payload of payloads) {
 				await getApiAdapter().createOrganizationLedgerEvent(organizationReference, payload);
 				createdCount += 1;
@@ -1023,6 +1054,13 @@ async function submitCreateItem() {
 			}
 
 			window.clearTimeout(timeoutId);
+			devDebugError('events.create', 'Ledger event creation failed.', {
+				organization,
+				organizationReference,
+				createdCount,
+				payloads,
+				errorMessage: error instanceof Error ? error.message : String(error),
+			});
 			const baseMessage = getErrorMessage(error, labels.errorCreateTitle);
 			openErrorDialog(
 				createdCount > 0 ? `${baseMessage} ${labels.errorPartialPrefix} ${createdCount}.` : baseMessage,
