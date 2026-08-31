@@ -11,6 +11,8 @@
   "scripts": {
     "dev": "astro dev",
     "build": "astro build",
+    "build:dev": "PUBLIC_APP_MODE=dev astro build",
+    "build:prod": "PUBLIC_APP_MODE=prod astro build",
     "preview": "astro preview",
     "astro": "astro",
     "test": "npm run test:all",

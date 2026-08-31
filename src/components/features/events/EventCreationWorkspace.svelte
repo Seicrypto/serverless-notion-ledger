@@ -37,6 +37,7 @@
 	} from '../../../libs/events/recent-event-creations.ts';
 	import { getOrganizationReference, resolveOrganizationQuery } from '../../../libs/organizations/reference.ts';
 	import { getLatestActiveOrganization, readPreferredOrganization, writePreferredOrganization } from '../../../libs/ledger/workspace-preferences.ts';
+	import { devDebugError, devDebugLog } from '../../../libs/runtime/dev-debug.ts';
 	import type { CreateLedgerEventRequest } from '../../../libs/api/openapi/generated/schema';
 
 	interface GameOption {
@@ -1002,6 +1003,13 @@ async function submitCreateItem() {
 		}, CREATE_TIMEOUT_MS);
 
 		try {
+			devDebugLog('events.create', 'Submitting ledger events.', {
+				organization,
+				organizationReference,
+				payloadCount: payloads.length,
+				payloads,
+			});
+
 			for (const payload of payloads) {
 				await getApiAdapter().createOrganizationLedgerEvent(organizationReference, payload);
 				createdCount += 1;
@@ -1023,6 +1031,13 @@ async function submitCreateItem() {
 			}
 
 			window.clearTimeout(timeoutId);
+			devDebugError('events.create', 'Ledger event creation failed.', {
+				organization,
+				organizationReference,
+				createdCount,
+				payloads,
+				errorMessage: error instanceof Error ? error.message : String(error),
+			});
 			const baseMessage = getErrorMessage(error, labels.errorCreateTitle);
 			openErrorDialog(
 				createdCount > 0 ? `${baseMessage} ${labels.errorPartialPrefix} ${createdCount}.` : baseMessage,
