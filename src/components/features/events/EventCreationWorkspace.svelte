@@ -862,21 +862,44 @@
 			return;
 		}
 
+		const payload = {
+			q: query.trim(),
+			gameId: Number(gameId) || undefined,
+			assetType: 'item' as const,
+			limit: 8,
+		};
+
 		try {
 			assetSearchPendingRowId = rowId;
-			const response = await getApiAdapter().searchOrganizationAssets(organizationReference, {
-				q: query.trim(),
-				gameId: Number(gameId) || undefined,
-				assetType: 'item',
-				limit: 8,
+			devDebugLog('assets.search', 'Submitting organization asset search.', {
+				rowId,
+				organization,
+				organizationReference,
+				payload,
 			});
+			const response = await getApiAdapter().searchOrganizationAssets(organizationReference, payload);
 			const options = response.assets.map((asset) => {
 				rememberKnownAsset(asset);
 				return toOrganizationAssetOption(asset);
 			});
+			devDebugLog('assets.search', 'Organization asset search completed.', {
+				rowId,
+				organization,
+				organizationReference,
+				payload,
+				response,
+				options,
+			});
 			appendAssetsToRecentCache(response.assets);
 			assetSearchOptionsByRowId = { ...assetSearchOptionsByRowId, [rowId]: options };
-		} catch {
+		} catch (error) {
+			devDebugError('assets.search', 'Organization asset search failed.', {
+				rowId,
+				organization,
+				organizationReference,
+				payload,
+				errorMessage: error instanceof Error ? error.message : String(error),
+			});
 			assetSearchOptionsByRowId = { ...assetSearchOptionsByRowId, [rowId]: recentAssetOptions };
 		} finally {
 			if (assetSearchPendingRowId === rowId) {
