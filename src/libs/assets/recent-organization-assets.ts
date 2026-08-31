@@ -6,9 +6,11 @@ export const RECENT_ORGANIZATION_ASSET_LIMIT = 60;
 
 export interface RecentOrganizationAssetEntry {
 	organization: string;
+	gameId?: number;
 	assetId: number;
 	name: string;
 	assetType: Asset['assetType'];
+	iconUrl?: string | null;
 	createdAt: string;
 }
 
@@ -59,9 +61,13 @@ export function parseRecentOrganizationAssets(raw: string | null) {
 				const candidate = entry as Partial<RecentOrganizationAssetEntry>;
 				return (
 					typeof candidate.organization === 'string' &&
+					(candidate.gameId === undefined || typeof candidate.gameId === 'number') &&
 					typeof candidate.assetId === 'number' &&
 					typeof candidate.name === 'string' &&
 					typeof candidate.assetType === 'string' &&
+					(candidate.iconUrl === undefined ||
+						candidate.iconUrl === null ||
+						typeof candidate.iconUrl === 'string') &&
 					typeof candidate.createdAt === 'string'
 				);
 			}),
@@ -94,4 +100,14 @@ export function getRecentOrganizationAssetsByOrganization(
 	organization: string,
 ) {
 	return entries.filter((entry) => entry.organization === organization);
+}
+
+export function getRecentOrganizationAssetsByOrganizationAndGame(
+	entries: RecentOrganizationAssetEntry[],
+	organization: string,
+	gameId: number,
+) {
+	return entries.filter(
+		(entry) => entry.organization === organization && entry.gameId === gameId,
+	);
 }

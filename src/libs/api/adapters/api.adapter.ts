@@ -125,6 +125,15 @@ export interface SearchOrganizationAssetsOptions {
 	status?: 'candidate' | 'org_verified' | 'active' | 'merged' | 'deprecated';
 }
 
+export interface ListOrganizationAssetsOptions {
+	assetType?: CreateAssetRequest['assetType'];
+	gameId?: number;
+	limit?: number;
+	offset?: number;
+	q?: string;
+	status?: 'candidate' | 'org_verified' | 'active' | 'merged' | 'deprecated';
+}
+
 export interface ListDisabledUsersOptions {
 	displayName?: string;
 	email?: string;
@@ -567,6 +576,13 @@ export class ApiAdapter {
 		return this.client.postOrganizationsByOrganizationAssets({
 			pathParams: { organization: normalizeOrganizationReference(organization) },
 			body: payload,
+		});
+	}
+
+	listOrganizationAssets(organization: OrganizationReference, options: ListOrganizationAssetsOptions = {}) {
+		return this.client.getOrganizationsByOrganizationAssets({
+			pathParams: { organization: normalizeOrganizationReference(organization) },
+			query: options,
 		});
 	}
 
