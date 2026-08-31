@@ -29,12 +29,7 @@
 	let open = false;
 	let query = '';
 
-	function getSelectedItem() {
-		return items.find((item) => item.value === value) ?? null;
-	}
-
 	function selectItem(nextValue: string) {
-		value = nextValue;
 		open = false;
 		dispatch('change', { value: nextValue });
 	}
@@ -90,7 +85,7 @@
 		}
 	}
 
-	$: selectedItem = getSelectedItem();
+	$: selectedItem = items.find((item) => item.value === value) ?? null;
 	$: normalizedQuery = query.trim().toLocaleLowerCase();
 	$: filteredItems = normalizedQuery
 		? items.filter((item) => {

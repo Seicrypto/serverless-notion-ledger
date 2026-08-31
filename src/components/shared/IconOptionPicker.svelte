@@ -28,10 +28,6 @@
 	let query = '';
 	let failedIconUrls = new Set<string>();
 
-	function getSelectedItem() {
-		return items.find((item) => item.value === value) ?? null;
-	}
-
 	function getIconCandidates(item: IconOptionPickerItem | null) {
 		if (!item) {
 			return [];
@@ -115,7 +111,7 @@
 		}
 	}
 
-	$: selectedItem = getSelectedItem();
+	$: selectedItem = items.find((item) => item.value === value) ?? null;
 	$: normalizedQuery = query.trim().toLocaleLowerCase();
 	$: filteredItems = normalizedQuery
 		? items.filter((item) => [item.label, item.metaLabel ?? '', item.value].some((candidate) => candidate.toLocaleLowerCase().includes(normalizedQuery)))
