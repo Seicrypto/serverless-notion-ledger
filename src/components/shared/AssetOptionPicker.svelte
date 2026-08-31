@@ -33,10 +33,6 @@
 	let query = '';
 	let failedIconUrls = new Set<string>();
 
-	function getSelectedItem() {
-		return items.find((item) => item.value === value) ?? null;
-	}
-
 	function getIconUrl(item: AssetOptionPickerItem | null) {
 		if (!item?.iconUrl || failedIconUrls.has(item.iconUrl)) {
 			return null;
@@ -125,7 +121,7 @@
 		}
 	}
 
-	$: selectedItem = getSelectedItem();
+	$: selectedItem = items.find((item) => item.value === value) ?? null;
 	$: normalizedQuery = query.trim().toLocaleLowerCase();
 	$: filteredItems = normalizedQuery
 		? items.filter((item) =>

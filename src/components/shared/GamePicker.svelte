@@ -31,10 +31,6 @@
 	let open = false;
 	let failedIconUrls = new Set<string>();
 
-	function getSelectedItem() {
-		return items.find((item) => item.value === value) ?? null;
-	}
-
 	function getIconUrl(item: GamePickerItem | null) {
 		if (!item) {
 			return null;
@@ -58,7 +54,6 @@
 	}
 
 	function selectItem(nextValue: string) {
-		value = nextValue;
 		open = false;
 		dispatch('change', { value: nextValue });
 	}
@@ -92,7 +87,7 @@
 		}
 	}
 
-	$: selectedItem = getSelectedItem();
+	$: selectedItem = items.find((item) => item.value === value) ?? null;
 </script>
 
 <svelte:document on:click={handleDocumentClick} on:keydown={handleDocumentKeydown} />
