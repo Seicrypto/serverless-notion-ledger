@@ -12,7 +12,7 @@ const orgVanity = Astro.url.searchParams.get('orgVanity') ?? Astro.url.searchPar
 ---
 
 <Layout
-	title={`${t.app.dashboard_title} | ${t.common.product_name}`}
+	title={`${orgVanity ?? t.app.dashboard_title} ${t.app.dashboard_suffix} | ${t.common.product_name}`}
 	description={t.app.dashboard_intro}
 	productName={t.common.product_name}
 	lang={lang}
@@ -47,6 +47,7 @@ const orgVanity = Astro.url.searchParams.get('orgVanity') ?? Astro.url.searchPar
 			nextLabel: t.app.dashboard_next_label,
 			overviewTitle: t.app.dashboard_overview_title,
 			dashboardSuffix: t.app.dashboard_suffix,
+			pageTitleProductName: t.common.product_name,
 			revenueLabel: t.app.dashboard_revenue_label,
 			revenueEmptyLabel: t.app.dashboard_revenue_empty_label,
 			revenueHelperLabel: t.app.dashboard_revenue_helper_label,

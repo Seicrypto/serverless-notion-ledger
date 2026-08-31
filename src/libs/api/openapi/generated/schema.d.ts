@@ -211,7 +211,13 @@ export type CreateAssetRequest = { "assetType"?: "item" | "currency" | "ticket" 
 
 export type OrganizationAssetListResponse = { "assets": Array<Asset>; "pagination": { "hasMore": boolean; "limit": number; "offset": number; }; };
 
-export type OrganizationAssetDetailResponse = { "asset": Asset; };
+export type OrganizationAssetSearchResponse = { "assets": Array<AssetSearchItem>; "pagination": { "hasMore": boolean; "limit": number; "offset": number; }; };
+
+export type AssetSearchItem = { "assetType": "item" | "currency" | "ticket" | "reward" | "service" | "other"; "gameId": number; "iconUrl": string | unknown; "id": number; "name": string; "status": "candidate" | "org_verified" | "active" | "merged" | "deprecated"; };
+
+export type OrganizationAssetDetailResponse = { "asset": AssetDetail; };
+
+export type AssetDetail = { "assetType": "item" | "currency" | "ticket" | "reward" | "service" | "other"; "createdAt": string; "gameId": number; "iconUrl": string | unknown; "id": number; "metadataJson": string | unknown; "name": string; "rarityLabel": string | unknown; "status": "candidate" | "org_verified" | "active" | "merged" | "deprecated"; "updatedAt": string; };
 
 export type UpdateOrganizationAssetResponse = { "asset": Asset; "message": string; };
 

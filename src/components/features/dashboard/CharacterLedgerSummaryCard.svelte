@@ -190,11 +190,11 @@
 	}
 
 	.metric-icon {
-		width: 18px;
-		height: 18px;
+		width: 20px;
+		height: 20px;
 		fill: none;
 		stroke: currentColor;
-		stroke-width: 2;
+		stroke-width: 3;
 		stroke-linecap: round;
 		stroke-linejoin: round;
 		flex: 0 0 auto;

@@ -66,6 +66,7 @@ export interface ApiClientLike {
 	getOrganizationsCurrent: OpenApiClient['getOrganizationsCurrent'];
 	getOrganizationsCurrentMembers: OpenApiClient['getOrganizationsCurrentMembers'];
 	postOrganizationsByOrganizationAssets: OpenApiClient['postOrganizationsByOrganizationAssets'];
+	getOrganizationsByOrganizationAssets: OpenApiClient['getOrganizationsByOrganizationAssets'];
 	getOrganizationsByOrganizationAssetsSearch: OpenApiClient['getOrganizationsByOrganizationAssetsSearch'];
 	getOrganizationsByOrganizationAssetsByAssetId: OpenApiClient['getOrganizationsByOrganizationAssetsByAssetId'];
 	patchOrganizationsByOrganizationAssetsByAssetId:

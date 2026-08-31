@@ -59,6 +59,7 @@
 		nextLabel: string;
 		overviewTitle: string;
 		dashboardSuffix: string;
+		pageTitleProductName: string;
 		revenueLabel: string;
 		revenueEmptyLabel: string;
 		revenueHelperLabel: string;
@@ -129,6 +130,14 @@
 
 	function getOrganizationDisplayName() {
 		return summary?.organization.name ?? organization ?? labels.overviewTitle;
+	}
+
+	function updateDocumentTitle() {
+		if (typeof document === 'undefined') {
+			return;
+		}
+
+		document.title = `${getOrganizationDisplayName()} ${labels.dashboardSuffix} | ${labels.pageTitleProductName}`;
 	}
 
 	$: normalizedQuery = normalizeSearch(query);
@@ -369,11 +378,16 @@
 		void loadSummaries(false);
 	}
 
+	$: if (organization) {
+		updateDocumentTitle();
+	}
+
 	onMount(() => {
 		organization = resolveOrganizationQuery(organization);
 		session = readAuthSession();
 		authResolved = Boolean(session);
 		hydrateDashboardFromCache();
+		updateDocumentTitle();
 		const intervalId = window.setInterval(() => {
 			refreshClock = Date.now();
 		}, 1000);

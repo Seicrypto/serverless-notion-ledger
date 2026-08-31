@@ -106,7 +106,10 @@ import type {
 	CreateAssetOperationalConflictResponse,
 	CreateAssetRequest,
 	OrganizationAssetListResponse,
+	OrganizationAssetSearchResponse,
+	AssetSearchItem,
 	OrganizationAssetDetailResponse,
+	AssetDetail,
 	UpdateOrganizationAssetResponse,
 	UpdateOrganizationAssetRequest,
 	ResolveOrganizationAssetResponse,
@@ -320,7 +323,7 @@ export type ApiOperations = {
 	getOrganizationsCurrentMembers: { response: void; };
 	postOrganizationsByOrganizationAssets: { pathParams: { "organization": string; }; body: CreateAssetRequest; response: CreateAssetResponse; };
 	getOrganizationsByOrganizationAssets: { pathParams: { "organization": string; }; query: { "assetType"?: "item" | "currency" | "ticket" | "reward" | "service" | "other"; "gameId"?: number; "limit"?: number; "offset"?: number | unknown; "q"?: string; "status"?: "candidate" | "org_verified" | "active" | "merged" | "deprecated"; }; response: OrganizationAssetListResponse; };
-	getOrganizationsByOrganizationAssetsSearch: { pathParams: { "organization": string; }; query: { "assetType"?: "item" | "currency" | "ticket" | "reward" | "service" | "other"; "gameId"?: number; "limit"?: number; "offset"?: number | unknown; "q"?: string; "status"?: "candidate" | "org_verified" | "active" | "merged" | "deprecated"; }; response: OrganizationAssetListResponse; };
+	getOrganizationsByOrganizationAssetsSearch: { pathParams: { "organization": string; }; query: { "assetType"?: "item" | "currency" | "ticket" | "reward" | "service" | "other"; "gameId"?: number; "limit"?: number; "offset"?: number | unknown; "q"?: string; "status"?: "candidate" | "org_verified" | "active" | "merged" | "deprecated"; }; response: OrganizationAssetSearchResponse; };
 	getOrganizationsByOrganizationAssetsByAssetId: { pathParams: { "organization": string; "assetId": number; }; response: OrganizationAssetDetailResponse; };
 	patchOrganizationsByOrganizationAssetsByAssetId: { pathParams: { "organization": string; "assetId": number; }; body: UpdateOrganizationAssetRequest; response: UpdateOrganizationAssetResponse; };
 	postOrganizationsByOrganizationAssetsResolve: { pathParams: { "organization": string; }; body: ResolveOrganizationAssetRequest; response: ResolveOrganizationAssetResponse; };

@@ -2,6 +2,9 @@
 	import { onMount } from 'svelte';
 
 	import RequestStatusDialog from '../org/RequestStatusDialog.svelte';
+	import AssetOptionPicker, {
+		type AssetOptionPickerItem,
+	} from '../../shared/AssetOptionPicker.svelte';
 	import GameOptionPicker from '../../shared/GameOptionPicker.svelte';
 	import GuildOptionPicker from '../../shared/GuildOptionPicker.svelte';
 	import SearchSelect from '../../shared/SearchSelect.svelte';
@@ -15,11 +18,17 @@
 		type OrganizationManageSummary,
 	} from '../../../libs/api/organizations/manage-workspace-cache.ts';
 	import {
-		getRecentOrganizationAssetsByOrganization,
+		getRecentOrganizationAssetsByOrganizationAndGame,
 		loadRecentOrganizationAssets,
 		recordRecentOrganizationAsset,
 		type RecentOrganizationAssetEntry,
 	} from '../../../libs/assets/recent-organization-assets.ts';
+	import {
+		toOrganizationAssetOption,
+		toOrganizationAssetRecord,
+		type OrganizationAssetOption,
+		type OrganizationAssetRecord,
+	} from '../../../libs/assets/organization-asset-records.ts';
 	import {
 		getOrganizationRecentEventCreations,
 		loadRecentEventCreations,
@@ -49,17 +58,8 @@
 		name: string;
 	}
 
-	interface SearchOption {
-		value: string;
-		label: string;
-		metaLabel?: string | null;
-	}
-
-	interface KnownAssetRecord {
-		assetId: number;
-		name: string;
-		assetType: RecentOrganizationAssetEntry['assetType'];
-	}
+	type SearchOption = OrganizationAssetOption;
+	type KnownAssetRecord = OrganizationAssetRecord;
 
 	interface Labels {
 		eyebrow: string;
@@ -117,17 +117,24 @@
 		notesPlaceholder: string;
 		assetSectionLabel: string;
 		assetSectionBody: string;
+		assetSectionAdvancedBody: string;
 		assetCatalogHint: string;
 		assetQuickPickLabel: string;
 		assetQuickPickPlaceholder: string;
 		assetQuickPickEmpty: string;
-		assetIdLabel: string;
-		assetIdPlaceholder: string;
-		assetManualHint: string;
 		assetSelectedLabel: string;
+		assetSingleHint: string;
 		clearSelectionLabel: string;
 		addAssetLabel: string;
 		removeAssetLabel: string;
+		advancedModeLabel: string;
+		basicModeLabel: string;
+		advancedModeHint: string;
+		assetSearchLabel: string;
+		assetSearchingLabel: string;
+		assetDetailLabel: string;
+		assetDetailComingSoonTitle: string;
+		assetDetailComingSoonBody: string;
 		createItemLabel: string;
 		createItemTitle: string;
 		createItemNameLabel: string;
@@ -180,6 +187,7 @@
 	type FieldErrors = Record<string, string>;
 	type EventType = NonNullable<CreateLedgerEventRequest['eventType']>;
 	type HolderType = NonNullable<CreateLedgerEventRequest['holderType']>;
+	type AssetMode = 'basic' | 'advanced';
 
 	const CREATE_TIMEOUT_MS = 20000;
 
@@ -224,6 +232,7 @@
 	let participantPickerValue = '';
 	let participantCharacterIds: string[] = [];
 	let notes = '';
+	let assetMode: AssetMode = 'basic';
 	let assetRows: AssetInputRow[] = [createAssetRow()];
 	let assetSearchOptionsByRowId: Record<string, SearchOption[]> = {};
 	let knownAssetsById: Record<string, KnownAssetRecord> = {};
@@ -240,6 +249,7 @@
 	let createItemTargetRowId = '';
 	let duplicateSuggestions: AssetDuplicateSuggestion[] = [];
 	let createItemResolved = false;
+	let assetSearchPendingRowId = '';
 
 	let errors: FieldErrors = {};
 	let isSubmitting = false;
@@ -273,7 +283,16 @@
 	}
 
 	function getCurrentRecentAssets() {
-		return organization ? getRecentOrganizationAssetsByOrganization(recentAssets, organization) : [];
+		if (!organization) {
+			return [];
+		}
+
+		const normalizedGameId = Number(gameId);
+		if (!Number.isFinite(normalizedGameId)) {
+			return [];
+		}
+
+		return getRecentOrganizationAssetsByOrganizationAndGame(recentAssets, organization, normalizedGameId);
 	}
 
 	function findOrganizationByReference(reference: string) {
@@ -374,6 +393,20 @@
 		const row = createAssetRow();
 		assetRows = [...assetRows, row];
 		assetSearchOptionsByRowId = { ...assetSearchOptionsByRowId, [row.id]: recentAssetOptions };
+	}
+
+	function enableAdvancedAssetMode() {
+		assetMode = 'advanced';
+	}
+
+	function restoreBasicAssetMode() {
+		const primaryRow = assetRows[0] ?? createAssetRow();
+		assetMode = 'basic';
+		assetRows = [primaryRow];
+		assetSearchOptionsByRowId = primaryRow.id && assetSearchOptionsByRowId[primaryRow.id]
+			? { [primaryRow.id]: assetSearchOptionsByRowId[primaryRow.id] }
+			: {};
+		errors = Object.fromEntries(Object.entries(errors).filter(([key]) => key !== 'assetIds'));
 	}
 
 	function updateAssetRow(rowId: string, assetId: string, selectedLabel = '') {
@@ -527,6 +560,7 @@
 			typeof entry.payload.assetId === 'number' && Number.isFinite(entry.payload.assetId)
 				? [createAssetRow(String(entry.payload.assetId), getKnownAssetName(entry.payload.assetId) ?? '')]
 				: [createAssetRow()];
+		assetMode = 'basic';
 		errors = {};
 	}
 
@@ -683,6 +717,7 @@
 		holderCharacterId = '';
 		participantCharacterIds = [];
 		participantPickerValue = '';
+		assetMode = 'basic';
 		assetRows = [createAssetRow()];
 		assetSearchOptionsByRowId = {};
 		await loadOrganizationContext();
@@ -745,15 +780,44 @@
 		createItemOpen = false;
 	}
 
-	function rememberKnownAsset(asset: { id: number; name: string; assetType: RecentOrganizationAssetEntry['assetType'] }) {
+	function rememberKnownAsset(asset: {
+		id: number;
+		name: string;
+		assetType: RecentOrganizationAssetEntry['assetType'];
+		gameId?: number;
+		iconUrl?: string | null;
+	}) {
+		const record = toOrganizationAssetRecord(asset);
 		knownAssetsById = {
 			...knownAssetsById,
-			[String(asset.id)]: {
+			[String(asset.id)]: record,
+		};
+	}
+
+	function appendAssetsToRecentCache(
+		assets: Array<{
+			id: number;
+			name: string;
+			assetType: RecentOrganizationAssetEntry['assetType'];
+			gameId?: number;
+			iconUrl?: string | null;
+		}>,
+	) {
+		if (typeof window === 'undefined' || !organization) {
+			return;
+		}
+
+		for (const asset of assets) {
+			recentAssets = recordRecentOrganizationAsset(window.localStorage, {
+				organization,
+				gameId: typeof asset.gameId === 'number' ? asset.gameId : Number(gameId) || undefined,
 				assetId: asset.id,
 				name: asset.name,
 				assetType: asset.assetType,
-			},
-		};
+				iconUrl: asset.iconUrl ?? null,
+				createdAt: new Date().toISOString(),
+			});
+		}
 	}
 
 	function rememberAssetSelection(assetId: number) {
@@ -768,9 +832,11 @@
 
 		recentAssets = recordRecentOrganizationAsset(window.localStorage, {
 			organization,
+			gameId: knownAsset.gameId ?? (Number(gameId) || undefined),
 			assetId: knownAsset.assetId,
 			name: knownAsset.name,
 			assetType: knownAsset.assetType,
+			iconUrl: knownAsset.iconUrl ?? null,
 			createdAt: new Date().toISOString(),
 		});
 	}
@@ -796,6 +862,7 @@
 		}
 
 		try {
+			assetSearchPendingRowId = rowId;
 			const response = await getApiAdapter().searchOrganizationAssets(organizationReference, {
 				q: query.trim(),
 				gameId: Number(gameId) || undefined,
@@ -804,16 +871,31 @@
 			});
 			const options = response.assets.map((asset) => {
 				rememberKnownAsset(asset);
-				return {
-					value: String(asset.id),
-					label: asset.name,
-					metaLabel: `#${asset.id}`,
-				};
+				return toOrganizationAssetOption(asset);
 			});
+			appendAssetsToRecentCache(response.assets);
 			assetSearchOptionsByRowId = { ...assetSearchOptionsByRowId, [rowId]: options };
 		} catch {
 			assetSearchOptionsByRowId = { ...assetSearchOptionsByRowId, [rowId]: recentAssetOptions };
+		} finally {
+			if (assetSearchPendingRowId === rowId) {
+				assetSearchPendingRowId = '';
+			}
 		}
+	}
+
+	function openAssetDetailPlaceholder() {
+		dialogOpen = true;
+		dialogState = 'success';
+		dialogTitle = labels.assetDetailComingSoonTitle;
+		dialogMessage = labels.assetDetailComingSoonBody;
+		dialogPrimaryAction = {
+			label: labels.successCloseLabel,
+			onClick: () => {
+				dialogOpen = false;
+			},
+		};
+		dialogSecondaryAction = null;
 	}
 
 	function clearAssetSelection(rowId: string) {
@@ -873,9 +955,11 @@ async function submitCreateItem() {
 			if (typeof window !== 'undefined') {
 				recentAssets = recordRecentOrganizationAsset(window.localStorage, {
 					organization,
+					gameId: response.asset.gameId,
 					assetId: response.asset.id,
 					name: response.asset.name,
 					assetType: response.asset.assetType,
+					iconUrl: typeof response.asset.iconUrl === 'string' ? response.asset.iconUrl : null,
 					createdAt: new Date().toISOString(),
 				});
 			}
@@ -899,7 +983,13 @@ async function submitCreateItem() {
 		const assetIds = getNormalizedAssetIds() ?? [];
 		const basePayload = buildBasePayload();
 		const payloads: CreateLedgerEventRequest[] =
-			assetIds.length > 0 ? assetIds.map((assetId) => ({ ...basePayload, assetId })) : [{ ...basePayload }];
+			assetIds.length > 0
+				? assetIds.map((assetId, index) => ({
+						...basePayload,
+						assetId,
+						title: assetIds.length > 1 ? `${basePayload.title} (${index + 1})` : basePayload.title,
+					}))
+				: [{ ...basePayload }];
 
 		isSubmitting = true;
 		openPendingDialog(payloads.length);
@@ -963,11 +1053,15 @@ async function submitCreateItem() {
 		.map((characterId) => getCharacterById(characterId))
 		.filter((character): character is OrganizationManageCharacter => Boolean(character));
 
-	$: recentAssetOptions = getCurrentRecentAssets().map((asset) => ({
-		value: String(asset.assetId),
-		label: asset.name,
-		metaLabel: `#${asset.assetId}`,
-	}));
+	$: recentAssetOptions = getCurrentRecentAssets().map((asset) =>
+		toOrganizationAssetOption({
+			id: asset.assetId,
+			name: asset.name,
+			assetType: asset.assetType,
+			gameId: asset.gameId ?? (Number(gameId) || 0),
+			iconUrl: asset.iconUrl ?? null,
+		}),
+	);
 
 	$: selectedHolderCharacter = getCharacterById(holderCharacterId);
 	$: organizationOptions = organizations.map((entry) => ({
@@ -1237,7 +1331,7 @@ async function submitCreateItem() {
 		<section class="event-assets-card">
 			<div class="event-assets-copy">
 				<h2>{labels.assetSectionLabel}</h2>
-				<p>{labels.assetSectionBody}</p>
+				<p>{assetMode === 'advanced' ? labels.assetSectionAdvancedBody : labels.assetSectionBody}</p>
 				<p class="event-assets-catalog-hint">{labels.assetCatalogHint}</p>
 			</div>
 
@@ -1245,19 +1339,33 @@ async function submitCreateItem() {
 				{#each assetRows as row, index (row.id)}
 					<div class="event-asset-row">
 						<label class="event-field">
-							<span>{labels.assetQuickPickLabel} #{index + 1}</span>
-							<SearchSelect
+							<span>
+								{labels.assetQuickPickLabel}
+								{#if assetMode === 'advanced'}
+									#{index + 1}
+								{/if}
+							</span>
+							<AssetOptionPicker
 								value={row.assetId}
 								ariaLabel={`${labels.assetQuickPickLabel} ${index + 1}`}
 								placeholder={labels.assetQuickPickPlaceholder}
+								searchPlaceholder={labels.assetQuickPickPlaceholder}
 								emptyLabel={labels.assetQuickPickEmpty}
 								disabled={!organization || contextLoading}
+								searchPending={assetSearchPendingRowId === row.id}
+								searchLabel={labels.assetSearchLabel}
+								searchingLabel={labels.assetSearchingLabel}
+								detailLabel={labels.assetDetailLabel}
+								detailDisabled={!row.assetId}
 								items={getAssetOptionsForRow(row.id)}
 								on:focus={() => {
 									void loadAssetSearchOptions(row.id);
 								}}
 								on:search={(event) => {
 									void loadAssetSearchOptions(row.id, event.detail.query);
+								}}
+								on:detail={() => {
+									openAssetDetailPlaceholder();
 								}}
 								on:change={(event) => {
 									const selectedOption = getAssetOptionsForRow(row.id).find((option) => option.value === event.detail.value);
@@ -1270,33 +1378,22 @@ async function submitCreateItem() {
 									<span>{labels.assetSelectedLabel}</span>
 									<button type="button" class="event-selected-chip" on:click={() => clearAssetSelection(row.id)}>
 										<strong>{row.selectedLabel}</strong>
-										<small>#{row.assetId}</small>
 										<b aria-hidden="true">x</b>
 										<span class="sr-only">{labels.clearSelectionLabel}</span>
 									</button>
 								</div>
 							{/if}
-							<small>{labels.optionalHint}</small>
-						</label>
-						<label class="event-field">
-							<span>{labels.assetIdLabel} #{index + 1}</span>
-							<input
-								class:error={Boolean(errors.assetIds)}
-								type="text"
-								value={row.assetId}
-								placeholder={labels.assetIdPlaceholder}
-								readonly
-								disabled={!organization || contextLoading}
-							/>
-							<small>{labels.assetManualHint}</small>
+							<small>{assetMode === 'advanced' ? labels.advancedModeHint : labels.assetSingleHint}</small>
 						</label>
 						<div class="event-asset-row-actions">
 							<button type="button" class="event-asset-create" on:click={() => openCreateItem(row.id)} disabled={!organization || contextLoading}>
 								{labels.createItemLabel}
 							</button>
-							<button type="button" class="event-asset-remove" on:click={() => removeAssetRow(row.id)} disabled={!organization || contextLoading}>
-								{labels.removeAssetLabel}
-							</button>
+							{#if assetMode === 'advanced' && assetRows.length > 1}
+								<button type="button" class="event-asset-remove" on:click={() => removeAssetRow(row.id)} disabled={!organization || contextLoading}>
+									{labels.removeAssetLabel}
+								</button>
+							{/if}
 						</div>
 					</div>
 				{/each}
@@ -1304,9 +1401,18 @@ async function submitCreateItem() {
 			</div>
 
 			<div class="event-assets-actions">
-				<button type="button" class="event-asset-add" on:click={addAssetRow} disabled={!organization || contextLoading}>
-					{labels.addAssetLabel}
-				</button>
+				{#if assetMode === 'advanced'}
+					<button type="button" class="event-asset-add" on:click={addAssetRow} disabled={!organization || contextLoading}>
+						{labels.addAssetLabel}
+					</button>
+					<button type="button" class="event-asset-add" on:click={restoreBasicAssetMode} disabled={!organization || contextLoading}>
+						{labels.basicModeLabel}
+					</button>
+				{:else}
+					<button type="button" class="event-asset-add" on:click={enableAdvancedAssetMode} disabled={!organization || contextLoading}>
+						{labels.advancedModeLabel}
+					</button>
+				{/if}
 			</div>
 		</section>
 
