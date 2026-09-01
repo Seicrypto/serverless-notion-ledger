@@ -2,6 +2,7 @@
 	import { onMount } from 'svelte';
 
 	import GuildOptionPicker from '../../shared/GuildOptionPicker.svelte';
+	import TimeSelector from '../../shared/TimeSelector.svelte';
 	import RequestStatusDialog from '../org/RequestStatusDialog.svelte';
 	import { getApiAdapter } from '../../../libs/api/adapters/api.adapter.ts';
 	import { ensureAuthSession, getErrorMessage, isAuthenticatedSession, type AuthSession } from '../../../libs/api/auth/session.ts';
@@ -544,6 +545,15 @@
 		return labels.eventPageSummaryLabel.replace('{page}', String(page));
 	}
 
+	function handleEventRangeChange(event: CustomEvent<{ start: string; end: string }>) {
+		eventQueryFromDate = event.detail.start;
+		eventQueryToDate = event.detail.end;
+	}
+
+	function handleDecidedAtChange(event: CustomEvent<{ value: string }>) {
+		decidedAt = event.detail.value;
+	}
+
 	function validate() {
 		const nextErrors: Record<string, string> = {};
 
@@ -850,15 +860,17 @@
 			</div>
 
 			<div class="settlement-form-grid">
-				<label class="settlement-field">
-					<span>{labels.eventFilterFromLabel}</span>
-					<input bind:value={eventQueryFromDate} type="date" />
-					<small>{labels.optionalHint}</small>
-				</label>
-
-				<label class="settlement-field">
-					<span>{labels.eventFilterToLabel}</span>
-					<input bind:value={eventQueryToDate} type="date" />
+				<label class="settlement-field settlement-field-wide">
+					<span>{labels.eventFilterFromLabel} / {labels.eventFilterToLabel}</span>
+					<TimeSelector
+						mode="range"
+						inputType="date"
+						start={eventQueryFromDate}
+						end={eventQueryToDate}
+						startAriaLabel={labels.eventFilterFromLabel}
+						endAriaLabel={labels.eventFilterToLabel}
+						on:change={handleEventRangeChange}
+					/>
 					<small>{labels.optionalHint}</small>
 				</label>
 
@@ -986,7 +998,14 @@
 
 					<label class="settlement-field">
 						<span>{labels.formDecidedAtLabel}</span>
-						<input bind:value={decidedAt} type="datetime-local" />
+						<TimeSelector
+							mode="single"
+							inputType="datetime-local"
+							value={decidedAt}
+							ariaLabel={labels.formDecidedAtLabel}
+							error={Boolean(errors.decidedAt)}
+							on:change={handleDecidedAtChange}
+						/>
 						<small>{labels.requiredHint}</small>
 						{#if errors.decidedAt}<em>{errors.decidedAt}</em>{/if}
 					</label>
