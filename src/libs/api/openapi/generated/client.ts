@@ -156,7 +156,9 @@ import type {
 	LedgerSettlementParticipantValidation,
 	LedgerSettlementParticipantConflictResponse,
 	CreateLedgerSettlementRequest,
+	SettleLedgerEventRequest,
 	UpdateLedgerSettlementStatusRequest,
+	UpdateLedgerSettlementRequest,
 	LedgerAllocationResponse,
 	CreateLedgerAllocationRequest,
 	UpdateLedgerAllocationStatusRequest,
@@ -249,7 +251,9 @@ export const operationPaths = {
 	getOrganizationsByOrganizationLedgerSettlementDefaults: "/organizations/{organization}/ledger/settlement-defaults",
 	postOrganizationsByOrganizationLedgerClaimsBatch: "/organizations/{organization}/ledger/claims/batch",
 	postOrganizationsByOrganizationLedgerSettlementsBySettlementIdDisburse: "/organizations/{organization}/ledger/settlements/{settlementId}/disburse",
+	postOrganizationsByOrganizationLedgerEventsByEventIdSettle: "/organizations/{organization}/ledger/events/{eventId}/settle",
 	patchOrganizationsByOrganizationLedgerSettlementsBySettlementIdStatus: "/organizations/{organization}/ledger/settlements/{settlementId}/status",
+	patchOrganizationsByOrganizationLedgerSettlementsBySettlementId: "/organizations/{organization}/ledger/settlements/{settlementId}",
 	postOrganizationsByOrganizationLedgerAllocations: "/organizations/{organization}/ledger/allocations",
 	patchOrganizationsByOrganizationLedgerAllocationsByAllocationIdStatus: "/organizations/{organization}/ledger/allocations/{allocationId}/status",
 	postOrganizationsByOrganizationLedgerClaims: "/organizations/{organization}/ledger/claims",
@@ -343,7 +347,9 @@ export type ApiOperations = {
 	getOrganizationsByOrganizationLedgerSettlementDefaults: { pathParams: { "organization": string; }; query: { "gameId"?: number; }; response: LedgerSettlementDefaultsResponse; };
 	postOrganizationsByOrganizationLedgerClaimsBatch: { pathParams: { "organization": string; }; body: CreateLedgerBatchClaimsRequest; response: LedgerBatchClaimsResponse; };
 	postOrganizationsByOrganizationLedgerSettlementsBySettlementIdDisburse: { pathParams: { "organization": string; "settlementId": number; }; body: CreateSettlementDisbursementRequest; response: LedgerSettlementDisbursementResponse; };
+	postOrganizationsByOrganizationLedgerEventsByEventIdSettle: { pathParams: { "eventId": number; "organization": string; }; body: SettleLedgerEventRequest; response: LedgerSettlementResponse; };
 	patchOrganizationsByOrganizationLedgerSettlementsBySettlementIdStatus: { pathParams: { "organization": string; "settlementId": number; }; body: UpdateLedgerSettlementStatusRequest; response: LedgerSettlementResponse; };
+	patchOrganizationsByOrganizationLedgerSettlementsBySettlementId: { pathParams: { "organization": string; "settlementId": number; }; body: UpdateLedgerSettlementRequest; response: LedgerSettlementResponse; };
 	postOrganizationsByOrganizationLedgerAllocations: { pathParams: { "organization": string; }; body: CreateLedgerAllocationRequest; response: LedgerAllocationResponse; };
 	patchOrganizationsByOrganizationLedgerAllocationsByAllocationIdStatus: { pathParams: { "allocationId": number; "organization": string; }; body: UpdateLedgerAllocationStatusRequest; response: LedgerAllocationResponse; };
 	postOrganizationsByOrganizationLedgerClaims: { pathParams: { "organization": string; }; body: CreateLedgerClaimRequest; response: LedgerClaimResponse; };
@@ -1873,6 +1879,25 @@ export class OpenApiClient {
 	}
 
 	/**
+	 * POST /organizations/{organization}/ledger/events/{eventId}/settle
+	 */
+	async postOrganizationsByOrganizationLedgerEventsByEventIdSettle(options: RequestOptions<ApiOperations['postOrganizationsByOrganizationLedgerEventsByEventIdSettle']> = {}): Promise<ApiOperations['postOrganizationsByOrganizationLedgerEventsByEventIdSettle']['response']> {
+		const body = options.body === undefined ? undefined : JSON.stringify(options.body);
+
+		return this.request<ApiOperations['postOrganizationsByOrganizationLedgerEventsByEventIdSettle']['response']>({
+			method: "POST",
+			path: operationPaths.postOrganizationsByOrganizationLedgerEventsByEventIdSettle,
+			pathParams: options.pathParams,
+			query: options.query,
+			headers: {
+			...(options.body === undefined ? {} : { 'content-type': 'application/json' }),
+				...options.headers,
+			},
+			body,
+		});
+	}
+
+	/**
 	 * PATCH /organizations/{organization}/ledger/settlements/{settlementId}/status
 	 */
 	async patchOrganizationsByOrganizationLedgerSettlementsBySettlementIdStatus(options: RequestOptions<ApiOperations['patchOrganizationsByOrganizationLedgerSettlementsBySettlementIdStatus']> = {}): Promise<ApiOperations['patchOrganizationsByOrganizationLedgerSettlementsBySettlementIdStatus']['response']> {
@@ -1881,6 +1906,25 @@ export class OpenApiClient {
 		return this.request<ApiOperations['patchOrganizationsByOrganizationLedgerSettlementsBySettlementIdStatus']['response']>({
 			method: "PATCH",
 			path: operationPaths.patchOrganizationsByOrganizationLedgerSettlementsBySettlementIdStatus,
+			pathParams: options.pathParams,
+			query: options.query,
+			headers: {
+			...(options.body === undefined ? {} : { 'content-type': 'application/json' }),
+				...options.headers,
+			},
+			body,
+		});
+	}
+
+	/**
+	 * PATCH /organizations/{organization}/ledger/settlements/{settlementId}
+	 */
+	async patchOrganizationsByOrganizationLedgerSettlementsBySettlementId(options: RequestOptions<ApiOperations['patchOrganizationsByOrganizationLedgerSettlementsBySettlementId']> = {}): Promise<ApiOperations['patchOrganizationsByOrganizationLedgerSettlementsBySettlementId']['response']> {
+		const body = options.body === undefined ? undefined : JSON.stringify(options.body);
+
+		return this.request<ApiOperations['patchOrganizationsByOrganizationLedgerSettlementsBySettlementId']['response']>({
+			method: "PATCH",
+			path: operationPaths.patchOrganizationsByOrganizationLedgerSettlementsBySettlementId,
 			pathParams: options.pathParams,
 			query: options.query,
 			headers: {

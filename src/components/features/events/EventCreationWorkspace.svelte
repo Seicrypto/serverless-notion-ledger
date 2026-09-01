@@ -8,6 +8,7 @@
 	import GameOptionPicker from '../../shared/GameOptionPicker.svelte';
 	import GuildOptionPicker from '../../shared/GuildOptionPicker.svelte';
 	import SearchSelect from '../../shared/SearchSelect.svelte';
+	import TimeSelector from '../../shared/TimeSelector.svelte';
 	import { getApiAdapter } from '../../../libs/api/adapters/api.adapter.ts';
 	import { ensureAuthSession, getErrorMessage, isAuthenticatedSession, type AuthSession } from '../../../libs/api/auth/session.ts';
 	import { ensureMyOrganizationsCache } from '../../../libs/api/organizations/my-organizations-cache.ts';
@@ -737,6 +738,10 @@
 		}
 	}
 
+	function handleOccurredAtChange(event: CustomEvent<{ value: string }>) {
+		occurredAt = event.detail.value;
+	}
+
 	function parseDuplicateSuggestions(error: unknown) {
 		if (!(error instanceof Error)) {
 			return [];
@@ -1217,7 +1222,15 @@ async function submitCreateItem() {
 
 			<label class="event-field">
 				<span>{labels.occurredAtLabel}</span>
-				<input class:error={Boolean(errors.occurredAt)} bind:value={occurredAt} type="datetime-local" disabled={!organization || contextLoading} />
+				<TimeSelector
+					mode="single"
+					inputType="datetime-local"
+					value={occurredAt}
+					ariaLabel={labels.occurredAtLabel}
+					disabled={!organization || contextLoading}
+					error={Boolean(errors.occurredAt)}
+					on:change={handleOccurredAtChange}
+				/>
 				<small>{labels.requiredHint}</small>
 				{#if errors.occurredAt}<em>{errors.occurredAt}</em>{/if}
 			</label>

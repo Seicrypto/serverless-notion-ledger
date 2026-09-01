@@ -2,6 +2,7 @@
 	import { onMount } from 'svelte';
 
 	import GuildOptionPicker from '../../shared/GuildOptionPicker.svelte';
+	import TimeSelector from '../../shared/TimeSelector.svelte';
 	import RequestStatusDialog from '../org/RequestStatusDialog.svelte';
 	import { getApiAdapter } from '../../../libs/api/adapters/api.adapter.ts';
 	import { ensureAuthSession, getErrorMessage, isAuthenticatedSession, type AuthSession } from '../../../libs/api/auth/session.ts';
@@ -20,6 +21,7 @@
 		CreateLedgerSettlementRequest,
 		LedgerEvent,
 		LedgerSettlementDefaultsResponse,
+		SettleLedgerEventRequest,
 	} from '../../../libs/api/openapi/generated/schema';
 
 	interface Labels {
@@ -46,6 +48,12 @@
 		eventEmptyActionLabel: string;
 		eventEmptyRefreshHint: string;
 		eventRefreshLabel: string;
+		eventFilterFromLabel: string;
+		eventFilterToLabel: string;
+		eventFilterApplyLabel: string;
+		eventPagePreviousLabel: string;
+		eventPageNextLabel: string;
+		eventPageSummaryLabel: string;
 		eventSummaryTitle: string;
 		eventSummaryStatusLabel: string;
 		eventSummaryOccurredAtLabel: string;
@@ -121,6 +129,8 @@
 	type FeeMode = NonNullable<CreateLedgerSettlementRequest['feeMode']>;
 
 	const CREATE_TIMEOUT_MS = 20000;
+	const DEFAULT_EVENT_PAGE_LIMIT = 10;
+	const DEFAULT_EVENT_LOOKBACK_DAYS = 7;
 
 	const settlementTypeOptions: Array<{ value: SettlementType; labelKey: keyof Labels }> = [
 		{ value: 'sale', labelKey: 'settlementTypeSale' },
@@ -162,6 +172,11 @@
 	let eventsLoading = false;
 	let eventsError = '';
 	let hasAnyEvents = false;
+	let eventsHasMore = false;
+	let eventQueryOffset = 0;
+	let eventQueryLimit = DEFAULT_EVENT_PAGE_LIMIT;
+	let eventQueryFromDate = '';
+	let eventQueryToDate = '';
 	let selectedEventId = '';
 	let selectedEvent: LedgerEvent | null = null;
 
@@ -207,6 +222,8 @@
 		eventsLoading = false;
 		eventsError = '';
 		hasAnyEvents = false;
+		eventsHasMore = false;
+		eventQueryOffset = 0;
 		selectedEventId = '';
 		selectedEvent = null;
 		defaultsLoading = false;
@@ -245,6 +262,39 @@
 		const hours = `${date.getHours()}`.padStart(2, '0');
 		const minutes = `${date.getMinutes()}`.padStart(2, '0');
 		return `${year}-${month}-${day}T${hours}:${minutes}`;
+	}
+
+	function toDateInputValue(date: Date) {
+		const year = date.getFullYear();
+		const month = `${date.getMonth() + 1}`.padStart(2, '0');
+		const day = `${date.getDate()}`.padStart(2, '0');
+		return `${year}-${month}-${day}`;
+	}
+
+	function getDefaultEventRange() {
+		const today = new Date();
+		const start = new Date(today);
+		start.setDate(today.getDate() - (DEFAULT_EVENT_LOOKBACK_DAYS - 1));
+		return {
+			from: toDateInputValue(start),
+			to: toDateInputValue(today),
+		};
+	}
+
+	function toRangeStartIso(value: string) {
+		if (!value) {
+			return undefined;
+		}
+
+		return new Date(`${value}T00:00:00`).toISOString();
+	}
+
+	function toRangeEndIso(value: string) {
+		if (!value) {
+			return undefined;
+		}
+
+		return new Date(`${value}T23:59:59.999`).toISOString();
 	}
 
 	function parsePositiveNumber(value: string) {
@@ -443,11 +493,15 @@
 			}
 
 			const response = await getApiAdapter().listOrganizationLedgerEvents(organization, {
-				statusGroup: 'settleable',
-				limit: 50,
+				statusGroup: 'unsettled',
+				fromOccurredAt: toRangeStartIso(eventQueryFromDate),
+				toOccurredAt: toRangeEndIso(eventQueryToDate),
+				limit: eventQueryLimit,
+				offset: eventQueryOffset,
 				sortBy: 'occurredAt',
 				sortOrder: 'desc',
 			});
+			eventsHasMore = response.pagination.hasMore;
 			events = preferredEvent
 				? [preferredEvent, ...response.events.filter((entry) => entry.id !== preferredEvent?.id)]
 				: response.events;
@@ -456,10 +510,48 @@
 			updateSelectedEvent();
 		} catch (error) {
 			hasAnyEvents = false;
+			eventsHasMore = false;
 			eventsError = getErrorMessage(error, labels.errorCreateTitle);
 		} finally {
 			eventsLoading = false;
 		}
+	}
+
+	function applyEventFilters() {
+		eventQueryOffset = 0;
+		void loadEvents();
+	}
+
+	function loadPreviousEventPage() {
+		if (eventsLoading || eventQueryOffset === 0) {
+			return;
+		}
+
+		eventQueryOffset = Math.max(0, eventQueryOffset - eventQueryLimit);
+		void loadEvents();
+	}
+
+	function loadNextEventPage() {
+		if (eventsLoading || !eventsHasMore) {
+			return;
+		}
+
+		eventQueryOffset += eventQueryLimit;
+		void loadEvents();
+	}
+
+	function getEventPageSummary() {
+		const page = Math.floor(eventQueryOffset / eventQueryLimit) + 1;
+		return labels.eventPageSummaryLabel.replace('{page}', String(page));
+	}
+
+	function handleEventRangeChange(event: CustomEvent<{ start: string; end: string }>) {
+		eventQueryFromDate = event.detail.start;
+		eventQueryToDate = event.detail.end;
+	}
+
+	function handleDecidedAtChange(event: CustomEvent<{ value: string }>) {
+		decidedAt = event.detail.value;
 	}
 
 	function validate() {
@@ -627,7 +719,45 @@
 		}, CREATE_TIMEOUT_MS);
 
 		try {
-			await getApiAdapter().createOrganizationLedgerSettlement(organization, payload);
+			if (selectedEvent?.status === 'open') {
+				const settlePayload: SettleLedgerEventRequest = {
+					title: payload.title,
+					decidedAt: payload.decidedAt,
+					grossAmount: payload.grossAmount,
+					netAmount: payload.netAmount,
+					feeMode: payload.feeMode,
+					allocationMode: payload.allocationMode,
+					payerType: payload.payerType,
+					settlementType: payload.settlementType,
+				};
+
+				if (payload.notes) {
+					settlePayload.notes = payload.notes;
+				}
+				if (payload.payerRef) {
+					settlePayload.payerRef = payload.payerRef;
+				}
+				if (payload.unitAssetId) {
+					settlePayload.unitAssetId = payload.unitAssetId;
+				}
+				if (payload.feePercent !== undefined) {
+					settlePayload.feePercent = payload.feePercent;
+				}
+				if (payload.feeAmount !== undefined) {
+					settlePayload.feeAmount = payload.feeAmount;
+				}
+				if (payload.feeRuleKey) {
+					settlePayload.feeRuleKey = payload.feeRuleKey;
+				}
+
+				await getApiAdapter().settleOrganizationLedgerEvent(
+					organization,
+					Number(selectedEventId),
+					settlePayload,
+				);
+			} else {
+				await getApiAdapter().createOrganizationLedgerSettlement(organization, payload);
+			}
 			if (timedOut) {
 				return;
 			}
@@ -664,6 +794,9 @@
 
 	onMount(() => {
 		decidedAt = toLocalDateTimeValue(new Date());
+		const defaultRange = getDefaultEventRange();
+		eventQueryFromDate = defaultRange.from;
+		eventQueryToDate = defaultRange.to;
 		if (typeof window !== 'undefined') {
 			recentSettlements = loadRecentSettlementCreations(window.sessionStorage);
 		}
@@ -726,6 +859,28 @@
 				</button>
 			</div>
 
+			<div class="settlement-form-grid">
+				<label class="settlement-field settlement-field-wide">
+					<span>{labels.eventFilterFromLabel} / {labels.eventFilterToLabel}</span>
+					<TimeSelector
+						mode="range"
+						inputType="date"
+						start={eventQueryFromDate}
+						end={eventQueryToDate}
+						startAriaLabel={labels.eventFilterFromLabel}
+						endAriaLabel={labels.eventFilterToLabel}
+						on:change={handleEventRangeChange}
+					/>
+					<small>{labels.optionalHint}</small>
+				</label>
+
+				<div class="settlement-field settlement-field-actions">
+					<button type="button" class="secondary-button" on:click={applyEventFilters} disabled={eventsLoading}>
+						{labels.eventFilterApplyLabel}
+					</button>
+				</div>
+			</div>
+
 			<label class="settlement-field">
 				<span>{labels.eventSelectLabel}</span>
 				<select bind:value={selectedEventId} disabled={eventsLoading || events.length === 0}>
@@ -740,6 +895,16 @@
 				{#if errors.eventId}<em>{errors.eventId}</em>{/if}
 				{#if eventsError}<em>{eventsError}</em>{/if}
 			</label>
+
+			<div class="settlement-actions">
+				<button type="button" class="secondary-button" on:click={loadPreviousEventPage} disabled={eventsLoading || eventQueryOffset === 0}>
+					{labels.eventPagePreviousLabel}
+				</button>
+				<p class="muted-text">{getEventPageSummary()}</p>
+				<button type="button" class="secondary-button" on:click={loadNextEventPage} disabled={eventsLoading || !eventsHasMore}>
+					{labels.eventPageNextLabel}
+				</button>
+			</div>
 
 			{#if !eventsLoading && events.length === 0}
 				<div class="settlement-empty">
@@ -833,7 +998,14 @@
 
 					<label class="settlement-field">
 						<span>{labels.formDecidedAtLabel}</span>
-						<input bind:value={decidedAt} type="datetime-local" />
+						<TimeSelector
+							mode="single"
+							inputType="datetime-local"
+							value={decidedAt}
+							ariaLabel={labels.formDecidedAtLabel}
+							error={Boolean(errors.decidedAt)}
+							on:change={handleDecidedAtChange}
+						/>
 						<small>{labels.requiredHint}</small>
 						{#if errors.decidedAt}<em>{errors.decidedAt}</em>{/if}
 					</label>

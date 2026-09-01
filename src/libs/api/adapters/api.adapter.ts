@@ -26,6 +26,7 @@ import type {
 	RegisterResponse,
 	ResolveOrganizationAssetRequest,
 	ResetPasswordRequest,
+	SettleLedgerEventRequest,
 	SetPrimaryOrganizationGameRequest,
 	UpdateLedgerEventRequest,
 	UpdateUserVanityRequest,
@@ -35,6 +36,7 @@ import type {
 	UpdateLedgerAllocationStatusRequest,
 	UpdateLedgerClaimStatusRequest,
 	UpdateLedgerEventStatusRequest,
+	UpdateLedgerSettlementRequest,
 	UpdateLedgerSettlementStatusRequest,
 	UpdateDisplayNameRequest,
 	UpdateOrganizationRequest,
@@ -698,6 +700,28 @@ export class ApiAdapter {
 	) {
 		return this.client.postOrganizationsByOrganizationLedgerSettlements({
 			pathParams: { organization: normalizeOrganizationReference(organization) },
+			body: payload,
+		});
+	}
+
+	settleOrganizationLedgerEvent(
+		organization: OrganizationReference,
+		eventId: number,
+		payload: SettleLedgerEventRequest,
+	) {
+		return this.client.postOrganizationsByOrganizationLedgerEventsByEventIdSettle({
+			pathParams: { organization: normalizeOrganizationReference(organization), eventId },
+			body: payload,
+		});
+	}
+
+	updateOrganizationLedgerSettlement(
+		organization: OrganizationReference,
+		settlementId: number,
+		payload: UpdateLedgerSettlementRequest,
+	) {
+		return this.client.patchOrganizationsByOrganizationLedgerSettlementsBySettlementId({
+			pathParams: { organization: normalizeOrganizationReference(organization), settlementId },
 			body: payload,
 		});
 	}
