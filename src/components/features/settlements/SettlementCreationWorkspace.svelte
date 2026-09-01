@@ -104,6 +104,15 @@
 		formPayerRefSelectedLabel: string;
 		formPayerRefAddLabel: string;
 		formPayerRefChangeLabel: string;
+		formRecipientsLabel: string;
+		formRecipientsPlaceholder: string;
+		formRecipientsEmpty: string;
+		formRecipientsHint: string;
+		formRecipientsSelectedLabel: string;
+		formRecipientsAddLabel: string;
+		formRecipientsMismatchWarning: string;
+		formRecipientsMismatchError: string;
+		clearSelectionLabel: string;
 		formSettlementTypeLabel: string;
 		formAllocationModeLabel: string;
 		formNotesLabel: string;
@@ -218,6 +227,9 @@
 	let payerType: PayerType = 'character';
 	let payerRef = '';
 	let payerCharacterId = '';
+	let recipientPickerValue = '';
+	let recipientCharacterIds: string[] = [];
+	let eventParticipantCharacterIds: string[] = [];
 	let settlementType: SettlementType = 'sale';
 	let allocationMode: AllocationMode = 'equal';
 	let notes = '';
@@ -259,6 +271,9 @@
 		payerType = 'character';
 		payerRef = '';
 		payerCharacterId = '';
+		recipientPickerValue = '';
+		recipientCharacterIds = [];
+		eventParticipantCharacterIds = [];
 		settlementType = 'sale';
 		allocationMode = 'equal';
 		notes = '';
@@ -355,6 +370,26 @@
 		payerRef = getCharacterById(characterId)?.name ?? '';
 	}
 
+	function setRecipientsFromEventParticipants(characterIds: string[]) {
+		eventParticipantCharacterIds = [...characterIds];
+		recipientCharacterIds = [...characterIds];
+		recipientPickerValue = '';
+	}
+
+	function addRecipientCharacterId(characterId: string) {
+		if (!characterId || recipientCharacterIds.includes(characterId)) {
+			recipientPickerValue = '';
+			return;
+		}
+
+		recipientCharacterIds = [...recipientCharacterIds, characterId];
+		recipientPickerValue = '';
+	}
+
+	function removeRecipientCharacterId(characterId: string) {
+		recipientCharacterIds = recipientCharacterIds.filter((value) => value !== characterId);
+	}
+
 	function findCharacterIdByNameForGame(name: string, gameId?: number | null) {
 		const trimmed = name.trim();
 		if (!trimmed) {
@@ -381,9 +416,42 @@
 		return claimedByCurrentUser ? String(claimedByCurrentUser.id) : '';
 	}
 
+	function haveSameCharacterSelection(left: string[], right: string[]) {
+		if (left.length !== right.length) {
+			return false;
+		}
+
+		const leftSorted = [...left].sort();
+		const rightSorted = [...right].sort();
+		return leftSorted.every((value, index) => value === rightSorted[index]);
+	}
+
+	function parseStructuredApiError(error: unknown) {
+		if (!(error instanceof Error)) {
+			return null;
+		}
+
+		try {
+			return JSON.parse(error.message) as {
+				code?: string;
+				error?: string;
+				message?: string;
+				participantValidation?: {
+					eventParticipantCharacterIds?: number[];
+					recipientCharacterIds?: number[];
+				};
+			};
+		} catch {
+			return null;
+		}
+	}
+
 	function updateSelectedEvent() {
 		selectedEvent = events.find((event) => String(event.id) === selectedEventId) ?? null;
 		if (!selectedEvent) {
+			eventParticipantCharacterIds = [];
+			recipientCharacterIds = [];
+			recipientPickerValue = '';
 			return;
 		}
 
@@ -407,6 +475,35 @@
 			defaults = null;
 			defaultsError = '';
 			defaultsLoading = false;
+		}
+
+		void loadSelectedEventDetail(selectedEvent.id);
+	}
+
+	async function loadSelectedEventDetail(nextEventId: number) {
+		if (!organization) {
+			return;
+		}
+
+		try {
+			const response = await getApiAdapter().getOrganizationLedgerEvent(organization, nextEventId);
+			const participantIds = response.event.participants
+				.map((participant) =>
+					typeof participant.characterId === 'number' && Number.isFinite(participant.characterId)
+						? String(participant.characterId)
+						: '',
+				)
+				.filter(Boolean);
+
+			if (selectedEventId === String(nextEventId)) {
+				setRecipientsFromEventParticipants(participantIds);
+			}
+		} catch (error) {
+			devDebugError('settlements.event-detail', 'Failed to load event detail for recipients', {
+				organization,
+				eventId: nextEventId,
+				error,
+			});
 		}
 	}
 
@@ -471,6 +568,10 @@
 
 	function handlePayerCharacterChange(event: CustomEvent<{ value: string }>) {
 		syncPayerFromCharacterId(event.detail.value);
+	}
+
+	function handleRecipientCharacterChange(event: CustomEvent<{ value: string }>) {
+		addRecipientCharacterId(event.detail.value);
 	}
 
 	function applyDefaults(response: LedgerSettlementDefaultsResponse) {
@@ -619,6 +720,12 @@
 
 		if (payerType === 'character' && !payerCharacterId) {
 			nextErrors.payerRef = labels.validationRequired;
+		}
+
+		if (recipientCharacterIds.length === 0) {
+			nextErrors.recipientCharacterIds = labels.validationRequired;
+		} else if (!haveSameCharacterSelection(recipientCharacterIds, eventParticipantCharacterIds)) {
+			nextErrors.recipientCharacterIds = labels.formRecipientsMismatchError;
 		}
 
 		if (!title.trim()) {
@@ -774,6 +881,11 @@
 		if (payerRef.trim()) {
 			payload.payerRef = payerRef.trim();
 		}
+		if (recipientCharacterIds.length > 0) {
+			payload.recipientCharacterIds = recipientCharacterIds
+				.map((characterId) => Number(characterId))
+				.filter((characterId) => Number.isFinite(characterId));
+		}
 		if (hasNonEmptyValue(unitAssetId)) {
 			payload.unitAssetId = Number(unitAssetId);
 		}
@@ -814,6 +926,9 @@
 				}
 				if (payload.payerRef) {
 					settlePayload.payerRef = payload.payerRef;
+				}
+				if (payload.recipientCharacterIds) {
+					settlePayload.recipientCharacterIds = payload.recipientCharacterIds;
 				}
 				if (payload.unitAssetId) {
 					settlePayload.unitAssetId = payload.unitAssetId;
@@ -877,7 +992,12 @@
 				payload,
 				error,
 			});
-			openErrorDialog(getErrorMessage(error, labels.errorCreateTitle));
+			const structuredError = parseStructuredApiError(error);
+			if (structuredError?.code === 'SETTLEMENT_PARTICIPANT_CONFIRMATION_REQUIRED') {
+				openErrorDialog(labels.formRecipientsMismatchError);
+			} else {
+				openErrorDialog(getErrorMessage(error, labels.errorCreateTitle));
+			}
 		} finally {
 			isSubmitting = false;
 		}
@@ -890,6 +1010,9 @@
 	$: currentOrganizationRole = selectedOrganizationCard?.membership?.role ?? null;
 	$: isMemberRestrictedPayerSelection = currentOrganizationRole === 'member';
 	$: selectedPayerCharacter = getCharacterById(payerCharacterId);
+	$: selectedRecipientCharacters = recipientCharacterIds
+		.map((characterId) => getCharacterById(characterId))
+		.filter((character): character is OrganizationManageCharacter => Boolean(character));
 	$: payerCharacterOptions = organizationCharacters
 		.filter((character) =>
 			typeof selectedEvent?.gameId === 'number' ? character.gameId === selectedEvent.gameId : true,
@@ -904,6 +1027,20 @@
 			label: character.name,
 			metaLabel: getCharacterMetaLabel(character),
 		}));
+	$: recipientCharacterOptions = organizationCharacters
+		.filter((character) =>
+			typeof selectedEvent?.gameId === 'number' ? character.gameId === selectedEvent.gameId : true,
+		)
+		.filter((character) => !recipientCharacterIds.includes(String(character.id)))
+		.map((character) => ({
+			value: String(character.id),
+			label: character.name,
+			metaLabel: getCharacterMetaLabel(character),
+		}));
+	$: hasRecipientMismatch = !haveSameCharacterSelection(
+		recipientCharacterIds,
+		eventParticipantCharacterIds,
+	);
 	$: selectedOrganizationCard = organization ? findOrganizationByReference(organization) : null;
 	$: organizationOptions = organizations.map((entry) => ({
 		value: getOrganizationReference(entry),
@@ -1253,6 +1390,49 @@
 					</label>
 
 					<label class="settlement-field settlement-field-wide">
+						<span>{labels.formRecipientsLabel}</span>
+						{#if selectedRecipientCharacters.length > 0}
+							<div class="settlement-selected-character">
+								<span>{labels.formRecipientsSelectedLabel}</span>
+								<div class="settlement-selected-character-list">
+									{#each selectedRecipientCharacters as character}
+										<button
+											type="button"
+											class="settlement-selected-character-chip"
+											on:click={() => removeRecipientCharacterId(String(character.id))}
+										>
+											<strong>{character.name}</strong>
+											<small>{getCharacterMetaLabel(character)}</small>
+											<b aria-hidden="true">×</b>
+											<span class="sr-only">{labels.clearSelectionLabel}</span>
+										</button>
+									{/each}
+								</div>
+							</div>
+						{/if}
+						<SearchSelect
+							value={recipientPickerValue}
+							ariaLabel={labels.formRecipientsLabel}
+							placeholder={labels.formRecipientsPlaceholder}
+							searchPlaceholder={labels.formRecipientsPlaceholder}
+							emptyLabel={labels.formRecipientsEmpty}
+							disabled={!organization || eventsLoading || !selectedEvent?.gameId}
+							error={Boolean(errors.recipientCharacterIds)}
+							triggerMode="button"
+							buttonIdleLabel={labels.formRecipientsAddLabel}
+							buttonActiveLabel={labels.formRecipientsAddLabel}
+							items={recipientCharacterOptions}
+							on:change={handleRecipientCharacterChange}
+						/>
+						{#if hasRecipientMismatch}
+							<small class="warning-text">{labels.formRecipientsMismatchWarning}</small>
+						{:else}
+							<small>{labels.formRecipientsHint}</small>
+						{/if}
+						{#if errors.recipientCharacterIds}<em>{errors.recipientCharacterIds}</em>{/if}
+					</label>
+
+					<label class="settlement-field settlement-field-wide">
 						<span>{labels.formNotesLabel}</span>
 						<textarea bind:value={notes} rows="4" maxlength="1000" placeholder={labels.formNotesPlaceholder}></textarea>
 						<small>{labels.optionalHint}</small>
@@ -1442,6 +1622,12 @@
 		gap: 10px;
 	}
 
+	.settlement-selected-character-list {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 10px;
+	}
+
 	.settlement-selected-character > span {
 		font-size: 0.84rem;
 		font-weight: 700;
@@ -1479,6 +1665,17 @@
 	.settlement-selected-character-chip b {
 		font-size: 1rem;
 		color: var(--text-soft);
+	}
+
+	.settlement-selected-character-list .settlement-selected-character-chip {
+		width: auto;
+		min-width: min(260px, 100%);
+		flex: 1 1 240px;
+	}
+
+	.warning-text {
+		color: #b85b14;
+		font-weight: 600;
 	}
 
 	.primary-button,
