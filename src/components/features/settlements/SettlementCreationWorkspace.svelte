@@ -10,8 +10,10 @@
 	import { ensureAuthSession, getErrorMessage, isAuthenticatedSession, type AuthSession } from '../../../libs/api/auth/session.ts';
 	import { ensureMyOrganizationsCache } from '../../../libs/api/organizations/my-organizations-cache.ts';
 	import type { OrganizationCardResponse } from '../../../libs/api/organizations/organization-card.ts';
+	import { ensureOrganizationManageCache } from '../../../libs/api/organizations/manage-workspace-cache.ts';
 	import { getOrganizationReference, resolveOrganizationQuery } from '../../../libs/organizations/reference.ts';
 	import { getLatestActiveOrganization, readPreferredOrganization, writePreferredOrganization } from '../../../libs/ledger/workspace-preferences.ts';
+	import { readSettlementDefaultsCache, writeSettlementDefaultsCache } from '../../../libs/settlements/settlement-defaults-cache.ts';
 	import {
 		getLatestSettlementCreationForOrganization,
 		loadRecentSettlementCreations,
@@ -27,6 +29,7 @@
 	import type {
 		CreateLedgerSettlementRequest,
 		LedgerEvent,
+		LedgerEventListItem,
 		LedgerSettlementDefaultsResponse,
 		LedgerWorkspaceCharacter,
 		SettleLedgerEventRequest,
@@ -194,7 +197,7 @@
 	let organizations: OrganizationCardResponse[] = [];
 	let organizationCharacters: LedgerWorkspaceCharacter[] = [];
 	let session: AuthSession | null = null;
-	let events: LedgerEvent[] = [];
+	let events: LedgerEventListItem[] = [];
 	let eventsLoading = false;
 	let eventsError = '';
 	let hasAnyEvents = false;
@@ -212,6 +215,7 @@
 	let recipientLoadError = '';
 	let currentWorkspaceRole: WorkspaceRole | null = null;
 	let workspaceDefaultPayerCharacterId = '';
+	let loadingWorkspaceEventId: number | null = null;
 
 	let recentSettlements: RecentSettlementCreationEntry[] = [];
 
@@ -543,14 +547,97 @@
 		addRecipientCharacterId(event.detail.value);
 	}
 
+	async function loadSettlementWorkspaceFallback(nextEventId: number) {
+		if (!organization) {
+			return;
+		}
+
+		const eventSummary = events.find((entry) => entry.id === nextEventId) ?? null;
+		const gameId =
+			eventSummary && typeof eventSummary.gameId === 'number' && Number.isFinite(eventSummary.gameId)
+				? eventSummary.gameId
+				: undefined;
+
+		try {
+			const [manageSnapshot, defaultsResponse] = await Promise.all([
+				ensureOrganizationManageCache(organization),
+				(async () => {
+					if (typeof window !== 'undefined') {
+						const cached = readSettlementDefaultsCache(window.sessionStorage, organization, gameId);
+						if (cached) {
+							return cached;
+						}
+					}
+
+					const response = await getApiAdapter().getOrganizationLedgerSettlementDefaults(organization, {
+						gameId,
+					});
+					if (typeof window !== 'undefined') {
+						writeSettlementDefaultsCache(window.sessionStorage, organization, response, gameId);
+					}
+					return response;
+				})(),
+			]);
+
+			if (selectedEventId !== String(nextEventId)) {
+				return;
+			}
+
+			organizationCharacters = manageSnapshot.characters.map((character) => ({
+				id: character.id,
+				name: character.name,
+				slug: character.slug,
+				vanity: character.vanity,
+				gameId: character.gameId,
+				isActive: true,
+			}));
+			currentWorkspaceRole = selectedOrganizationCard?.membership?.role ?? null;
+			defaults = defaultsResponse;
+			defaultsError = '';
+
+			const participantIds = (eventSummary?.participantCharacterIds ?? []).map((characterId) =>
+				String(characterId),
+			);
+			setRecipientsFromEventParticipants(participantIds);
+
+			if (payerType === 'character' && gameId !== undefined) {
+				syncPayerFromCharacterId(getDefaultPayerCharacterId(gameId));
+			}
+
+			allocationMode = defaultsResponse.defaults.defaultAllocationMode;
+			feeMode = defaultsResponse.defaults.defaultFeeMode;
+			unitAssetId = String(defaultsResponse.defaults.defaultSettlementUnit.id);
+			netAmount = calculateSettlementNetAmount({
+				grossAmount,
+				feeMode,
+				feePercent,
+				feeAmount,
+			});
+		} catch (fallbackError) {
+			defaults = null;
+			defaultsError = getErrorMessage(fallbackError, labels.errorCreateTitle);
+			recipientLoadError = getErrorMessage(fallbackError, labels.formRecipientsMismatchError);
+			devDebugError('settlements.workspace', 'Fallback settlement workspace load failed', {
+				organization,
+				eventId: nextEventId,
+				error: fallbackError,
+			});
+		}
+	}
+
 	async function loadSettlementWorkspace(nextEventId: number) {
 		if (!organization) {
+			return;
+		}
+
+		if (loadingWorkspaceEventId === nextEventId) {
 			return;
 		}
 
 		defaultsLoading = true;
 		defaultsError = '';
 		recipientLoadError = '';
+		loadingWorkspaceEventId = nextEventId;
 
 		try {
 			const response = await getApiAdapter().getOrganizationLedgerSettlementWorkspace(
@@ -585,15 +672,14 @@
 				feeAmount,
 			});
 		} catch (error) {
-			defaults = null;
-			defaultsError = getErrorMessage(error, labels.errorCreateTitle);
-			recipientLoadError = getErrorMessage(error, labels.formRecipientsMismatchError);
 			devDebugError('settlements.workspace', 'Failed to load settlement workspace', {
 				organization,
 				eventId: nextEventId,
 				error,
 			});
+			await loadSettlementWorkspaceFallback(nextEventId);
 		} finally {
+			loadingWorkspaceEventId = null;
 			defaultsLoading = false;
 		}
 	}
@@ -624,25 +710,15 @@
 				sortBy: 'occurredAt',
 				sortOrder: 'desc',
 			});
-			let preferredEvent: LedgerEvent | null = eventId
+			let preferredEvent: LedgerEventListItem | null = eventId
 				? response.events.find((entry) => entry.id === eventId) ?? null
 				: null;
-			if (!preferredEvent && eventId) {
-				try {
-					const workspaceResponse =
-						await getApiAdapter().getOrganizationLedgerSettlementWorkspace(organization, eventId);
-					preferredEvent = workspaceResponse.event;
-				} catch {
-					// Fall back to the settleable event list if the direct event fetch is unavailable.
-				}
-			}
 			eventsHasMore = response.pagination.hasMore;
 			events = preferredEvent
 				? [preferredEvent, ...response.events.filter((entry) => entry.id !== preferredEvent?.id)]
 				: response.events;
 			const preferred = preferredEvent ?? (eventId ? response.events.find((entry) => entry.id === eventId) : null);
 			selectedEventId = String(preferred?.id ?? response.events[0]?.id ?? '');
-			updateSelectedEvent();
 		} catch (error) {
 			hasAnyEvents = false;
 			eventsHasMore = false;
