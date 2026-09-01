@@ -124,12 +124,16 @@ import type {
 	LedgerDashboardDetailSettlement,
 	LedgerDashboardClaimStatus,
 	LedgerEventListResponse,
+	LedgerEventListItem,
 	LedgerEvent,
 	LedgerPagination,
 	LedgerEventResponse,
 	LedgerEventDetail,
 	LedgerEventParticipant,
 	LedgerEventParticipantCharacter,
+	LedgerSettlementWorkspaceResponse,
+	LedgerWorkspaceCharacter,
+	LedgerSettlementDefaultUnit,
 	LedgerClaimableRecipientSummaryListResponse,
 	LedgerClaimableRecipientSummary,
 	LedgerClaimableUnitBreakdown,
@@ -143,7 +147,6 @@ import type {
 	LedgerSettlementListResponse,
 	LedgerSettlement,
 	LedgerSettlementDefaultsResponse,
-	LedgerSettlementDefaultUnit,
 	LedgerBatchClaimsResponse,
 	LedgerSettlementClaim,
 	CreateLedgerBatchClaimsRequest,
@@ -242,6 +245,7 @@ export const operationPaths = {
 	postOrganizationsByOrganizationLedgerEvents: "/organizations/{organization}/ledger/events",
 	getOrganizationsByOrganizationLedgerEventsByEventId: "/organizations/{organization}/ledger/events/{eventId}",
 	patchOrganizationsByOrganizationLedgerEventsByEventId: "/organizations/{organization}/ledger/events/{eventId}",
+	getOrganizationsByOrganizationLedgerSettlementsWorkspace: "/organizations/{organization}/ledger/settlements/workspace",
 	getOrganizationsByOrganizationLedgerClaimableRecipients: "/organizations/{organization}/ledger/claimable-recipients",
 	getOrganizationsByOrganizationLedgerClaimableRecipientsByCharacterId: "/organizations/{organization}/ledger/claimable-recipients/{characterId}",
 	postOrganizationsByOrganizationLedgerEventsBatch: "/organizations/{organization}/ledger/events/batch",
@@ -334,10 +338,11 @@ export type ApiOperations = {
 	getOrganizationsByOrganizationLedgerDashboardSummary: { pathParams: { "organization": string; }; response: OrganizationLedgerDashboardSummaryResponse; };
 	postOrganizationsByOrganizationLedgerDashboardCharacterSummariesQuery: { pathParams: { "organization": string; }; body: QueryCharacterLedgerDashboardSummariesRequest; response: CharacterLedgerDashboardSummaryResponse; };
 	getOrganizationsByOrganizationLedgerDashboardCharactersByCharacterId: { pathParams: { "characterId": number; "organization": string; }; response: CharacterLedgerDashboardDetailResponse; };
-	getOrganizationsByOrganizationLedgerEvents: { pathParams: { "organization": string; }; query: { "assetId"?: number; "createdByUserId"?: number; "eventType"?: "loot" | "raid" | "activity" | "bonus" | "salary" | "guild_event" | "other"; "fromOccurredAt"?: string; "holderRef"?: string; "holderType"?: "character" | "org_treasury" | "market" | "external" | "custom"; "limit"?: number; "offset"?: number | unknown; "sortBy"?: "occurredAt" | "createdAt" | "title" | "updatedAt"; "sortOrder"?: "asc" | "desc"; "status"?: "open" | "ready_for_settlement" | "partially_settled" | "settled" | "cancelled"; "statusGroup"?: "unsettled" | "settleable" | "settled" | "cancelled"; "toOccurredAt"?: string; }; response: LedgerEventListResponse; };
+	getOrganizationsByOrganizationLedgerEvents: { pathParams: { "organization": string; }; query: { "assetId"?: number; "createdByUserId"?: number; "eventType"?: "loot" | "raid" | "activity" | "bonus" | "salary" | "guild_event" | "other"; "fromOccurredAt"?: string; "holderRef"?: string; "holderType"?: "character" | "org_treasury" | "market" | "external" | "custom"; "limit"?: number; "offset"?: number | unknown; "include"?: "participants_summary"; "sortBy"?: "occurredAt" | "createdAt" | "title" | "updatedAt"; "sortOrder"?: "asc" | "desc"; "status"?: "open" | "ready_for_settlement" | "partially_settled" | "settled" | "cancelled"; "statusGroup"?: "unsettled" | "settleable" | "settled" | "cancelled"; "toOccurredAt"?: string; }; response: LedgerEventListResponse; };
 	postOrganizationsByOrganizationLedgerEvents: { pathParams: { "organization": string; }; body: CreateLedgerEventRequest; response: LedgerEventResponse; };
 	getOrganizationsByOrganizationLedgerEventsByEventId: { pathParams: { "eventId": number; "organization": string; }; response: LedgerEventResponse; };
 	patchOrganizationsByOrganizationLedgerEventsByEventId: { pathParams: { "eventId": number; "organization": string; }; body: UpdateLedgerEventRequest; response: LedgerEventResponse; };
+	getOrganizationsByOrganizationLedgerSettlementsWorkspace: { pathParams: { "organization": string; }; query: { "eventId": number; }; response: LedgerSettlementWorkspaceResponse; };
 	getOrganizationsByOrganizationLedgerClaimableRecipients: { pathParams: { "organization": string; }; response: LedgerClaimableRecipientSummaryListResponse; };
 	getOrganizationsByOrganizationLedgerClaimableRecipientsByCharacterId: { pathParams: { "organization": string; "characterId": number; }; query: { "includeSiblingCharacters"?: boolean | unknown; }; response: LedgerClaimableRecipientDetailResponse; };
 	postOrganizationsByOrganizationLedgerEventsBatch: { pathParams: { "organization": string; }; body: CreateLedgerEventBatchRequest; response: CreateLedgerEventBatchResponse; };
@@ -1716,6 +1721,22 @@ export class OpenApiClient {
 				...options.headers,
 			},
 			body,
+		});
+	}
+
+	/**
+	 * GET /organizations/{organization}/ledger/settlements/workspace
+	 */
+	async getOrganizationsByOrganizationLedgerSettlementsWorkspace(options: RequestOptions<ApiOperations['getOrganizationsByOrganizationLedgerSettlementsWorkspace']> = {}): Promise<ApiOperations['getOrganizationsByOrganizationLedgerSettlementsWorkspace']['response']> {
+		return this.request<ApiOperations['getOrganizationsByOrganizationLedgerSettlementsWorkspace']['response']>({
+			method: "GET",
+			path: operationPaths.getOrganizationsByOrganizationLedgerSettlementsWorkspace,
+			pathParams: options.pathParams,
+			query: options.query,
+			headers: {
+				...options.headers,
+			},
+			body: undefined,
 		});
 	}
 

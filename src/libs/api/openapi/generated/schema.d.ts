@@ -245,7 +245,9 @@ export type LedgerDashboardDetailSettlement = { "amount": number; "claimStatus":
 
 export type LedgerDashboardClaimStatus = "none" | "partial" | "claimed" | "confirmed";
 
-export type LedgerEventListResponse = { "events": Array<LedgerEvent>; "pagination": LedgerPagination; };
+export type LedgerEventListResponse = { "events": Array<LedgerEventListItem>; "pagination": LedgerPagination; };
+
+export type LedgerEventListItem = LedgerEvent & { "participantCharacterIds"?: Array<number>; "participantCount"?: number; };
 
 export type LedgerEvent = { "assetId": number | unknown; "createdAt": string; "createdByUserId": number | unknown; "eventKey": string; "eventType": "loot" | "raid" | "activity" | "bonus" | "salary" | "guild_event" | "other"; "gameId": number | unknown; "holderRef": string | unknown; "holderType": "character" | "org_treasury" | "market" | "external" | "custom"; "id": number; "notes": string | unknown; "occurredAt": string; "organizationId": number; "sourceType": "manual" | "api" | "import"; "status": "open" | "ready_for_settlement" | "partially_settled" | "settled" | "cancelled"; "title": string; "updatedAt": string; };
 
@@ -253,11 +255,17 @@ export type LedgerPagination = { "hasMore": boolean; "limit": number; "offset": 
 
 export type LedgerEventResponse = { "event": LedgerEventDetail; "message": string; };
 
-export type LedgerEventDetail = LedgerEvent & { "participants": Array<LedgerEventParticipant>; };
+export type LedgerEventDetail = LedgerEvent & { "asset": { "assetType": "item" | "currency" | "ticket" | "reward" | "service" | "other"; "iconUrl": string | unknown; "id": number; "name": string; "status": "candidate" | "org_verified" | "active" | "merged" | "deprecated"; } | { "assetType": "item" | "currency" | "ticket" | "reward" | "service" | "other"; "iconUrl": string | unknown; "id": number; "name": string; "status": "candidate" | "org_verified" | "active" | "merged" | "deprecated"; }; "game": { "id": number; "name": string; "slug": string; "source": "internal" | "steam"; "type": "game" | "activity"; } | { "id": number; "name": string; "slug": string; "source": "internal" | "steam"; "type": "game" | "activity"; }; "holder": { "character": { "id": number; "name": string; "slug": string | unknown; "vanity": string | unknown; } | { "id": number; "name": string; "slug": string | unknown; "vanity": string | unknown; }; "ref": string | unknown; "type": "character" | "org_treasury" | "market" | "external" | "custom"; }; "participantCharacterIds": Array<number>; "participantCount": number; "participants": Array<LedgerEventParticipant>; "recommendedRecipientCharacterIds": Array<number>; "requiresParticipantConfirmation": boolean; "settlementReadiness": { "canCreateFromReadyEvent": boolean; "canCreateSettlement": boolean; "canSettleEvent": boolean; "eventStatus": "open" | "ready_for_settlement" | "partially_settled" | "settled" | "cancelled"; "requiresParticipantConfirmation": boolean; }; };
 
 export type LedgerEventParticipant = { "character": LedgerEventParticipantCharacter; "characterId": number | unknown; "createdAt": string; "eventId": number; "id": number; "joinedAt": string | unknown; "leftAt": string | unknown; "roleLabel": string | unknown; "updatedAt": string; "weight": number; };
 
 export type LedgerEventParticipantCharacter = { "id": number; "name": string; "slug": string | unknown; "vanity": string | unknown; } | { "id": number; "name": string; "slug": string | unknown; "vanity": string | unknown; };
+
+export type LedgerSettlementWorkspaceResponse = { "availableCharacters": Array<LedgerWorkspaceCharacter>; "currentUserRole": "owner" | "admin" | "member"; "defaultPayerCharacterId": number | unknown; "defaultRecipientCharacterIds": Array<number>; "defaults": { "defaultAllocationMode": "equal" | "weight" | "manual"; "defaultFeeMode": "none" | "percent" | "fixed" | "rule"; "defaultSettlementUnit": LedgerSettlementDefaultUnit; "supportedAllocationModes": Array<"equal" | "weight" | "manual">; "supportedFeeModes": Array<"none" | "percent" | "fixed" | "rule">; }; "event": LedgerEventDetail; "participantCharacterIds": Array<number>; };
+
+export type LedgerWorkspaceCharacter = { "gameId": number | unknown; "id": number; "isActive": boolean; "name": string; "slug": string | unknown; "vanity": string | unknown; };
+
+export type LedgerSettlementDefaultUnit = { "assetKey": string; "assetType": "item" | "currency" | "ticket" | "reward" | "service" | "other"; "id": number; "name": string; "organizationId": number | unknown; "scope": "global" | "organization"; "status": "candidate" | "org_verified" | "active" | "merged" | "deprecated"; } | { "assetKey": string; "assetType": "item" | "currency" | "ticket" | "reward" | "service" | "other"; "id": number; "name": string; "organizationId": number | unknown; "scope": "global" | "organization"; "status": "candidate" | "org_verified" | "active" | "merged" | "deprecated"; };
 
 export type LedgerClaimableRecipientSummaryListResponse = { "recipients": Array<LedgerClaimableRecipientSummary>; };
 
@@ -284,8 +292,6 @@ export type LedgerSettlementListResponse = { "pagination": LedgerPagination; "se
 export type LedgerSettlement = { "allocationMode": "equal" | "weight" | "manual"; "createdAt": string; "createdByUserId": number | unknown; "decidedAt": string; "eventId": number | unknown; "feeAmount": number | unknown; "feeMode": "none" | "percent" | "fixed" | "rule"; "feePercent": number | unknown; "feeRuleKey": string | unknown; "grossAmount": number; "id": number; "netAmount": number; "notes": string | unknown; "organizationId": number; "participantExceptionConfirmed": boolean; "participantExceptionReason": string | unknown; "payerRef": string | unknown; "payerType": "character" | "org_treasury" | "external" | "custom"; "settlementKey": string; "settlementType": "sale" | "bonus" | "salary" | "reward" | "subsidy" | "adjustment"; "status": "draft" | "calculated" | "paying" | "paid" | "cancelled"; "title": string; "unitAssetId": number | unknown; "updatedAt": string; };
 
 export type LedgerSettlementDefaultsResponse = { "defaults": { "defaultAllocationMode": "equal" | "weight" | "manual"; "defaultFeeMode": "none" | "percent" | "fixed" | "rule"; "defaultSettlementUnit": LedgerSettlementDefaultUnit; "supportedAllocationModes": Array<"equal" | "weight" | "manual">; "supportedFeeModes": Array<"none" | "percent" | "fixed" | "rule">; }; "game": { "id": number; "name": string; "organizationDisplayName": string | unknown; "slug": string; "source": "internal" | "steam"; "type": "game" | "activity"; } | { "id": number; "name": string; "organizationDisplayName": string | unknown; "slug": string; "source": "internal" | "steam"; "type": "game" | "activity"; }; };
-
-export type LedgerSettlementDefaultUnit = { "assetKey": string; "assetType": "item" | "currency" | "ticket" | "reward" | "service" | "other"; "id": number; "name": string; "organizationId": number | unknown; "scope": "global" | "organization"; "status": "candidate" | "org_verified" | "active" | "merged" | "deprecated"; } | { "assetKey": string; "assetType": "item" | "currency" | "ticket" | "reward" | "service" | "other"; "id": number; "name": string; "organizationId": number | unknown; "scope": "global" | "organization"; "status": "candidate" | "org_verified" | "active" | "merged" | "deprecated"; };
 
 export type LedgerBatchClaimsResponse = { "allocationsProcessed": number; "claims": Array<LedgerSettlementClaim>; "message": string; "settlementsTouched": number; };
 

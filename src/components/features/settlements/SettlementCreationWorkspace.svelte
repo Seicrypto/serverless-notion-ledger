@@ -10,13 +10,8 @@
 	import { ensureAuthSession, getErrorMessage, isAuthenticatedSession, type AuthSession } from '../../../libs/api/auth/session.ts';
 	import { ensureMyOrganizationsCache } from '../../../libs/api/organizations/my-organizations-cache.ts';
 	import type { OrganizationCardResponse } from '../../../libs/api/organizations/organization-card.ts';
-	import {
-		ensureOrganizationManageCache,
-		type OrganizationManageCharacter,
-	} from '../../../libs/api/organizations/manage-workspace-cache.ts';
 	import { getOrganizationReference, resolveOrganizationQuery } from '../../../libs/organizations/reference.ts';
 	import { getLatestActiveOrganization, readPreferredOrganization, writePreferredOrganization } from '../../../libs/ledger/workspace-preferences.ts';
-	import { readSettlementDefaultsCache, writeSettlementDefaultsCache } from '../../../libs/settlements/settlement-defaults-cache.ts';
 	import {
 		getLatestSettlementCreationForOrganization,
 		loadRecentSettlementCreations,
@@ -33,6 +28,7 @@
 		CreateLedgerSettlementRequest,
 		LedgerEvent,
 		LedgerSettlementDefaultsResponse,
+		LedgerWorkspaceCharacter,
 		SettleLedgerEventRequest,
 	} from '../../../libs/api/openapi/generated/schema';
 
@@ -155,6 +151,7 @@
 	type PayerType = NonNullable<CreateLedgerSettlementRequest['payerType']>;
 	type AllocationMode = NonNullable<CreateLedgerSettlementRequest['allocationMode']>;
 	type FeeMode = NonNullable<CreateLedgerSettlementRequest['feeMode']>;
+	type WorkspaceRole = 'owner' | 'admin' | 'member';
 
 	const CREATE_TIMEOUT_MS = 20000;
 	const DEFAULT_EVENT_PAGE_LIMIT = 10;
@@ -195,7 +192,7 @@
 	export let labels: Labels;
 
 	let organizations: OrganizationCardResponse[] = [];
-	let organizationCharacters: OrganizationManageCharacter[] = [];
+	let organizationCharacters: LedgerWorkspaceCharacter[] = [];
 	let session: AuthSession | null = null;
 	let events: LedgerEvent[] = [];
 	let eventsLoading = false;
@@ -212,6 +209,9 @@
 	let defaultsLoading = false;
 	let defaultsError = '';
 	let defaults: LedgerSettlementDefaultsResponse | null = null;
+	let recipientLoadError = '';
+	let currentWorkspaceRole: WorkspaceRole | null = null;
+	let workspaceDefaultPayerCharacterId = '';
 
 	let recentSettlements: RecentSettlementCreationEntry[] = [];
 
@@ -261,6 +261,9 @@
 		defaultsLoading = false;
 		defaultsError = '';
 		defaults = null;
+		recipientLoadError = '';
+		currentWorkspaceRole = null;
+		workspaceDefaultPayerCharacterId = '';
 		title = '';
 		grossAmount = '';
 		netAmount = '';
@@ -361,8 +364,8 @@
 		return organizationCharacters.find((character) => String(character.id) === characterId) ?? null;
 	}
 
-	function getCharacterMetaLabel(character: OrganizationManageCharacter) {
-		return character.claimedBy?.displayName ?? labels.formPayerRefUnclaimedMeta;
+	function getCharacterMetaLabel(character: LedgerWorkspaceCharacter) {
+		return character.vanity ? `@${character.vanity}` : labels.formPayerRefUnclaimedMeta;
 	}
 
 	function syncPayerFromCharacterId(characterId: string) {
@@ -406,14 +409,19 @@
 	}
 
 	function getDefaultPayerCharacterId(gameId?: number | null) {
-		if (!isAuthenticatedSession(session) || typeof gameId !== 'number') {
+		if (workspaceDefaultPayerCharacterId) {
+			return workspaceDefaultPayerCharacterId;
+		}
+
+		if (typeof gameId !== 'number') {
 			return '';
 		}
 
-		const claimedByCurrentUser = organizationCharacters.find(
-			(character) => character.gameId === gameId && character.claimedBy?.userId === session.user.id,
+		return (
+			String(
+				organizationCharacters.find((character) => character.gameId === gameId)?.id ?? '',
+			) || ''
 		);
-		return claimedByCurrentUser ? String(claimedByCurrentUser.id) : '';
 	}
 
 	function haveSameCharacterSelection(left: string[], right: string[]) {
@@ -452,6 +460,7 @@
 			eventParticipantCharacterIds = [];
 			recipientCharacterIds = [];
 			recipientPickerValue = '';
+			recipientLoadError = '';
 			return;
 		}
 
@@ -466,45 +475,7 @@
 			payerType === 'character'
 				? findCharacterIdByNameForGame(payerRef, selectedEvent.gameId ?? null)
 				: '';
-		if (payerType === 'character' && isMemberRestrictedPayerSelection && selectedEvent.gameId) {
-			syncPayerFromCharacterId(getDefaultPayerCharacterId(selectedEvent.gameId));
-		}
-		if (selectedEvent.gameId && Number.isFinite(Number(selectedEvent.gameId))) {
-			void loadDefaults(Number(selectedEvent.gameId));
-		} else {
-			defaults = null;
-			defaultsError = '';
-			defaultsLoading = false;
-		}
-
-		void loadSelectedEventDetail(selectedEvent.id);
-	}
-
-	async function loadSelectedEventDetail(nextEventId: number) {
-		if (!organization) {
-			return;
-		}
-
-		try {
-			const response = await getApiAdapter().getOrganizationLedgerEvent(organization, nextEventId);
-			const participantIds = response.event.participants
-				.map((participant) =>
-					typeof participant.characterId === 'number' && Number.isFinite(participant.characterId)
-						? String(participant.characterId)
-						: '',
-				)
-				.filter(Boolean);
-
-			if (selectedEventId === String(nextEventId)) {
-				setRecipientsFromEventParticipants(participantIds);
-			}
-		} catch (error) {
-			devDebugError('settlements.event-detail', 'Failed to load event detail for recipients', {
-				organization,
-				eventId: nextEventId,
-				error,
-			});
-		}
+		void loadSettlementWorkspace(selectedEvent.id);
 	}
 
 	async function syncOrganizationContext() {
@@ -514,8 +485,6 @@
 
 		writePreferredOrganization(window.localStorage, organization);
 		resetWorkspaceState();
-		const manageSnapshot = await ensureOrganizationManageCache(organization);
-		organizationCharacters = manageSnapshot.characters;
 		const url = new URL(window.location.href);
 		url.searchParams.set('orgVanity', organization);
 		window.history.replaceState({}, '', url);
@@ -574,46 +543,56 @@
 		addRecipientCharacterId(event.detail.value);
 	}
 
-	function applyDefaults(response: LedgerSettlementDefaultsResponse) {
-		defaults = response;
-		allocationMode = response.defaults.defaultAllocationMode;
-		feeMode = response.defaults.defaultFeeMode;
-		unitAssetId = String(response.defaults.defaultSettlementUnit.id);
-		netAmount = calculateSettlementNetAmount({
-			grossAmount,
-			feeMode,
-			feePercent,
-			feeAmount,
-		});
-	}
-
-	async function loadDefaults(gameId?: number) {
+	async function loadSettlementWorkspace(nextEventId: number) {
 		if (!organization) {
 			return;
 		}
 
 		defaultsLoading = true;
 		defaultsError = '';
+		recipientLoadError = '';
 
 		try {
-			if (typeof window !== 'undefined') {
-				const cached = readSettlementDefaultsCache(window.sessionStorage, organization, gameId);
-				if (cached) {
-					applyDefaults(cached);
-					defaultsLoading = false;
-					return;
-				}
+			const response = await getApiAdapter().getOrganizationLedgerSettlementWorkspace(
+				organization,
+				nextEventId,
+			);
+			if (selectedEventId !== String(nextEventId)) {
+				return;
 			}
 
-			const response = await getApiAdapter().getOrganizationLedgerSettlementDefaults(organization, {
-				gameId,
-			});
-			applyDefaults(response);
-			if (typeof window !== 'undefined') {
-				writeSettlementDefaultsCache(window.sessionStorage, organization, response, gameId);
+			selectedEvent = response.event;
+			defaults = {
+				defaults: response.defaults,
+				game: response.event.game,
+			};
+			organizationCharacters = response.availableCharacters.filter((character) => character.isActive);
+			currentWorkspaceRole = response.currentUserRole;
+			workspaceDefaultPayerCharacterId = String(response.defaultPayerCharacterId ?? '');
+			setRecipientsFromEventParticipants(
+				response.defaultRecipientCharacterIds.map((characterId) => String(characterId)),
+			);
+			if (payerType === 'character') {
+				syncPayerFromCharacterId(workspaceDefaultPayerCharacterId);
 			}
+			allocationMode = response.defaults.defaultAllocationMode;
+			feeMode = response.defaults.defaultFeeMode;
+			unitAssetId = String(response.defaults.defaultSettlementUnit.id);
+			netAmount = calculateSettlementNetAmount({
+				grossAmount,
+				feeMode,
+				feePercent,
+				feeAmount,
+			});
 		} catch (error) {
+			defaults = null;
 			defaultsError = getErrorMessage(error, labels.errorCreateTitle);
+			recipientLoadError = getErrorMessage(error, labels.formRecipientsMismatchError);
+			devDebugError('settlements.workspace', 'Failed to load settlement workspace', {
+				organization,
+				eventId: nextEventId,
+				error,
+			});
 		} finally {
 			defaultsLoading = false;
 		}
@@ -635,25 +614,28 @@
 			});
 			hasAnyEvents = allEventsResponse.events.length > 0;
 
-			let preferredEvent: LedgerEvent | null = null;
-			if (eventId) {
-				try {
-					const response = await getApiAdapter().getOrganizationLedgerEvent(organization, eventId);
-					preferredEvent = response.event;
-				} catch {
-					// Fall back to the settleable event list if the direct event fetch is unavailable.
-				}
-			}
-
 			const response = await getApiAdapter().listOrganizationLedgerEvents(organization, {
 				statusGroup: 'unsettled',
 				fromOccurredAt: toRangeStartIso(eventQueryFromDate),
 				toOccurredAt: toRangeEndIso(eventQueryToDate),
+				include: 'participants_summary',
 				limit: eventQueryLimit,
 				offset: eventQueryOffset,
 				sortBy: 'occurredAt',
 				sortOrder: 'desc',
 			});
+			let preferredEvent: LedgerEvent | null = eventId
+				? response.events.find((entry) => entry.id === eventId) ?? null
+				: null;
+			if (!preferredEvent && eventId) {
+				try {
+					const workspaceResponse =
+						await getApiAdapter().getOrganizationLedgerSettlementWorkspace(organization, eventId);
+					preferredEvent = workspaceResponse.event;
+				} catch {
+					// Fall back to the settleable event list if the direct event fetch is unavailable.
+				}
+			}
 			eventsHasMore = response.pagination.hasMore;
 			events = preferredEvent
 				? [preferredEvent, ...response.events.filter((entry) => entry.id !== preferredEvent?.id)]
@@ -1007,21 +989,16 @@
 		updateSelectedEvent();
 	}
 
-	$: currentOrganizationRole = selectedOrganizationCard?.membership?.role ?? null;
-	$: isMemberRestrictedPayerSelection = currentOrganizationRole === 'member';
+	$: isMemberRestrictedPayerSelection = currentWorkspaceRole === 'member';
 	$: selectedPayerCharacter = getCharacterById(payerCharacterId);
 	$: selectedRecipientCharacters = recipientCharacterIds
 		.map((characterId) => getCharacterById(characterId))
-		.filter((character): character is OrganizationManageCharacter => Boolean(character));
+		.filter((character): character is LedgerWorkspaceCharacter => Boolean(character));
 	$: payerCharacterOptions = organizationCharacters
 		.filter((character) =>
 			typeof selectedEvent?.gameId === 'number' ? character.gameId === selectedEvent.gameId : true,
 		)
-		.filter((character) =>
-			isMemberRestrictedPayerSelection && isAuthenticatedSession(session)
-				? character.claimedBy?.userId === session.user.id
-				: true,
-		)
+		.filter((character) => character.isActive)
 		.map((character) => ({
 			value: String(character.id),
 			label: character.name,
@@ -1424,7 +1401,9 @@
 							items={recipientCharacterOptions}
 							on:change={handleRecipientCharacterChange}
 						/>
-						{#if hasRecipientMismatch}
+						{#if recipientLoadError}
+							<small class="warning-text">{recipientLoadError}</small>
+						{:else if hasRecipientMismatch}
 							<small class="warning-text">{labels.formRecipientsMismatchWarning}</small>
 						{:else}
 							<small>{labels.formRecipientsHint}</small>

@@ -83,6 +83,7 @@ export interface ListOrganizationLedgerEventsOptions {
 	fromOccurredAt?: string;
 	holderRef?: string;
 	holderType?: CreateLedgerEventRequest['holderType'];
+	include?: 'participants_summary';
 	limit?: number;
 	offset?: number;
 	sortBy?: 'occurredAt' | 'createdAt' | 'title' | 'updatedAt';
@@ -691,6 +692,13 @@ export class ApiAdapter {
 		return this.client.getOrganizationsByOrganizationLedgerSettlementDefaults({
 			pathParams: { organization: normalizeOrganizationReference(organization) },
 			query: options,
+		});
+	}
+
+	getOrganizationLedgerSettlementWorkspace(organization: OrganizationReference, eventId: number) {
+		return this.client.getOrganizationsByOrganizationLedgerSettlementsWorkspace({
+			pathParams: { organization: normalizeOrganizationReference(organization) },
+			query: { eventId },
 		});
 	}
 
