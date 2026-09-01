@@ -2,6 +2,7 @@
 	import { onMount } from 'svelte';
 
 	import GuildOptionPicker from '../../shared/GuildOptionPicker.svelte';
+	import SettlementAmountEditor from '../../shared/SettlementAmountEditor.svelte';
 	import TimeSelector from '../../shared/TimeSelector.svelte';
 	import RequestStatusDialog from '../org/RequestStatusDialog.svelte';
 	import { getApiAdapter } from '../../../libs/api/adapters/api.adapter.ts';
@@ -17,6 +18,11 @@
 		recordRecentSettlementCreation,
 		type RecentSettlementCreationEntry,
 	} from '../../../libs/settlements/recent-settlement-creations.ts';
+	import {
+		calculateSettlementNetAmount,
+		formatAmountDisplay,
+		parseAmountValue,
+	} from '../../../libs/ledger/settlement-amounts.ts';
 	import type {
 		CreateLedgerSettlementRequest,
 		LedgerEvent,
@@ -72,9 +78,12 @@
 		formTitleLabel: string;
 		formTitlePlaceholder: string;
 		formDecidedAtLabel: string;
+		formAmountLabel: string;
 		formGrossAmountLabel: string;
 		formNetAmountLabel: string;
-		formFeeModeLabel: string;
+		formFeeRuleSectionLabel: string;
+		formFeeRuleToggleLabel: string;
+		formFeeRuleHideLabel: string;
 		formFeePercentLabel: string;
 		formFeeAmountLabel: string;
 		formFeeRuleKeyLabel: string;
@@ -88,8 +97,6 @@
 		formNotesLabel: string;
 		formNotesPlaceholder: string;
 		formAutoNetHint: string;
-		formManualNetHint: string;
-		formUseAutoNetLabel: string;
 		submitLabel: string;
 		requiredHint: string;
 		optionalHint: string;
@@ -200,7 +207,6 @@
 	let settlementType: SettlementType = 'sale';
 	let allocationMode: AllocationMode = 'equal';
 	let notes = '';
-	let netAmountMode: 'auto' | 'manual' = 'auto';
 	let titleWasPrefilled = false;
 
 	let errors: Record<string, string> = {};
@@ -241,7 +247,6 @@
 		settlementType = 'sale';
 		allocationMode = 'equal';
 		notes = '';
-		netAmountMode = 'auto';
 		titleWasPrefilled = false;
 		errors = {};
 	}
@@ -297,14 +302,16 @@
 		return new Date(`${value}T23:59:59.999`).toISOString();
 	}
 
-	function parsePositiveNumber(value: string) {
-		const trimmed = value.trim();
-		if (!trimmed) {
-			return null;
+	function parsePositiveNumber(value: string | number | null | undefined) {
+		return parseAmountValue(value);
+	}
+
+	function hasNonEmptyValue(value: string | number | null | undefined) {
+		if (value === null || value === undefined) {
+			return false;
 		}
 
-		const parsed = Number(trimmed);
-		return Number.isFinite(parsed) && parsed >= 0 ? parsed : Number.NaN;
+		return typeof value === 'number' ? Number.isFinite(value) : value.trim().length > 0;
 	}
 
 	function mapEventHolderToPayerType(event: LedgerEvent): PayerType {
@@ -399,39 +406,17 @@
 		void syncOrganizationContext();
 	}
 
-	function recalculateNetAmount() {
-		if (netAmountMode === 'manual') {
-			return;
-		}
-
-		const gross = parsePositiveNumber(grossAmount);
-		if (gross === null || Number.isNaN(gross)) {
-			netAmount = '';
-			return;
-		}
-
-		let nextNet = gross;
-		if (feeMode === 'percent') {
-			const percent = parsePositiveNumber(feePercent);
-			if (percent !== null && !Number.isNaN(percent)) {
-				nextNet = gross - gross * (percent / 100);
-			}
-		} else if (feeMode === 'fixed' || feeMode === 'rule') {
-			const fee = parsePositiveNumber(feeAmount);
-			if (fee !== null && !Number.isNaN(fee)) {
-				nextNet = gross - fee;
-			}
-		}
-
-		netAmount = String(Math.max(0, Number(nextNet.toFixed(2))));
-	}
-
 	function applyDefaults(response: LedgerSettlementDefaultsResponse) {
 		defaults = response;
 		allocationMode = response.defaults.defaultAllocationMode;
 		feeMode = response.defaults.defaultFeeMode;
 		unitAssetId = String(response.defaults.defaultSettlementUnit.id);
-		recalculateNetAmount();
+		netAmount = calculateSettlementNetAmount({
+			grossAmount,
+			feeMode,
+			feePercent,
+			feeAmount,
+		});
 	}
 
 	async function loadDefaults(gameId?: number) {
@@ -599,7 +584,7 @@
 			}
 		}
 
-		if (unitAssetId.trim()) {
+		if (hasNonEmptyValue(unitAssetId)) {
 			const parsed = Number(unitAssetId);
 			if (!Number.isInteger(parsed) || parsed <= 0) {
 				nextErrors.unitAssetId = labels.validationNumber;
@@ -618,7 +603,7 @@
 			return labels.reusePreviousAmountEmpty;
 		}
 
-		return `${labels.reusePreviousAmountLabel} ${previous.payload.grossAmount}`;
+		return `${labels.reusePreviousAmountLabel} ${formatAmountDisplay(previous.payload.grossAmount)}`;
 	}
 
 	function usePreviousAmount() {
@@ -632,8 +617,30 @@
 		}
 
 		grossAmount = String(previous.payload.grossAmount);
-		netAmountMode = 'auto';
-		recalculateNetAmount();
+		netAmount = calculateSettlementNetAmount({
+			grossAmount,
+			feeMode,
+			feePercent,
+			feeAmount,
+		});
+	}
+
+	function handleAmountEditorChange(
+		event: CustomEvent<{
+			grossAmount: string;
+			netAmount: string;
+			feeMode: FeeMode;
+			feePercent: string;
+			feeAmount: string;
+			feeRuleKey: string;
+		}>,
+	) {
+		grossAmount = event.detail.grossAmount;
+		netAmount = event.detail.netAmount;
+		feeMode = event.detail.feeMode;
+		feePercent = event.detail.feePercent;
+		feeAmount = event.detail.feeAmount;
+		feeRuleKey = event.detail.feeRuleKey;
 	}
 
 	function openPendingDialog() {
@@ -696,13 +703,13 @@
 		if (payerRef.trim()) {
 			payload.payerRef = payerRef.trim();
 		}
-		if (unitAssetId.trim()) {
+		if (hasNonEmptyValue(unitAssetId)) {
 			payload.unitAssetId = Number(unitAssetId);
 		}
-		if (feeMode === 'percent' && feePercent.trim()) {
+		if (feeMode === 'percent' && hasNonEmptyValue(feePercent)) {
 			payload.feePercent = Number(feePercent);
 		}
-		if ((feeMode === 'fixed' || feeMode === 'rule') && feeAmount.trim()) {
+		if ((feeMode === 'fixed' || feeMode === 'rule') && hasNonEmptyValue(feeAmount)) {
 			payload.feeAmount = Number(feeAmount);
 		}
 		if (feeMode === 'rule' && feeRuleKey.trim()) {
@@ -783,7 +790,6 @@
 		updateSelectedEvent();
 	}
 
-	$: recalculateNetAmount();
 	$: selectedOrganizationCard = organization ? findOrganizationByReference(organization) : null;
 	$: organizationOptions = organizations.map((entry) => ({
 		value: getOrganizationReference(entry),
@@ -1020,76 +1026,49 @@
 						<small>{labels.requiredHint}</small>
 					</label>
 
-					<label class="settlement-field">
-						<span>{labels.formGrossAmountLabel}</span>
-						<input bind:value={grossAmount} type="number" min="0" step="0.01" inputmode="decimal" />
-						<small>{labels.requiredHint}</small>
-						{#if errors.grossAmount}<em>{errors.grossAmount}</em>{/if}
-					</label>
-
-					<label class="settlement-field">
-						<span>{labels.formNetAmountLabel}</span>
-						<input
-							bind:value={netAmount}
-							type="number"
-							min="0"
-							step="0.01"
-							inputmode="decimal"
-							on:input={() => {
-								netAmountMode = 'manual';
+					<div class="settlement-field settlement-field-wide">
+						<SettlementAmountEditor
+							grossAmount={grossAmount}
+							netAmount={netAmount}
+							feeMode={feeMode}
+							feePercent={feePercent}
+							feeAmount={feeAmount}
+							feeRuleKey={feeRuleKey}
+							labels={{
+								amountLabel: labels.formAmountLabel,
+								grossAmountLabel: labels.formGrossAmountLabel,
+								netAmountLabel: labels.formNetAmountLabel,
+								ruleSectionLabel: labels.formFeeRuleSectionLabel,
+								ruleToggleLabel: labels.formFeeRuleToggleLabel,
+								ruleHideLabel: labels.formFeeRuleHideLabel,
+								feeModeNone: labels.feeModeNone,
+								feeModePercent: labels.feeModePercent,
+								feeModeFixed: labels.feeModeFixed,
+								feeModeRule: labels.feeModeRule,
+								feePercentLabel: labels.formFeePercentLabel,
+								feeAmountLabel: labels.formFeeAmountLabel,
+								feeRuleKeyLabel: labels.formFeeRuleKeyLabel,
+								feeRuleKeyPlaceholder: labels.formFeeRuleKeyPlaceholder,
+								autoNetHint: labels.formAutoNetHint,
+								requiredHint: labels.requiredHint,
+								optionalHint: labels.optionalHint,
 							}}
+							errors={{
+								grossAmount: errors.grossAmount,
+								netAmount: errors.netAmount,
+								feePercent: errors.feePercent,
+								feeAmount: errors.feeAmount,
+								feeRuleKey: errors.feeRuleKey,
+							}}
+							on:change={handleAmountEditorChange}
 						/>
-						<small>{netAmountMode === 'auto' ? labels.formAutoNetHint : labels.formManualNetHint}</small>
-						{#if errors.netAmount}<em>{errors.netAmount}</em>{/if}
-					</label>
+					</div>
 
-					<div class="settlement-field settlement-field-actions">
+					<div class="settlement-field settlement-field-actions settlement-field-actions-inline">
 						<button type="button" class="secondary-button" on:click={usePreviousAmount}>
 							{getPreviousSettlementButtonLabel()}
 						</button>
-						<button type="button" class="secondary-button" on:click={() => {
-							netAmountMode = 'auto';
-							recalculateNetAmount();
-						}}>
-							{labels.formUseAutoNetLabel}
-						</button>
 					</div>
-
-					<label class="settlement-field">
-						<span>{labels.formFeeModeLabel}</span>
-						<select bind:value={feeMode}>
-							{#each Object.keys(feeModeLabels) as key}
-								<option value={key}>{labels[feeModeLabels[key as FeeMode]]}</option>
-							{/each}
-						</select>
-						<small>{labels.requiredHint}</small>
-					</label>
-
-					{#if feeMode === 'percent'}
-						<label class="settlement-field">
-							<span>{labels.formFeePercentLabel}</span>
-							<input bind:value={feePercent} type="number" min="0" step="0.01" inputmode="decimal" />
-							<small>{labels.optionalHint}</small>
-							{#if errors.feePercent}<em>{errors.feePercent}</em>{/if}
-						</label>
-					{/if}
-
-					{#if feeMode === 'fixed' || feeMode === 'rule'}
-						<label class="settlement-field">
-							<span>{labels.formFeeAmountLabel}</span>
-							<input bind:value={feeAmount} type="number" min="0" step="0.01" inputmode="decimal" />
-							<small>{labels.optionalHint}</small>
-							{#if errors.feeAmount}<em>{errors.feeAmount}</em>{/if}
-						</label>
-					{/if}
-
-					{#if feeMode === 'rule'}
-						<label class="settlement-field">
-							<span>{labels.formFeeRuleKeyLabel}</span>
-							<input bind:value={feeRuleKey} type="text" maxlength="120" placeholder={labels.formFeeRuleKeyPlaceholder} />
-							<small>{labels.optionalHint}</small>
-						</label>
-					{/if}
 
 					<label class="settlement-field">
 						<span>{labels.formUnitAssetIdLabel}</span>
