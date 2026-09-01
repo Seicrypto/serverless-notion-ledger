@@ -2,6 +2,7 @@
 	import { onMount } from 'svelte';
 
 	import GuildOptionPicker from '../../shared/GuildOptionPicker.svelte';
+	import SearchSelect from '../../shared/SearchSelect.svelte';
 	import SettlementAmountEditor from '../../shared/SettlementAmountEditor.svelte';
 	import TimeSelector from '../../shared/TimeSelector.svelte';
 	import RequestStatusDialog from '../org/RequestStatusDialog.svelte';
@@ -9,6 +10,10 @@
 	import { ensureAuthSession, getErrorMessage, isAuthenticatedSession, type AuthSession } from '../../../libs/api/auth/session.ts';
 	import { ensureMyOrganizationsCache } from '../../../libs/api/organizations/my-organizations-cache.ts';
 	import type { OrganizationCardResponse } from '../../../libs/api/organizations/organization-card.ts';
+	import {
+		ensureOrganizationManageCache,
+		type OrganizationManageCharacter,
+	} from '../../../libs/api/organizations/manage-workspace-cache.ts';
 	import { getOrganizationReference, resolveOrganizationQuery } from '../../../libs/organizations/reference.ts';
 	import { getLatestActiveOrganization, readPreferredOrganization, writePreferredOrganization } from '../../../libs/ledger/workspace-preferences.ts';
 	import { readSettlementDefaultsCache, writeSettlementDefaultsCache } from '../../../libs/settlements/settlement-defaults-cache.ts';
@@ -23,6 +28,7 @@
 		formatAmountDisplay,
 		parseAmountValue,
 	} from '../../../libs/ledger/settlement-amounts.ts';
+	import { devDebugError, devDebugLog } from '../../../libs/runtime/dev-debug.ts';
 	import type {
 		CreateLedgerSettlementRequest,
 		LedgerEvent,
@@ -92,6 +98,12 @@
 		formPayerTypeLabel: string;
 		formPayerRefLabel: string;
 		formPayerRefPlaceholder: string;
+		formPayerRefEmpty: string;
+		formPayerRefHint: string;
+		formPayerRefUnclaimedMeta: string;
+		formPayerRefSelectedLabel: string;
+		formPayerRefAddLabel: string;
+		formPayerRefChangeLabel: string;
 		formSettlementTypeLabel: string;
 		formAllocationModeLabel: string;
 		formNotesLabel: string;
@@ -174,6 +186,7 @@
 	export let labels: Labels;
 
 	let organizations: OrganizationCardResponse[] = [];
+	let organizationCharacters: OrganizationManageCharacter[] = [];
 	let session: AuthSession | null = null;
 	let events: LedgerEvent[] = [];
 	let eventsLoading = false;
@@ -204,6 +217,7 @@
 	let unitAssetId = '';
 	let payerType: PayerType = 'character';
 	let payerRef = '';
+	let payerCharacterId = '';
 	let settlementType: SettlementType = 'sale';
 	let allocationMode: AllocationMode = 'equal';
 	let notes = '';
@@ -244,6 +258,7 @@
 		unitAssetId = '';
 		payerType = 'character';
 		payerRef = '';
+		payerCharacterId = '';
 		settlementType = 'sale';
 		allocationMode = 'equal';
 		notes = '';
@@ -327,6 +342,45 @@
 		}
 	}
 
+	function getCharacterById(characterId: string) {
+		return organizationCharacters.find((character) => String(character.id) === characterId) ?? null;
+	}
+
+	function getCharacterMetaLabel(character: OrganizationManageCharacter) {
+		return character.claimedBy?.displayName ?? labels.formPayerRefUnclaimedMeta;
+	}
+
+	function syncPayerFromCharacterId(characterId: string) {
+		payerCharacterId = characterId;
+		payerRef = getCharacterById(characterId)?.name ?? '';
+	}
+
+	function findCharacterIdByNameForGame(name: string, gameId?: number | null) {
+		const trimmed = name.trim();
+		if (!trimmed) {
+			return '';
+		}
+
+		return String(
+			organizationCharacters.find(
+				(character) =>
+					character.name === trimmed &&
+					(typeof gameId !== 'number' || character.gameId === gameId),
+			)?.id ?? '',
+		);
+	}
+
+	function getDefaultPayerCharacterId(gameId?: number | null) {
+		if (!isAuthenticatedSession(session) || typeof gameId !== 'number') {
+			return '';
+		}
+
+		const claimedByCurrentUser = organizationCharacters.find(
+			(character) => character.gameId === gameId && character.claimedBy?.userId === session.user.id,
+		);
+		return claimedByCurrentUser ? String(claimedByCurrentUser.id) : '';
+	}
+
 	function updateSelectedEvent() {
 		selectedEvent = events.find((event) => String(event.id) === selectedEventId) ?? null;
 		if (!selectedEvent) {
@@ -340,6 +394,13 @@
 
 		payerType = mapEventHolderToPayerType(selectedEvent);
 		payerRef = typeof selectedEvent.holderRef === 'string' ? selectedEvent.holderRef : '';
+		payerCharacterId =
+			payerType === 'character'
+				? findCharacterIdByNameForGame(payerRef, selectedEvent.gameId ?? null)
+				: '';
+		if (payerType === 'character' && isMemberRestrictedPayerSelection && selectedEvent.gameId) {
+			syncPayerFromCharacterId(getDefaultPayerCharacterId(selectedEvent.gameId));
+		}
 		if (selectedEvent.gameId && Number.isFinite(Number(selectedEvent.gameId))) {
 			void loadDefaults(Number(selectedEvent.gameId));
 		} else {
@@ -356,6 +417,8 @@
 
 		writePreferredOrganization(window.localStorage, organization);
 		resetWorkspaceState();
+		const manageSnapshot = await ensureOrganizationManageCache(organization);
+		organizationCharacters = manageSnapshot.characters;
 		const url = new URL(window.location.href);
 		url.searchParams.set('orgVanity', organization);
 		window.history.replaceState({}, '', url);
@@ -404,6 +467,10 @@
 
 		organization = event.detail.value;
 		void syncOrganizationContext();
+	}
+
+	function handlePayerCharacterChange(event: CustomEvent<{ value: string }>) {
+		syncPayerFromCharacterId(event.detail.value);
 	}
 
 	function applyDefaults(response: LedgerSettlementDefaultsResponse) {
@@ -548,6 +615,10 @@
 
 		if (!selectedEventId) {
 			nextErrors.eventId = labels.validationRequired;
+		}
+
+		if (payerType === 'character' && !payerCharacterId) {
+			nextErrors.payerRef = labels.validationRequired;
 		}
 
 		if (!title.trim()) {
@@ -757,13 +828,32 @@
 					settlePayload.feeRuleKey = payload.feeRuleKey;
 				}
 
-				await getApiAdapter().settleOrganizationLedgerEvent(
+				devDebugLog('settlements.submit', 'Submitting settle event payload', {
+					organization,
+					eventId: Number(selectedEventId),
+					sourceEventStatus: selectedEvent.status,
+					payload: settlePayload,
+				});
+				const response = await getApiAdapter().settleOrganizationLedgerEvent(
 					organization,
 					Number(selectedEventId),
 					settlePayload,
 				);
+				devDebugLog('settlements.submit', 'Received settle event response', {
+					organization,
+					eventId: Number(selectedEventId),
+					response,
+				});
 			} else {
-				await getApiAdapter().createOrganizationLedgerSettlement(organization, payload);
+				devDebugLog('settlements.submit', 'Submitting settlement payload', {
+					organization,
+					payload,
+				});
+				const response = await getApiAdapter().createOrganizationLedgerSettlement(organization, payload);
+				devDebugLog('settlements.submit', 'Received settlement response', {
+					organization,
+					response,
+				});
 			}
 			if (timedOut) {
 				return;
@@ -780,6 +870,13 @@
 			}
 
 			window.clearTimeout(timeoutId);
+			devDebugError('settlements.submit', 'Settlement submission failed', {
+				organization,
+				selectedEventId,
+				selectedEventStatus: selectedEvent?.status ?? null,
+				payload,
+				error,
+			});
 			openErrorDialog(getErrorMessage(error, labels.errorCreateTitle));
 		} finally {
 			isSubmitting = false;
@@ -790,6 +887,23 @@
 		updateSelectedEvent();
 	}
 
+	$: currentOrganizationRole = selectedOrganizationCard?.membership?.role ?? null;
+	$: isMemberRestrictedPayerSelection = currentOrganizationRole === 'member';
+	$: selectedPayerCharacter = getCharacterById(payerCharacterId);
+	$: payerCharacterOptions = organizationCharacters
+		.filter((character) =>
+			typeof selectedEvent?.gameId === 'number' ? character.gameId === selectedEvent.gameId : true,
+		)
+		.filter((character) =>
+			isMemberRestrictedPayerSelection && isAuthenticatedSession(session)
+				? character.claimedBy?.userId === session.user.id
+				: true,
+		)
+		.map((character) => ({
+			value: String(character.id),
+			label: character.name,
+			metaLabel: getCharacterMetaLabel(character),
+		}));
 	$: selectedOrganizationCard = organization ? findOrganizationByReference(organization) : null;
 	$: organizationOptions = organizations.map((entry) => ({
 		value: getOrganizationReference(entry),
@@ -797,6 +911,12 @@
 		metaLabel: entry.vanity ? `@${entry.vanity}` : `${entry.stats.memberCount} members`,
 		iconUrl: entry.iconUrl,
 	}));
+	$: if (payerType === 'character' && isMemberRestrictedPayerSelection && selectedEvent?.gameId) {
+		const defaultCharacterId = getDefaultPayerCharacterId(selectedEvent.gameId);
+		if (defaultCharacterId && payerCharacterId !== defaultCharacterId) {
+			syncPayerFromCharacterId(defaultCharacterId);
+		}
+	}
 
 	onMount(() => {
 		decidedAt = toLocalDateTimeValue(new Date());
@@ -1064,19 +1184,6 @@
 						/>
 					</div>
 
-					<div class="settlement-field settlement-field-actions settlement-field-actions-inline">
-						<button type="button" class="secondary-button" on:click={usePreviousAmount}>
-							{getPreviousSettlementButtonLabel()}
-						</button>
-					</div>
-
-					<label class="settlement-field">
-						<span>{labels.formUnitAssetIdLabel}</span>
-						<input bind:value={unitAssetId} type="number" min="1" step="1" inputmode="numeric" />
-						<small>{labels.optionalHint}</small>
-						{#if errors.unitAssetId}<em>{errors.unitAssetId}</em>{/if}
-					</label>
-
 					<label class="settlement-field">
 						<span>{labels.formAllocationModeLabel}</span>
 						<select bind:value={allocationMode}>
@@ -1099,8 +1206,50 @@
 
 					<label class="settlement-field">
 						<span>{labels.formPayerRefLabel}</span>
-						<input bind:value={payerRef} type="text" maxlength="120" placeholder={labels.formPayerRefPlaceholder} />
-						<small>{labels.optionalHint}</small>
+						{#if payerType === 'character'}
+							{#if selectedPayerCharacter}
+								<div class="settlement-selected-character">
+									<span>{labels.formPayerRefSelectedLabel}</span>
+									<button
+										type="button"
+										class="settlement-selected-character-chip"
+										disabled={isMemberRestrictedPayerSelection}
+										on:click={() => {
+											if (isMemberRestrictedPayerSelection) {
+												return;
+											}
+											payerCharacterId = '';
+											payerRef = '';
+										}}
+									>
+										<strong>{selectedPayerCharacter.name}</strong>
+										<small>{getCharacterMetaLabel(selectedPayerCharacter)}</small>
+										<b aria-hidden="true">×</b>
+									</button>
+								</div>
+							{/if}
+							{#if !isMemberRestrictedPayerSelection}
+								<SearchSelect
+									value={payerCharacterId}
+									ariaLabel={labels.formPayerRefLabel}
+									placeholder={labels.formPayerRefPlaceholder}
+									searchPlaceholder={labels.formPayerRefPlaceholder}
+									emptyLabel={labels.formPayerRefEmpty}
+									disabled={!organization || eventsLoading || !selectedEvent?.gameId}
+									error={Boolean(errors.payerRef)}
+									triggerMode="button"
+									buttonIdleLabel={labels.formPayerRefAddLabel}
+									buttonActiveLabel={labels.formPayerRefChangeLabel}
+									items={payerCharacterOptions}
+									on:change={handlePayerCharacterChange}
+								/>
+							{/if}
+							<small>{labels.formPayerRefHint}</small>
+						{:else}
+							<input bind:value={payerRef} type="text" maxlength="120" placeholder={labels.formPayerRefPlaceholder} />
+							<small>{labels.optionalHint}</small>
+						{/if}
+						{#if errors.payerRef}<em>{errors.payerRef}</em>{/if}
 					</label>
 
 					<label class="settlement-field settlement-field-wide">
@@ -1286,6 +1435,50 @@
 		font-style: normal;
 		font-size: 0.92rem;
 		color: #c24e4e;
+	}
+
+	.settlement-selected-character {
+		display: grid;
+		gap: 10px;
+	}
+
+	.settlement-selected-character > span {
+		font-size: 0.84rem;
+		font-weight: 700;
+		color: var(--text-soft);
+	}
+
+	.settlement-selected-character-chip {
+		width: 100%;
+		padding: 12px 14px;
+		border-radius: 18px;
+		border: 1px solid color-mix(in srgb, var(--accent) 12%, var(--line));
+		background: color-mix(in srgb, var(--surface-strong) 82%, white);
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 12px;
+		text-align: left;
+		cursor: pointer;
+	}
+
+	.settlement-selected-character-chip strong,
+	.settlement-selected-character-chip small,
+	.settlement-selected-character-chip b {
+		display: block;
+	}
+
+	.settlement-selected-character-chip strong {
+		color: var(--text-main);
+	}
+
+	.settlement-selected-character-chip small {
+		color: var(--text-soft);
+	}
+
+	.settlement-selected-character-chip b {
+		font-size: 1rem;
+		color: var(--text-soft);
 	}
 
 	.primary-button,
