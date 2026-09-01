@@ -23,6 +23,7 @@
 		formatAmountDisplay,
 		parseAmountValue,
 	} from '../../../libs/ledger/settlement-amounts.ts';
+	import { devDebugError, devDebugLog } from '../../../libs/runtime/dev-debug.ts';
 	import type {
 		CreateLedgerSettlementRequest,
 		LedgerEvent,
@@ -757,13 +758,32 @@
 					settlePayload.feeRuleKey = payload.feeRuleKey;
 				}
 
-				await getApiAdapter().settleOrganizationLedgerEvent(
+				devDebugLog('settlements.submit', 'Submitting settle event payload', {
+					organization,
+					eventId: Number(selectedEventId),
+					sourceEventStatus: selectedEvent.status,
+					payload: settlePayload,
+				});
+				const response = await getApiAdapter().settleOrganizationLedgerEvent(
 					organization,
 					Number(selectedEventId),
 					settlePayload,
 				);
+				devDebugLog('settlements.submit', 'Received settle event response', {
+					organization,
+					eventId: Number(selectedEventId),
+					response,
+				});
 			} else {
-				await getApiAdapter().createOrganizationLedgerSettlement(organization, payload);
+				devDebugLog('settlements.submit', 'Submitting settlement payload', {
+					organization,
+					payload,
+				});
+				const response = await getApiAdapter().createOrganizationLedgerSettlement(organization, payload);
+				devDebugLog('settlements.submit', 'Received settlement response', {
+					organization,
+					response,
+				});
 			}
 			if (timedOut) {
 				return;
@@ -780,6 +800,13 @@
 			}
 
 			window.clearTimeout(timeoutId);
+			devDebugError('settlements.submit', 'Settlement submission failed', {
+				organization,
+				selectedEventId,
+				selectedEventStatus: selectedEvent?.status ?? null,
+				payload,
+				error,
+			});
 			openErrorDialog(getErrorMessage(error, labels.errorCreateTitle));
 		} finally {
 			isSubmitting = false;

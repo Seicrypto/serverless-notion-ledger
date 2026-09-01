@@ -10,6 +10,7 @@
 	import { recordRecentClaimCreation } from '../../../libs/claims/recent-claim-creations.ts';
 	import { getLatestActiveOrganization, readPreferredOrganization, writePreferredOrganization } from '../../../libs/ledger/workspace-preferences.ts';
 	import { getOrganizationReference, resolveOrganizationQuery } from '../../../libs/organizations/reference.ts';
+	import { devDebugError, devDebugLog } from '../../../libs/runtime/dev-debug.ts';
 	import type {
 		CreateLedgerBatchClaimsRequest,
 		LedgerClaimableRecipientAllocation,
@@ -626,6 +627,17 @@
 			return;
 		}
 
+		const payload: CreateLedgerBatchClaimsRequest = {
+			claimedAt: new Date(claimedAt).toISOString(),
+			items: selectedItems.map(({ allocation, amount }) => ({
+				settlementAllocationId: allocation.allocationId,
+				amount,
+				claimedByCharacterId: allocation.ownerCharacterId,
+			})),
+			method,
+			notes: notes.trim() || undefined,
+		};
+
 		isSubmitting = true;
 		dialogOpen = true;
 		dialogState = 'pending';
@@ -635,19 +647,20 @@
 		dialogSecondaryAction = null;
 
 		try {
-			await withTimeout(
-				getApiAdapter().createOrganizationLedgerBatchClaims(organization, {
-					claimedAt: new Date(claimedAt).toISOString(),
-					items: selectedItems.map(({ allocation, amount }) => ({
-						settlementAllocationId: allocation.allocationId,
-						amount,
-						claimedByCharacterId: allocation.ownerCharacterId,
-					})),
-					method,
-					notes: notes.trim() || undefined,
-				}),
+			devDebugLog('claims.submit', 'Submitting batch claim payload', {
+				organization,
+				recipientCharacterId: currentDetail.character.id,
+				payload,
+			});
+			const response = await withTimeout(
+				getApiAdapter().createOrganizationLedgerBatchClaims(organization, payload),
 				SUBMIT_TIMEOUT_MS,
 			);
+			devDebugLog('claims.submit', 'Received batch claim response', {
+				organization,
+				recipientCharacterId: currentDetail.character.id,
+				response,
+			});
 
 			dialogState = 'success';
 			dialogTitle = labels.successSubmitTitle;
@@ -666,6 +679,12 @@
 			detailCache = new Map();
 			await loadRecipients({ keepSelection: true });
 		} catch (error) {
+			devDebugError('claims.submit', 'Batch claim submission failed', {
+				organization,
+				recipientCharacterId: currentDetail.character.id,
+				payload,
+				error,
+			});
 			dialogState = 'error';
 			dialogTitle = labels.errorSubmitTitle;
 			dialogMessage = error instanceof Error && error.message === 'timeout'
