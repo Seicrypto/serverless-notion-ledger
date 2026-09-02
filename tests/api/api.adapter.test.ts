@@ -90,6 +90,12 @@ function createMockClient() {
 			response('postOrganizationsByOrganizationMembersByMemberIdApprove', payload),
 		postOrganizationsByOrganizationMembersByMemberIdReject: (payload) =>
 			response('postOrganizationsByOrganizationMembersByMemberIdReject', payload),
+		postOrganizationsByOrganizationMembersByMemberIdCancel: (payload) =>
+			response('postOrganizationsByOrganizationMembersByMemberIdCancel', payload),
+		postOrganizationsByOrganizationMembersByMemberIdLeave: (payload) =>
+			response('postOrganizationsByOrganizationMembersByMemberIdLeave', payload),
+		postOrganizationsByOrganizationMembersByMemberIdRemove: (payload) =>
+			response('postOrganizationsByOrganizationMembersByMemberIdRemove', payload),
 		postOrganizationsByOrganizationMembersByMemberIdAppointAdmin: (payload) =>
 			response('postOrganizationsByOrganizationMembersByMemberIdAppointAdmin', payload),
 		postOrganizationsByOrganizationMembersByMemberIdRemoveAdmin: (payload) =>
@@ -285,6 +291,9 @@ test('ApiAdapter maps organization operations to generated client methods', asyn
 	});
 	await adapter.approveOrganizationMember('demo-guild', 88);
 	await adapter.rejectOrganizationMember('demo-guild', 89);
+	await adapter.cancelOrganizationMember('demo-guild', 94);
+	await adapter.leaveOrganization('demo-guild', 95);
+	await adapter.removeOrganizationMember('demo-guild', 96);
 	await adapter.appointOrganizationMemberAdmin('demo-guild', 90);
 	await adapter.removeOrganizationMemberAdmin('demo-guild', 91);
 	await adapter.acceptOrganizationInvite('demo-guild', 92);
@@ -501,6 +510,18 @@ test('ApiAdapter maps organization operations to generated client methods', asyn
 		{
 			method: 'postOrganizationsByOrganizationMembersByMemberIdReject',
 			payload: { pathParams: { organization: 'demo-guild', memberId: 89 } },
+		},
+		{
+			method: 'postOrganizationsByOrganizationMembersByMemberIdCancel',
+			payload: { pathParams: { organization: 'demo-guild', memberId: 94 } },
+		},
+		{
+			method: 'postOrganizationsByOrganizationMembersByMemberIdLeave',
+			payload: { pathParams: { organization: 'demo-guild', memberId: 95 } },
+		},
+		{
+			method: 'postOrganizationsByOrganizationMembersByMemberIdRemove',
+			payload: { pathParams: { organization: 'demo-guild', memberId: 96 } },
 		},
 		{
 			method: 'postOrganizationsByOrganizationMembersByMemberIdAppointAdmin',

@@ -141,6 +141,8 @@ export type CreateCharacterClaimRequestResponse = { "character": OrganizationCha
 
 export type CreateCharacterClaimRequest = { "memberId"?: number; "userId"?: number; };
 
+export type AssignOrganizationCharacterRequest = { "memberId"?: number; "userId"?: number; };
+
 export type OrganizationMembersResponse = { "members": Array<OrganizationMember>; };
 
 export type OrganizationMember = { "approvedAt": string | unknown; "createdAt": string; "id": number; "joinedAt": string; "organizationId": number; "role": "owner" | "admin" | "member"; "status": "pending" | "active" | "left" | "removed"; "userId": number; };

@@ -71,6 +71,7 @@ import type {
 	OrganizationCharacterClaimRequest,
 	CreateCharacterClaimRequestResponse,
 	CreateCharacterClaimRequest,
+	AssignOrganizationCharacterRequest,
 	OrganizationMembersResponse,
 	OrganizationMember,
 	OrganizationManagementCharactersResponse,
@@ -221,7 +222,9 @@ export const operationPaths = {
 	deleteOrganizationsByOrganizationCharactersByCharacterId: "/organizations/{organization}/characters/{characterId}",
 	patchOrganizationsByOrganizationCharactersByCharacterIdClaim: "/organizations/{organization}/characters/{characterId}/claim",
 	postOrganizationsByOrganizationCharactersByCharacterIdClaimRequest: "/organizations/{organization}/characters/{characterId}/claim-request",
+	postOrganizationsByOrganizationCharactersByCharacterIdAssign: "/organizations/{organization}/characters/{characterId}/assign",
 	postOrganizationsByOrganizationCharactersByCharacterIdUnclaim: "/organizations/{organization}/characters/{characterId}/unclaim",
+	postOrganizationsByOrganizationCharactersByCharacterIdUnassign: "/organizations/{organization}/characters/{characterId}/unassign",
 	getOrganizationsByOrganizationMembers: "/organizations/{organization}/members",
 	postOrganizationsByOrganizationMembers: "/organizations/{organization}/members",
 	getOrganizationsByOrganizationManagementCharacters: "/organizations/{organization}/management/characters",
@@ -236,10 +239,16 @@ export const operationPaths = {
 	postOrganizationsByOrganizationMembersApply: "/organizations/{organization}/members/apply",
 	postOrganizationsByOrganizationMembersByMemberIdApprove: "/organizations/{organization}/members/{memberId}/approve",
 	postOrganizationsByOrganizationMembersByMemberIdReject: "/organizations/{organization}/members/{memberId}/reject",
+	postOrganizationsByOrganizationMembersByMemberIdCancel: "/organizations/{organization}/members/{memberId}/cancel",
+	postOrganizationsByOrganizationMembersByMemberIdLeave: "/organizations/{organization}/members/{memberId}/leave",
+	postOrganizationsByOrganizationMembersByMemberIdRemove: "/organizations/{organization}/members/{memberId}/remove",
 	postOrganizationsByOrganizationMembersByMemberIdAppointAdmin: "/organizations/{organization}/members/{memberId}/appoint-admin",
 	postOrganizationsByOrganizationMembersByMemberIdRemoveAdmin: "/organizations/{organization}/members/{memberId}/remove-admin",
 	postOrganizationsByOrganizationMembersByMemberIdAcceptInvite: "/organizations/{organization}/members/{memberId}/accept-invite",
 	postOrganizationsByOrganizationMembersByMemberIdDeclineInvite: "/organizations/{organization}/members/{memberId}/decline-invite",
+	postOrganizationsByOrganizationCharacterClaimRequestsByRequestIdAccept: "/organizations/{organization}/character-claim-requests/{requestId}/accept",
+	postOrganizationsByOrganizationCharacterClaimRequestsByRequestIdDecline: "/organizations/{organization}/character-claim-requests/{requestId}/decline",
+	postOrganizationsByOrganizationCharacterClaimRequestsByRequestIdCancel: "/organizations/{organization}/character-claim-requests/{requestId}/cancel",
 	getOrganizationsCurrent: "/organizations/current",
 	getOrganizationsCurrentMembers: "/organizations/current/members",
 	postOrganizationsByOrganizationAssets: "/organizations/{organization}/assets",
@@ -325,7 +334,9 @@ export type ApiOperations = {
 	deleteOrganizationsByOrganizationCharactersByCharacterId: { pathParams: { "characterId": number; "organization": string; }; response: DeleteOrganizationCharacterResponse; };
 	patchOrganizationsByOrganizationCharactersByCharacterIdClaim: { pathParams: { "characterId": number; "organization": string; }; body: OrganizationCharacterClaimRequest; response: OrganizationCharacterClaimResponse; };
 	postOrganizationsByOrganizationCharactersByCharacterIdClaimRequest: { pathParams: { "characterId": number; "organization": string; }; body: CreateCharacterClaimRequest; response: CreateCharacterClaimRequestResponse; };
+	postOrganizationsByOrganizationCharactersByCharacterIdAssign: { pathParams: { "characterId": number; "organization": string; }; body: AssignOrganizationCharacterRequest; response: OrganizationCharacterClaimResponse; };
 	postOrganizationsByOrganizationCharactersByCharacterIdUnclaim: { pathParams: { "characterId": number; "organization": string; }; response: OrganizationCharacterClaimResponse; };
+	postOrganizationsByOrganizationCharactersByCharacterIdUnassign: { pathParams: { "characterId": number; "organization": string; }; response: OrganizationCharacterClaimResponse; };
 	getOrganizationsByOrganizationMembers: { pathParams: { "organization": string; }; response: OrganizationMembersResponse; };
 	postOrganizationsByOrganizationMembers: { pathParams: { "organization": string; }; body: AddOrganizationMemberRequest; response: OrganizationMemberWithCharacterResponse; };
 	getOrganizationsByOrganizationManagementCharacters: { pathParams: { "organization": string; }; response: OrganizationManagementCharactersResponse; };
@@ -340,10 +351,16 @@ export type ApiOperations = {
 	postOrganizationsByOrganizationMembersApply: { pathParams: { "organization": string; }; body: ApplyOrganizationMemberRequest; response: OrganizationMemberWithCharacterResponse; };
 	postOrganizationsByOrganizationMembersByMemberIdApprove: { pathParams: { "memberId": number; "organization": string; }; response: OrganizationMemberResponse; };
 	postOrganizationsByOrganizationMembersByMemberIdReject: { pathParams: { "memberId": number; "organization": string; }; response: OrganizationMemberResponse; };
+	postOrganizationsByOrganizationMembersByMemberIdCancel: { pathParams: { "memberId": number; "organization": string; }; response: OrganizationMemberResponse; };
+	postOrganizationsByOrganizationMembersByMemberIdLeave: { pathParams: { "memberId": number; "organization": string; }; response: OrganizationMemberResponse; };
+	postOrganizationsByOrganizationMembersByMemberIdRemove: { pathParams: { "memberId": number; "organization": string; }; response: OrganizationMemberResponse; };
 	postOrganizationsByOrganizationMembersByMemberIdAppointAdmin: { pathParams: { "memberId": number; "organization": string; }; response: OrganizationMemberResponse; };
 	postOrganizationsByOrganizationMembersByMemberIdRemoveAdmin: { pathParams: { "memberId": number; "organization": string; }; response: OrganizationMemberResponse; };
 	postOrganizationsByOrganizationMembersByMemberIdAcceptInvite: { pathParams: { "memberId": number; "organization": string; }; response: OrganizationMemberResponse; };
 	postOrganizationsByOrganizationMembersByMemberIdDeclineInvite: { pathParams: { "memberId": number; "organization": string; }; response: OrganizationMemberResponse; };
+	postOrganizationsByOrganizationCharacterClaimRequestsByRequestIdAccept: { pathParams: { "organization": string; "requestId": number; }; response: OrganizationCharacterClaimResponse; };
+	postOrganizationsByOrganizationCharacterClaimRequestsByRequestIdDecline: { pathParams: { "organization": string; "requestId": number; }; response: OrganizationCharacterClaimResponse; };
+	postOrganizationsByOrganizationCharacterClaimRequestsByRequestIdCancel: { pathParams: { "organization": string; "requestId": number; }; response: OrganizationCharacterClaimResponse; };
 	getOrganizationsCurrent: { response: void; };
 	getOrganizationsCurrentMembers: { response: void; };
 	postOrganizationsByOrganizationAssets: { pathParams: { "organization": string; }; body: CreateAssetRequest; response: CreateAssetResponse; };
@@ -1169,12 +1186,47 @@ export class OpenApiClient {
 	}
 
 	/**
+	 * POST /organizations/{organization}/characters/{characterId}/assign
+	 */
+	async postOrganizationsByOrganizationCharactersByCharacterIdAssign(options: RequestOptions<ApiOperations['postOrganizationsByOrganizationCharactersByCharacterIdAssign']> = {}): Promise<ApiOperations['postOrganizationsByOrganizationCharactersByCharacterIdAssign']['response']> {
+		const body = options.body === undefined ? undefined : JSON.stringify(options.body);
+
+		return this.request<ApiOperations['postOrganizationsByOrganizationCharactersByCharacterIdAssign']['response']>({
+			method: "POST",
+			path: operationPaths.postOrganizationsByOrganizationCharactersByCharacterIdAssign,
+			pathParams: options.pathParams,
+			query: options.query,
+			headers: {
+			...(options.body === undefined ? {} : { 'content-type': 'application/json' }),
+				...options.headers,
+			},
+			body,
+		});
+	}
+
+	/**
 	 * POST /organizations/{organization}/characters/{characterId}/unclaim
 	 */
 	async postOrganizationsByOrganizationCharactersByCharacterIdUnclaim(options: RequestOptions<ApiOperations['postOrganizationsByOrganizationCharactersByCharacterIdUnclaim']> = {}): Promise<ApiOperations['postOrganizationsByOrganizationCharactersByCharacterIdUnclaim']['response']> {
 		return this.request<ApiOperations['postOrganizationsByOrganizationCharactersByCharacterIdUnclaim']['response']>({
 			method: "POST",
 			path: operationPaths.postOrganizationsByOrganizationCharactersByCharacterIdUnclaim,
+			pathParams: options.pathParams,
+			query: options.query,
+			headers: {
+				...options.headers,
+			},
+			body: undefined,
+		});
+	}
+
+	/**
+	 * POST /organizations/{organization}/characters/{characterId}/unassign
+	 */
+	async postOrganizationsByOrganizationCharactersByCharacterIdUnassign(options: RequestOptions<ApiOperations['postOrganizationsByOrganizationCharactersByCharacterIdUnassign']> = {}): Promise<ApiOperations['postOrganizationsByOrganizationCharactersByCharacterIdUnassign']['response']> {
+		return this.request<ApiOperations['postOrganizationsByOrganizationCharactersByCharacterIdUnassign']['response']>({
+			method: "POST",
+			path: operationPaths.postOrganizationsByOrganizationCharactersByCharacterIdUnassign,
 			pathParams: options.pathParams,
 			query: options.query,
 			headers: {
@@ -1427,6 +1479,54 @@ export class OpenApiClient {
 	}
 
 	/**
+	 * POST /organizations/{organization}/members/{memberId}/cancel
+	 */
+	async postOrganizationsByOrganizationMembersByMemberIdCancel(options: RequestOptions<ApiOperations['postOrganizationsByOrganizationMembersByMemberIdCancel']> = {}): Promise<ApiOperations['postOrganizationsByOrganizationMembersByMemberIdCancel']['response']> {
+		return this.request<ApiOperations['postOrganizationsByOrganizationMembersByMemberIdCancel']['response']>({
+			method: "POST",
+			path: operationPaths.postOrganizationsByOrganizationMembersByMemberIdCancel,
+			pathParams: options.pathParams,
+			query: options.query,
+			headers: {
+				...options.headers,
+			},
+			body: undefined,
+		});
+	}
+
+	/**
+	 * POST /organizations/{organization}/members/{memberId}/leave
+	 */
+	async postOrganizationsByOrganizationMembersByMemberIdLeave(options: RequestOptions<ApiOperations['postOrganizationsByOrganizationMembersByMemberIdLeave']> = {}): Promise<ApiOperations['postOrganizationsByOrganizationMembersByMemberIdLeave']['response']> {
+		return this.request<ApiOperations['postOrganizationsByOrganizationMembersByMemberIdLeave']['response']>({
+			method: "POST",
+			path: operationPaths.postOrganizationsByOrganizationMembersByMemberIdLeave,
+			pathParams: options.pathParams,
+			query: options.query,
+			headers: {
+				...options.headers,
+			},
+			body: undefined,
+		});
+	}
+
+	/**
+	 * POST /organizations/{organization}/members/{memberId}/remove
+	 */
+	async postOrganizationsByOrganizationMembersByMemberIdRemove(options: RequestOptions<ApiOperations['postOrganizationsByOrganizationMembersByMemberIdRemove']> = {}): Promise<ApiOperations['postOrganizationsByOrganizationMembersByMemberIdRemove']['response']> {
+		return this.request<ApiOperations['postOrganizationsByOrganizationMembersByMemberIdRemove']['response']>({
+			method: "POST",
+			path: operationPaths.postOrganizationsByOrganizationMembersByMemberIdRemove,
+			pathParams: options.pathParams,
+			query: options.query,
+			headers: {
+				...options.headers,
+			},
+			body: undefined,
+		});
+	}
+
+	/**
 	 * POST /organizations/{organization}/members/{memberId}/appoint-admin
 	 */
 	async postOrganizationsByOrganizationMembersByMemberIdAppointAdmin(options: RequestOptions<ApiOperations['postOrganizationsByOrganizationMembersByMemberIdAppointAdmin']> = {}): Promise<ApiOperations['postOrganizationsByOrganizationMembersByMemberIdAppointAdmin']['response']> {
@@ -1481,6 +1581,54 @@ export class OpenApiClient {
 		return this.request<ApiOperations['postOrganizationsByOrganizationMembersByMemberIdDeclineInvite']['response']>({
 			method: "POST",
 			path: operationPaths.postOrganizationsByOrganizationMembersByMemberIdDeclineInvite,
+			pathParams: options.pathParams,
+			query: options.query,
+			headers: {
+				...options.headers,
+			},
+			body: undefined,
+		});
+	}
+
+	/**
+	 * POST /organizations/{organization}/character-claim-requests/{requestId}/accept
+	 */
+	async postOrganizationsByOrganizationCharacterClaimRequestsByRequestIdAccept(options: RequestOptions<ApiOperations['postOrganizationsByOrganizationCharacterClaimRequestsByRequestIdAccept']> = {}): Promise<ApiOperations['postOrganizationsByOrganizationCharacterClaimRequestsByRequestIdAccept']['response']> {
+		return this.request<ApiOperations['postOrganizationsByOrganizationCharacterClaimRequestsByRequestIdAccept']['response']>({
+			method: "POST",
+			path: operationPaths.postOrganizationsByOrganizationCharacterClaimRequestsByRequestIdAccept,
+			pathParams: options.pathParams,
+			query: options.query,
+			headers: {
+				...options.headers,
+			},
+			body: undefined,
+		});
+	}
+
+	/**
+	 * POST /organizations/{organization}/character-claim-requests/{requestId}/decline
+	 */
+	async postOrganizationsByOrganizationCharacterClaimRequestsByRequestIdDecline(options: RequestOptions<ApiOperations['postOrganizationsByOrganizationCharacterClaimRequestsByRequestIdDecline']> = {}): Promise<ApiOperations['postOrganizationsByOrganizationCharacterClaimRequestsByRequestIdDecline']['response']> {
+		return this.request<ApiOperations['postOrganizationsByOrganizationCharacterClaimRequestsByRequestIdDecline']['response']>({
+			method: "POST",
+			path: operationPaths.postOrganizationsByOrganizationCharacterClaimRequestsByRequestIdDecline,
+			pathParams: options.pathParams,
+			query: options.query,
+			headers: {
+				...options.headers,
+			},
+			body: undefined,
+		});
+	}
+
+	/**
+	 * POST /organizations/{organization}/character-claim-requests/{requestId}/cancel
+	 */
+	async postOrganizationsByOrganizationCharacterClaimRequestsByRequestIdCancel(options: RequestOptions<ApiOperations['postOrganizationsByOrganizationCharacterClaimRequestsByRequestIdCancel']> = {}): Promise<ApiOperations['postOrganizationsByOrganizationCharacterClaimRequestsByRequestIdCancel']['response']> {
+		return this.request<ApiOperations['postOrganizationsByOrganizationCharacterClaimRequestsByRequestIdCancel']['response']>({
+			method: "POST",
+			path: operationPaths.postOrganizationsByOrganizationCharacterClaimRequestsByRequestIdCancel,
 			pathParams: options.pathParams,
 			query: options.query,
 			headers: {
