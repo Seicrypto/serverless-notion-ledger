@@ -364,11 +364,62 @@
 		font-weight: 700;
 		color: var(--text-soft);
 		cursor: pointer;
+		transition:
+			background-color 140ms ease,
+			color 140ms ease,
+			transform 140ms ease,
+			box-shadow 140ms ease;
 	}
 
 	.page-size-toggle button.active {
 		background: color-mix(in srgb, var(--accent) 18%, white);
 		color: var(--text-main);
+	}
+
+	.page-size-toggle button:hover:not(:disabled) {
+		color: var(--text-main);
+		background: color-mix(in srgb, var(--accent) 10%, var(--surface));
+	}
+
+	.secondary-button {
+		min-height: 44px;
+		padding: 0 16px;
+		border-radius: 14px;
+		border: 1px solid color-mix(in srgb, var(--accent) 22%, var(--line));
+		background:
+			linear-gradient(
+				180deg,
+				color-mix(in srgb, var(--surface) 92%, white),
+				color-mix(in srgb, var(--surface-strong) 90%, white)
+			);
+		color: var(--text-main);
+		font: inherit;
+		font-weight: 700;
+		letter-spacing: 0.01em;
+		cursor: pointer;
+		box-shadow:
+			0 1px 0 rgba(255, 255, 255, 0.35) inset,
+			0 8px 18px rgba(18, 26, 44, 0.08);
+		transition:
+			transform 140ms ease,
+			box-shadow 140ms ease,
+			border-color 140ms ease,
+			background-color 140ms ease;
+	}
+
+	.secondary-button:hover:not(:disabled) {
+		transform: translateY(-1px);
+		border-color: color-mix(in srgb, var(--accent) 34%, var(--line));
+		box-shadow:
+			0 1px 0 rgba(255, 255, 255, 0.42) inset,
+			0 12px 22px rgba(18, 26, 44, 0.14);
+	}
+
+	.secondary-button:active:not(:disabled) {
+		transform: translateY(0);
+		box-shadow:
+			0 1px 0 rgba(255, 255, 255, 0.28) inset,
+			0 6px 14px rgba(18, 26, 44, 0.12);
 	}
 
 	.event-table-shell {
@@ -425,6 +476,39 @@
 	.secondary-button:disabled {
 		opacity: 0.6;
 		cursor: not-allowed;
+	}
+
+	:root[data-theme='dark'] .page-size-toggle {
+		background: color-mix(in srgb, var(--surface-strong) 92%, black);
+		border-color: color-mix(in srgb, var(--line) 92%, black);
+	}
+
+	:root[data-theme='dark'] .page-size-toggle button {
+		color: color-mix(in srgb, var(--text-soft) 92%, white);
+	}
+
+	:root[data-theme='dark'] .page-size-toggle button.active {
+		background: color-mix(in srgb, var(--accent) 24%, #1a2233);
+		color: #f4f7ff;
+		box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 28%, transparent) inset;
+	}
+
+	:root[data-theme='dark'] .page-size-toggle button:hover:not(:disabled) {
+		background: color-mix(in srgb, var(--accent) 14%, #151b28);
+		color: #f4f7ff;
+	}
+
+	:root[data-theme='dark'] .secondary-button {
+		border-color: color-mix(in srgb, var(--accent) 26%, var(--line));
+		background:
+			linear-gradient(
+				180deg,
+				color-mix(in srgb, var(--surface) 86%, #1b2333),
+				color-mix(in srgb, var(--surface-strong) 92%, #111723)
+			);
+		box-shadow:
+			0 1px 0 rgba(255, 255, 255, 0.04) inset,
+			0 10px 22px rgba(0, 0, 0, 0.28);
 	}
 
 	.error-text {
