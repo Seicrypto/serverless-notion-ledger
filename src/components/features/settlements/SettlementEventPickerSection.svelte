@@ -228,7 +228,7 @@
 					</thead>
 					<tbody>
 						{#each eventRows as row}
-							<tr class:is-picked={row.isPicked}>
+							<tr class:is-picked={row.isPicked} class:ledger-selected-row={row.isPicked}>
 								<td>{row.title}</td>
 								<td>{row.occurredAtLabel}</td>
 								<td>{row.holderLabel}</td>
@@ -236,7 +236,7 @@
 								<td>
 									<button
 										type="button"
-										class="pick-button"
+										class="pick-button ledger-quiet-button"
 										disabled={pendingPickEventId !== null}
 										on:click={() => dispatch('pick', { eventId: row.id })}
 									>
@@ -457,19 +457,12 @@
 		border-bottom: 0;
 	}
 
-	.event-table tbody tr.is-picked {
-		background: color-mix(in srgb, var(--accent) 9%, white);
-	}
-
 	.pick-button {
 		min-height: 40px;
 		padding: 0 14px;
 		border-radius: 999px;
-		border: 1px solid color-mix(in srgb, var(--accent) 24%, var(--line));
-		background: color-mix(in srgb, var(--surface) 92%, white);
 		font: inherit;
 		font-weight: 700;
-		cursor: pointer;
 	}
 
 	.pick-button:disabled,

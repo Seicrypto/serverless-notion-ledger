@@ -200,8 +200,8 @@
 		min-height: 48px;
 		padding: 0 16px;
 		border-radius: 16px;
-		border: 1px dashed color-mix(in srgb, var(--accent) 20%, var(--line));
-		background: color-mix(in srgb, var(--surface-strong) 80%, white);
+		border: 1px dashed var(--ui-control-border);
+		background: var(--ui-control-bg);
 		color: var(--text-main);
 		display: inline-flex;
 		align-items: center;
@@ -267,8 +267,8 @@
 	}
 
 	.search-select-option.active {
-		background: color-mix(in srgb, var(--ledger-accent) 14%, var(--surface-strong));
-		color: color-mix(in srgb, var(--ledger-accent-deep) 88%, var(--text-main));
+		background: var(--ui-selection-bg);
+		color: var(--ui-selection-color);
 	}
 
 	.search-select-copy {
@@ -281,8 +281,8 @@
 	.search-select-copy strong {
 		padding: 4px 8px;
 		border-radius: 999px;
-		background: color-mix(in srgb, var(--ledger-accent) 14%, var(--surface-soft));
-		color: color-mix(in srgb, var(--ledger-accent-deep) 86%, var(--text-main));
+		background: var(--ui-selection-bg);
+		color: var(--ui-selection-color);
 		font-size: 0.72rem;
 		letter-spacing: 0.06em;
 		text-transform: uppercase;

@@ -277,9 +277,17 @@ export type LedgerClaimableRecipientSummary = { "characterId": number; "characte
 
 export type LedgerClaimableUnitBreakdown = { "allocationCount": number; "amountTotal": number; "unitAssetId": number | unknown; "unitAssetName": string | unknown; };
 
+export type LedgerClaimableRecipientSummaryPagedResponse = { "pagination": LedgerPagination; "recipients": Array<{ "characterId": number; "characterName": string; "hasSiblingCharactersPending": boolean; "memberDisplayName": string | unknown; "pendingAllocationCount": number; "pendingClaimAmountTotal": number; "pendingUnitBreakdown": Array<LedgerClaimableUnitBreakdown>; }>; };
+
+export type LedgerDisburseableEventSummaryResponse = { "items": Array<{ "decidedAt": string; "eventId": number | unknown; "eventOccurredAt": string | unknown; "eventTitle": string | unknown; "holderLabel": string | unknown; "pendingRecipientCount": number; "settlementId": number; "settlementTitle": string; "settlementType": string; "totalAmount": number; "unitAssetId": number | unknown; "unitAssetName": string | unknown; }>; "pagination": LedgerPagination; };
+
+export type LedgerClaimableRecipientWorkspaceResponse = { "allocations": Array<{ "allocationId": number; "amount": number; "eventId": number | unknown; "eventOccurredAt": string | unknown; "eventStatus": string | unknown; "eventTitle": string | unknown; "ownerCharacterId": number; "ownerCharacterName": string; "settlementDecidedAt": string; "settlementId": number; "settlementTitle": string; "settlementType": string; "unitAssetId": number | unknown; "unitAssetName": string | unknown; }>; "defaults": { "defaultClaimedAt": string | unknown; "defaultMethod": "manual" | "in_game_mail" | "trade" | "bank" | "other"; }; "recipient": { "characterId": number; "characterName": string; "memberDisplayName": string | unknown; }; "siblingCharacters": Array<{ "characterId": number; "characterName": string; }>; "unitBreakdown": Array<LedgerClaimableUnitBreakdown>; };
+
 export type LedgerClaimableRecipientDetailResponse = { "allocations": Array<LedgerClaimableRecipientAllocation>; "recipient": LedgerClaimableRecipientSummary; "siblingCharacters": Array<LedgerClaimableRecipientSummary>; "unitBreakdown": Array<LedgerClaimableUnitBreakdown>; };
 
 export type LedgerClaimableRecipientAllocation = { "allocationId": number; "amount": number; "eventId": number | unknown; "eventKey": string | unknown; "eventOccurredAt": string | unknown; "eventStatus": "open" | "ready_for_settlement" | "partially_settled" | "settled" | "cancelled" | null; "eventTitle": string | unknown; "eventType": "loot" | "raid" | "activity" | "bonus" | "salary" | "guild_event" | "other" | null; "ratio": number | unknown; "settlementDecidedAt": string; "settlementId": number; "settlementKey": string; "settlementStatus": "draft" | "calculated" | "paying" | "paid" | "cancelled"; "settlementTitle": string; "settlementType": "sale" | "bonus" | "salary" | "reward" | "subsidy" | "adjustment"; "unitAssetId": number | unknown; "unitAssetName": string | unknown; "weight": number; };
+
+export type LedgerSettlementDisbursementWorkspaceResponse = { "defaults": { "defaultClaimedAt": string | unknown; "defaultMethod": "manual" | "in_game_mail" | "trade" | "bank" | "other"; }; "recipients": Array<{ "allocationId": number; "amount": number; "characterId": number; "characterName": string; "claimStatus": "pending" | "partial" | "claimed"; "claimableAmount": number; "memberDisplayName": string | unknown; }>; "settlement": { "decidedAt": string; "eventId": number | unknown; "eventOccurredAt": string | unknown; "eventTitle": string | unknown; "id": number; "settlementType": string; "title": string; "totalAmount": number; "unitAssetId": number | unknown; "unitAssetName": string | unknown; }; };
 
 export type CreateLedgerEventRequest = { "assetId"?: number | unknown; "eventType"?: "loot" | "raid" | "activity" | "bonus" | "salary" | "guild_event" | "other"; "gameId"?: number | unknown; "holderRef"?: string | unknown; "holderType"?: "character" | "org_treasury" | "market" | "external" | "custom"; "notes"?: string | unknown; "occurredAt": string; "participants"?: Array<{ "characterId"?: number | unknown; "joinedAt"?: string | unknown; "leftAt"?: string | unknown; "roleLabel"?: string | unknown; "weight"?: number; }>; "sourceType"?: "manual" | "api" | "import"; "title": string; };
 
@@ -304,6 +312,10 @@ export type LedgerSettlementClaim = { "amount": number; "claimedAt": string; "cl
 export type CreateLedgerBatchClaimsRequest = { "claimedAt": string; "items": Array<LedgerBatchClaimItemRequest>; "method"?: "manual" | "in_game_mail" | "trade" | "bank" | "other"; "notes"?: string | unknown; };
 
 export type LedgerBatchClaimItemRequest = { "amount": number; "claimedByCharacterId"?: number | unknown; "settlementAllocationId": number; };
+
+export type LedgerClaimableRecipientDisbursementRequest = { "claimedAt": string; "includeSiblingCharacters"?: boolean; "items": Array<{ "allocationId": number; "amount": number; }>; "method"?: "manual" | "in_game_mail" | "trade" | "bank" | "other"; "notes"?: string | unknown; };
+
+export type LedgerSettlementClaimsRequest = { "claimedAt": string; "items": Array<{ "allocationId": number; "amount": number; "characterId": number; }>; "method"?: "manual" | "in_game_mail" | "trade" | "bank" | "other"; "notes"?: string | unknown; };
 
 export type LedgerSettlementDisbursementResponse = { "allocationMode": "created" | "matched"; "allocations": Array<LedgerSettlementAllocation>; "claims": Array<LedgerSettlementClaim>; "message": string; "settlement": LedgerSettlement; "settlementStatusChanged": boolean; };
 
