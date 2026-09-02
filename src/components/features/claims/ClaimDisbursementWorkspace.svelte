@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 
+	import ClaimLoadingState from './ClaimLoadingState.svelte';
 	import GamePicker from '../../shared/GamePicker.svelte';
 	import GuildOptionPicker from '../../shared/GuildOptionPicker.svelte';
 	import RequestStatusDialog from '../org/RequestStatusDialog.svelte';
@@ -123,6 +124,15 @@
 		pagePreviousLabel: string;
 		pageNextLabel: string;
 		pageSummaryLabel: string;
+		summaryCharacterLabel: string;
+		summaryMemberLabel: string;
+		summaryPendingItemsLabel: string;
+		summaryEventLabel: string;
+		summaryHolderLabel: string;
+		summaryDecidedAtLabel: string;
+		summaryActionLabel: string;
+		summaryShowAllLabel: string;
+		summaryFocusSelectedLabel: string;
 		pickLabel: string;
 		pickPendingLabel: string;
 		pickedLabel: string;
@@ -200,6 +210,8 @@
 	let eventClaimedAt = '';
 	let eventMethod: ClaimMethod = 'trade';
 	let eventNotes = '';
+	let showAllRecipientSummaries = true;
+	let showAllEventSummaries = true;
 
 	let emptyStateMode: 'default' | 'no-events' | 'no-settlements' = 'default';
 	let errors: Record<string, string> = {};
@@ -325,6 +337,7 @@
 
 	function resetRecipientSelectionState() {
 		selectedRecipientId = '';
+		showAllRecipientSummaries = true;
 		includeSiblingCharacters = false;
 		recipientWorkspace = null;
 		siblingRecipientWorkspaces = [];
@@ -336,6 +349,7 @@
 
 	function resetEventSelectionState() {
 		selectedSettlementId = '';
+		showAllEventSummaries = true;
 		eventWorkspace = null;
 		eventWorkspaceLoading = false;
 		eventWorkspaceError = '';
@@ -666,6 +680,7 @@
 			}
 
 			recipientWorkspace = workspace;
+			showAllRecipientSummaries = false;
 			applyClaimDefaults(workspace.defaults.defaultClaimedAt, workspace.defaults.defaultMethod, 'recipient');
 			syncRecipientAllocationSelection(workspace.allocations);
 			recipientNotes = '';
@@ -707,6 +722,7 @@
 			}
 
 			eventWorkspace = workspace;
+			showAllEventSummaries = false;
 			applyClaimDefaults(workspace.defaults.defaultClaimedAt, workspace.defaults.defaultMethod, 'event');
 			syncEventRecipientInputs(workspace);
 			eventNotes = '';
@@ -812,6 +828,14 @@
 		if (activeMode === 'event' && eventSummaries.length === 0 && !eventSummariesLoading) {
 			void loadEventSummaries('mode-change');
 		}
+	}
+
+	function toggleRecipientSummaryScope() {
+		showAllRecipientSummaries = !showAllRecipientSummaries;
+	}
+
+	function toggleEventSummaryScope() {
+		showAllEventSummaries = !showAllEventSummaries;
 	}
 
 	function toggleRecipientAllocationSelection(allocationId: number) {
@@ -1097,6 +1121,14 @@
 	$: selectedCountLabel =
 		activeMode === 'recipient' ? labels.totalAllocationsLabel : labels.totalRecipientsLabel;
 	$: recipientEmptyStateCopy = getRecipientEmptyStateCopy();
+	$: visibleRecipientSummaries =
+		showAllRecipientSummaries || !selectedRecipientId
+			? recipientSummaries
+			: recipientSummaries.filter((recipient) => String(recipient.characterId) === selectedRecipientId);
+	$: visibleEventSummaries =
+		showAllEventSummaries || !selectedSettlementId
+			? eventSummaries
+			: eventSummaries.filter((item) => String(item.settlementId) === selectedSettlementId);
 
 	onMount(() => {
 		const now = toLocalDateTimeValue(new Date());
@@ -1200,7 +1232,7 @@
 		</article>
 	</section>
 {:else}
-	<section class="app-section workspace-grid">
+	<section class="app-section workspace-stack">
 		<article class="workspace-card">
 			<div class="workspace-head">
 				<div>
@@ -1222,9 +1254,23 @@
 				</button>
 			</div>
 
+			{#if activeMode === 'recipient' && selectedRecipientId}
+				<div class="summary-scope-bar">
+					<button type="button" class="ledger-quiet-button" on:click={toggleRecipientSummaryScope}>
+						{showAllRecipientSummaries ? labels.summaryFocusSelectedLabel : labels.summaryShowAllLabel}
+					</button>
+				</div>
+			{:else if activeMode === 'event' && selectedSettlementId}
+				<div class="summary-scope-bar">
+					<button type="button" class="ledger-quiet-button" on:click={toggleEventSummaryScope}>
+						{showAllEventSummaries ? labels.summaryFocusSelectedLabel : labels.summaryShowAllLabel}
+					</button>
+				</div>
+			{/if}
+
 			{#if activeMode === 'recipient'}
 				{#if recipientSummariesLoading}
-					<p class="workspace-meta">{labels.recipientsLoadingLabel}</p>
+					<ClaimLoadingState label={labels.recipientsLoadingLabel} />
 				{:else if recipientSummariesError}
 					<p class="workspace-error">{recipientSummariesError}</p>
 				{:else if !recipientSummaries.length}
@@ -1241,33 +1287,63 @@
 						</div>
 					</div>
 				{:else}
-					<ul class="summary-list">
-						{#each recipientSummaries as recipient}
-							<li class:selected={String(recipient.characterId) === selectedRecipientId}>
-								<div class="summary-card" class:ledger-selected-row={String(recipient.characterId) === selectedRecipientId}>
-									<div class="summary-card-copy">
-										<strong>{recipient.characterName}</strong>
-										<span>{formatAmount(recipient.pendingClaimAmountTotal)}</span>
-										<small>{recipient.pendingAllocationCount} · {recipient.memberDisplayName ?? labels.noMemberLabel}</small>
-									</div>
-									<button
-										type="button"
-										class="ledger-quiet-button"
-										disabled={Boolean(pendingPickKey)}
-										on:click={() => void pickRecipient(recipient.characterId)}
-									>
-										{#if pendingPickKey === `recipient:${recipient.characterId}`}
-											{labels.pickPendingLabel}
-										{:else if String(recipient.characterId) === selectedRecipientId}
-											{labels.pickedLabel}
-										{:else}
-											{labels.pickLabel}
-										{/if}
-									</button>
-								</div>
-							</li>
-						{/each}
-					</ul>
+					{#key `recipient:${showAllRecipientSummaries}:${selectedRecipientId}:${visibleRecipientSummaries.length}`}
+						<div class="summary-table-frame">
+							<div class="summary-table-scroll">
+								<table class="summary-table">
+									<thead>
+										<tr>
+											<th>{labels.summaryCharacterLabel}</th>
+											<th>{labels.summaryMemberLabel}</th>
+											<th>{labels.summaryPendingItemsLabel}</th>
+											<th>{labels.summaryActionLabel}</th>
+										</tr>
+									</thead>
+									<tbody>
+										{#each visibleRecipientSummaries as recipient}
+											<tr class:selected-row={String(recipient.characterId) === selectedRecipientId}>
+												<td>
+													<div class="table-primary-cell">
+														<strong>{recipient.characterName}</strong>
+													</div>
+												</td>
+												<td>{recipient.memberDisplayName ?? labels.noMemberLabel}</td>
+												<td>
+													<ul class="table-breakdown-list">
+														{#each recipient.pendingUnitBreakdown as unit}
+															<li>
+																<strong>{formatAmount(unit.amountTotal)}</strong>
+																<span>{unit.unitAssetName ?? `Asset #${unit.unitAssetId ?? '—'}`}</span>
+															</li>
+														{/each}
+													</ul>
+													<p class="table-subcopy">
+														{labels.totalAllocationsLabel}: {recipient.pendingAllocationCount}
+													</p>
+												</td>
+												<td class="summary-table-action">
+													<button
+														type="button"
+														class="ledger-quiet-button"
+														disabled={Boolean(pendingPickKey)}
+														on:click={() => void pickRecipient(recipient.characterId)}
+													>
+														{#if pendingPickKey === `recipient:${recipient.characterId}`}
+															{labels.pickPendingLabel}
+														{:else if String(recipient.characterId) === selectedRecipientId}
+															{labels.pickedLabel}
+														{:else}
+															{labels.pickLabel}
+														{/if}
+													</button>
+												</td>
+											</tr>
+										{/each}
+									</tbody>
+								</table>
+							</div>
+						</div>
+					{/key}
 
 					<div class="summary-footer">
 						<button
@@ -1297,7 +1373,7 @@
 				{/if}
 			{:else}
 				{#if eventSummariesLoading}
-					<p class="workspace-meta">{labels.eventsLoadingLabel}</p>
+					<ClaimLoadingState label={labels.eventsLoadingLabel} />
 				{:else if eventSummariesError}
 					<p class="workspace-error">{eventSummariesError}</p>
 				{:else if !eventSummaries.length}
@@ -1314,33 +1390,64 @@
 						</div>
 					</div>
 				{:else}
-					<ul class="summary-list">
-						{#each eventSummaries as item}
-							<li class:selected={String(item.settlementId) === selectedSettlementId}>
-								<div class="summary-card" class:ledger-selected-row={String(item.settlementId) === selectedSettlementId}>
-									<div class="summary-card-copy">
-										<strong>{item.settlementTitle}</strong>
-										<span>{item.eventTitle ?? `#${item.eventId ?? '—'}`}</span>
-										<small>{formatAmount(item.totalAmount)} · {item.pendingRecipientCount} · {item.unitAssetName ?? `Asset #${item.unitAssetId ?? '—'}`}</small>
-									</div>
-									<button
-										type="button"
-										class="ledger-quiet-button"
-										disabled={Boolean(pendingPickKey)}
-										on:click={() => void pickEventWorkspace(item.settlementId)}
-									>
-										{#if pendingPickKey === `event:${item.settlementId}`}
-											{labels.pickPendingLabel}
-										{:else if String(item.settlementId) === selectedSettlementId}
-											{labels.pickedLabel}
-										{:else}
-											{labels.pickLabel}
-										{/if}
-									</button>
-								</div>
-							</li>
-						{/each}
-					</ul>
+					{#key `event:${showAllEventSummaries}:${selectedSettlementId}:${visibleEventSummaries.length}`}
+						<div class="summary-table-frame">
+							<div class="summary-table-scroll">
+								<table class="summary-table">
+									<thead>
+										<tr>
+											<th>{labels.summaryEventLabel}</th>
+											<th>{labels.summaryHolderLabel}</th>
+											<th>{labels.summaryPendingItemsLabel}</th>
+											<th>{labels.summaryDecidedAtLabel}</th>
+											<th>{labels.summaryActionLabel}</th>
+										</tr>
+									</thead>
+									<tbody>
+										{#each visibleEventSummaries as item}
+											<tr class:selected-row={String(item.settlementId) === selectedSettlementId}>
+												<td>
+													<div class="table-primary-cell">
+														<strong>{item.eventTitle ?? `#${item.eventId ?? '—'}`}</strong>
+														<small>{item.settlementTitle}</small>
+													</div>
+												</td>
+												<td>{item.holderLabel ?? '—'}</td>
+												<td>
+													<ul class="table-breakdown-list">
+														<li>
+															<strong>{formatAmount(item.totalAmount)}</strong>
+															<span>{item.unitAssetName ?? `Asset #${item.unitAssetId ?? '—'}`}</span>
+														</li>
+													</ul>
+													<p class="table-subcopy">
+														{labels.totalRecipientsLabel}: {item.pendingRecipientCount}
+													</p>
+												</td>
+												<td>{formatDateTime(item.decidedAt)}</td>
+												<td class="summary-table-action">
+													<button
+														type="button"
+														class="ledger-quiet-button"
+														disabled={Boolean(pendingPickKey)}
+														on:click={() => void pickEventWorkspace(item.settlementId)}
+													>
+														{#if pendingPickKey === `event:${item.settlementId}`}
+															{labels.pickPendingLabel}
+														{:else if String(item.settlementId) === selectedSettlementId}
+															{labels.pickedLabel}
+														{:else}
+															{labels.pickLabel}
+														{/if}
+													</button>
+												</td>
+											</tr>
+										{/each}
+									</tbody>
+								</table>
+							</div>
+						</div>
+					{/key}
 
 					<div class="summary-footer">
 						<button
@@ -1384,7 +1491,7 @@
 
 			{#if activeMode === 'recipient'}
 				{#if recipientWorkspaceLoading}
-					<p class="workspace-meta">{labels.detailLoadingLabel}</p>
+					<ClaimLoadingState label={labels.detailLoadingLabel} />
 				{:else if recipientWorkspaceError}
 					<p class="workspace-error">{recipientWorkspaceError}</p>
 				{:else if !recipientWorkspace}
@@ -1541,7 +1648,7 @@
 				{/if}
 			{:else}
 				{#if eventWorkspaceLoading}
-					<p class="workspace-meta">{labels.eventDetailLoadingLabel}</p>
+					<ClaimLoadingState label={labels.eventDetailLoadingLabel} />
 				{:else if eventWorkspaceError}
 					<p class="workspace-error">{eventWorkspaceError}</p>
 				{:else if !eventWorkspace}
@@ -1686,11 +1793,9 @@
 />
 
 <style>
-	.workspace-grid {
+	.workspace-stack {
 		display: grid;
-		grid-template-columns: 340px minmax(0, 1fr);
 		gap: 20px;
-		align-items: start;
 	}
 
 	.workspace-card {
@@ -1831,45 +1936,86 @@
 		color: #c43c3c;
 	}
 
-	.summary-list {
-		margin: 0;
-		padding: 0;
-		list-style: none;
-		display: grid;
-		gap: 12px;
+	.summary-scope-bar {
+		display: flex;
+		justify-content: flex-end;
 	}
 
-	.summary-card {
-		padding: 16px;
+	.summary-table-frame {
+		animation: summary-surface-in 0.24s ease;
+	}
+
+	.summary-table-scroll {
+		overflow-x: auto;
 		border: 1px solid var(--ui-control-border);
-		border-radius: 18px;
+		border-radius: 20px;
 		background: var(--ui-control-bg-strong);
-		display: grid;
-		gap: 14px;
 	}
 
-	.summary-card-copy {
+	.summary-table {
+		width: 100%;
+		min-width: 760px;
+		border-collapse: collapse;
+	}
+
+	.summary-table th,
+	.summary-table td {
+		padding: 14px 16px;
+		text-align: left;
+		vertical-align: top;
+		border-bottom: 1px solid color-mix(in srgb, var(--ui-control-border) 82%, transparent);
+	}
+
+	.summary-table tbody tr:last-child td {
+		border-bottom: none;
+	}
+
+	.summary-table th {
+		font-size: 0.83rem;
+		letter-spacing: 0.02em;
+		text-transform: uppercase;
+		color: var(--text-soft);
+		background: color-mix(in srgb, var(--ui-control-bg) 92%, white);
+	}
+
+	.selected-row td {
+		background: var(--ui-selected-row-bg);
+	}
+
+	.summary-table-action {
+		width: 132px;
+	}
+
+	.table-primary-cell {
 		display: grid;
 		gap: 4px;
 	}
 
-	.summary-card-copy strong,
-	.summary-card-copy span,
-	.summary-card-copy small {
-		display: block;
-	}
-
-	.summary-card-copy span {
-		font-weight: 700;
-	}
-
-	.summary-card-copy small,
+	.table-primary-cell small,
+	.table-subcopy,
 	.summary-tile span,
 	.breakdown-card span,
 	.sibling-toggle small,
 	.allocation-meta,
 	.allocation-side small {
 		color: var(--text-soft);
+	}
+
+	.table-subcopy {
+		margin: 8px 0 0;
+	}
+
+	.table-breakdown-list {
+		margin: 0;
+		padding: 0;
+		list-style: none;
+		display: grid;
+		gap: 6px;
+	}
+
+	.table-breakdown-list li {
+		display: grid;
+		gap: 2px;
 	}
 
 	.summary-tile,
@@ -1960,8 +2106,19 @@
 		gap: 16px;
 	}
 
+	@keyframes summary-surface-in {
+		from {
+			opacity: 0;
+			transform: translateY(6px);
+		}
+
+		to {
+			opacity: 1;
+			transform: translateY(0);
+		}
+	}
+
 	@media (max-width: 980px) {
-		.workspace-grid,
 		.context-grid,
 		.mode-switch,
 		.field-grid,
@@ -1985,9 +2142,12 @@
 
 		.workspace-head,
 		.allocations-head,
-		.breakdown-card li,
-		.summary-card {
+		.breakdown-card li {
 			grid-template-columns: 1fr;
+		}
+
+		.summary-table {
+			min-width: 620px;
 		}
 	}
 </style>

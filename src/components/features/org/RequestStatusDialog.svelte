@@ -1,4 +1,6 @@
 <script lang="ts">
+	import SoftSpinner from '../../shared/SoftSpinner.svelte';
+
 	type DialogState = 'pending' | 'success' | 'error';
 
 	interface DialogAction {
@@ -30,7 +32,7 @@
 		<section class="status-dialog" role="dialog" aria-modal="true" aria-live="polite">
 			<div class="status-dialog-card" data-state={state}>
 				{#if state === 'pending'}
-					<div class="status-dialog-spinner" aria-hidden="true"></div>
+					<SoftSpinner size={42} label={title || 'Loading'} />
 				{/if}
 
 				<h2>{title}</h2>
@@ -135,15 +137,6 @@
 		color: var(--text-soft);
 	}
 
-	.status-dialog-spinner {
-		width: 42px;
-		height: 42px;
-		border: 4px solid color-mix(in srgb, var(--accent) 18%, white);
-		border-top-color: var(--accent);
-		border-radius: 999px;
-		animation: status-dialog-spin 0.9s linear infinite;
-	}
-
 	.status-dialog-actions {
 		margin-top: 8px;
 		display: flex;
@@ -179,12 +172,6 @@
 		border: 1px solid var(--line);
 		background: color-mix(in srgb, var(--surface-strong) 82%, white);
 		color: var(--text-main);
-	}
-
-	@keyframes status-dialog-spin {
-		to {
-			transform: rotate(360deg);
-		}
 	}
 
 	@media (max-width: 720px) {
