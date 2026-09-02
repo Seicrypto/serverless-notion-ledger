@@ -1,37 +1,39 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 
-	import GuildOptionPicker from '../../shared/GuildOptionPicker.svelte';
-	import SearchSelect from '../../shared/SearchSelect.svelte';
-	import SettlementAmountEditor from '../../shared/SettlementAmountEditor.svelte';
-	import TimeSelector from '../../shared/TimeSelector.svelte';
+	import SettlementEventPickerSection from './SettlementEventPickerSection.svelte';
+	import SettlementFormSection from './SettlementFormSection.svelte';
 	import RequestStatusDialog from '../org/RequestStatusDialog.svelte';
 	import { getApiAdapter } from '../../../libs/api/adapters/api.adapter.ts';
-	import { ensureAuthSession, getErrorMessage, isAuthenticatedSession, type AuthSession } from '../../../libs/api/auth/session.ts';
+	import {
+		ensureAuthSession,
+		getErrorMessage,
+		isAuthenticatedSession,
+		type AuthSession,
+	} from '../../../libs/api/auth/session.ts';
 	import { ensureMyOrganizationsCache } from '../../../libs/api/organizations/my-organizations-cache.ts';
 	import type { OrganizationCardResponse } from '../../../libs/api/organizations/organization-card.ts';
-	import { ensureOrganizationManageCache } from '../../../libs/api/organizations/manage-workspace-cache.ts';
-	import { getOrganizationReference, resolveOrganizationQuery } from '../../../libs/organizations/reference.ts';
-	import { getLatestActiveOrganization, readPreferredOrganization, writePreferredOrganization } from '../../../libs/ledger/workspace-preferences.ts';
-	import { readSettlementDefaultsCache, writeSettlementDefaultsCache } from '../../../libs/settlements/settlement-defaults-cache.ts';
 	import {
-		getLatestSettlementCreationForOrganization,
-		loadRecentSettlementCreations,
+		ensureOrganizationManageCache,
+		type OrganizationManageCharacter,
+		type OrganizationManageSummary,
+	} from '../../../libs/api/organizations/manage-workspace-cache.ts';
+	import { getLatestActiveOrganization, readPreferredOrganization, writePreferredOrganization } from '../../../libs/ledger/workspace-preferences.ts';
+	import { calculateSettlementNetAmount, parseAmountValue } from '../../../libs/ledger/settlement-amounts.ts';
+	import { getOrganizationReference, resolveOrganizationQuery } from '../../../libs/organizations/reference.ts';
+	import { devDebugError, devDebugLog } from '../../../libs/runtime/dev-debug.ts';
+	import {
 		recordRecentSettlementCreation,
-		type RecentSettlementCreationEntry,
 	} from '../../../libs/settlements/recent-settlement-creations.ts';
 	import {
-		calculateSettlementNetAmount,
-		formatAmountDisplay,
-		parseAmountValue,
-	} from '../../../libs/ledger/settlement-amounts.ts';
-	import { devDebugError, devDebugLog } from '../../../libs/runtime/dev-debug.ts';
+		readSettlementDefaultsCache,
+		writeSettlementDefaultsCache,
+	} from '../../../libs/settlements/settlement-defaults-cache.ts';
 	import type {
 		CreateLedgerSettlementRequest,
-		LedgerEvent,
+		LedgerEventDetail,
 		LedgerEventListItem,
 		LedgerSettlementDefaultsResponse,
-		LedgerWorkspaceCharacter,
 		SettleLedgerEventRequest,
 	} from '../../../libs/api/openapi/generated/schema';
 
@@ -48,11 +50,14 @@
 		contextSelectLabel: string;
 		contextSelectPlaceholder: string;
 		contextSelectEmpty: string;
-		orgRequiredTitle: string;
-		orgRequiredBody: string;
+		gameSelectLabel: string;
+		gameSelectPlaceholder: string;
+		gameSelectEmpty: string;
+		noOrganizationsTitle: string;
+		noOrganizationsBody: string;
+		noOrganizationsActionLabel: string;
 		eventSectionTitle: string;
 		eventSectionBody: string;
-		eventSelectLabel: string;
 		eventLoadingLabel: string;
 		eventEmptyTitle: string;
 		eventEmptyBody: string;
@@ -65,21 +70,22 @@
 		eventPagePreviousLabel: string;
 		eventPageNextLabel: string;
 		eventPageSummaryLabel: string;
-		eventSummaryTitle: string;
-		eventSummaryStatusLabel: string;
-		eventSummaryOccurredAtLabel: string;
-		eventSummaryAssetLabel: string;
-		eventSummaryHolderLabel: string;
-		eventSummaryGameLabel: string;
-		defaultsTitle: string;
-		defaultsBody: string;
-		defaultsLoadingLabel: string;
-		defaultsGameLabel: string;
-		defaultsUnitLabel: string;
-		defaultsFeeModeLabel: string;
-		defaultsAllocationModeLabel: string;
-		reusePreviousAmountLabel: string;
-		reusePreviousAmountEmpty: string;
+		eventPageSizeLabel: string;
+		eventTableNameLabel: string;
+		eventTableOccurredAtLabel: string;
+		eventTableHolderLabel: string;
+		eventTableAssetLabel: string;
+		eventTableActionLabel: string;
+		eventTablePickLabel: string;
+		eventTablePickPendingLabel: string;
+		eventTablePickedLabel: string;
+		formReadyTitle: string;
+		formReadyBody: string;
+		formLoadingLabel: string;
+		formContextEventLabel: string;
+		formContextGameLabel: string;
+		formContextAssetLabel: string;
+		formContextHolderLabel: string;
 		formTitleLabel: string;
 		formTitlePlaceholder: string;
 		formDecidedAtLabel: string;
@@ -93,7 +99,6 @@
 		formFeeAmountLabel: string;
 		formFeeRuleKeyLabel: string;
 		formFeeRuleKeyPlaceholder: string;
-		formUnitAssetIdLabel: string;
 		formPayerTypeLabel: string;
 		formPayerRefLabel: string;
 		formPayerRefPlaceholder: string;
@@ -157,67 +162,41 @@
 	type WorkspaceRole = 'owner' | 'admin' | 'member';
 
 	const CREATE_TIMEOUT_MS = 20000;
-	const DEFAULT_EVENT_PAGE_LIMIT = 10;
+	const FETCH_EVENT_BATCH_LIMIT = 100;
+	const DEFAULT_EVENT_PAGE_LIMIT = 5;
 	const DEFAULT_EVENT_LOOKBACK_DAYS = 7;
-
-	const settlementTypeOptions: Array<{ value: SettlementType; labelKey: keyof Labels }> = [
-		{ value: 'sale', labelKey: 'settlementTypeSale' },
-		{ value: 'bonus', labelKey: 'settlementTypeBonus' },
-		{ value: 'salary', labelKey: 'settlementTypeSalary' },
-		{ value: 'reward', labelKey: 'settlementTypeReward' },
-		{ value: 'subsidy', labelKey: 'settlementTypeSubsidy' },
-		{ value: 'adjustment', labelKey: 'settlementTypeAdjustment' },
-	];
-
-	const payerTypeOptions: Array<{ value: PayerType; labelKey: keyof Labels }> = [
-		{ value: 'character', labelKey: 'payerTypeCharacter' },
-		{ value: 'org_treasury', labelKey: 'payerTypeOrgTreasury' },
-		{ value: 'external', labelKey: 'payerTypeExternal' },
-		{ value: 'custom', labelKey: 'payerTypeCustom' },
-	];
-
-	const allocationModeLabels: Record<AllocationMode, keyof Labels> = {
-		equal: 'allocationModeEqual',
-		weight: 'allocationModeWeight',
-		manual: 'allocationModeManual',
-	};
-
-	const feeModeLabels: Record<FeeMode, keyof Labels> = {
-		none: 'feeModeNone',
-		percent: 'feeModePercent',
-		fixed: 'feeModeFixed',
-		rule: 'feeModeRule',
-	};
 
 	export let lang: string;
 	export let organization: string | null = null;
 	export let eventId: number | null = null;
 	export let labels: Labels;
 
-	let organizations: OrganizationCardResponse[] = [];
-	let organizationCharacters: LedgerWorkspaceCharacter[] = [];
 	let session: AuthSession | null = null;
-	let events: LedgerEventListItem[] = [];
+	let organizations: OrganizationCardResponse[] = [];
+	let organizationSummary: OrganizationManageSummary | null = null;
+	let organizationCharacters: OrganizationManageCharacter[] = [];
+	let currentWorkspaceRole: WorkspaceRole | null = null;
+
+	let allEvents: LedgerEventListItem[] = [];
+	let eventDetailsById: Record<string, LedgerEventDetail> = {};
+	let hydratingEventIds = new Set<number>();
 	let eventsLoading = false;
 	let eventsError = '';
 	let hasAnyEvents = false;
-	let eventsHasMore = false;
-	let eventQueryOffset = 0;
-	let eventQueryLimit = DEFAULT_EVENT_PAGE_LIMIT;
+	let pageSize = DEFAULT_EVENT_PAGE_LIMIT;
+	let currentPage = 1;
 	let eventQueryFromDate = '';
 	let eventQueryToDate = '';
+	let selectedGameId = '';
 	let selectedEventId = '';
-	let selectedEvent: LedgerEvent | null = null;
+	let selectedEvent: LedgerEventDetail | null = null;
+	let selectedEventLoading = false;
+	let selectedEventError = '';
+	let pendingPickEventId: number | null = null;
+	let initialEventIdPending: number | null = null;
 
-	let defaultsLoading = false;
-	let defaultsError = '';
-	let defaults: LedgerSettlementDefaultsResponse | null = null;
-	let recipientLoadError = '';
-	let currentWorkspaceRole: WorkspaceRole | null = null;
-	let workspaceDefaultPayerCharacterId = '';
-	let loadingWorkspaceEventId: number | null = null;
-
-	let recentSettlements: RecentSettlementCreationEntry[] = [];
+	let settlementDefaultsByGameId: Record<string, LedgerSettlementDefaultsResponse> = {};
+	let defaultsLoadingGameId = '';
 
 	let title = '';
 	let decidedAt = '';
@@ -227,17 +206,14 @@
 	let feePercent = '';
 	let feeAmount = '';
 	let feeRuleKey = '';
-	let unitAssetId = '';
 	let payerType: PayerType = 'character';
 	let payerRef = '';
 	let payerCharacterId = '';
-	let recipientPickerValue = '';
 	let recipientCharacterIds: string[] = [];
 	let eventParticipantCharacterIds: string[] = [];
 	let settlementType: SettlementType = 'sale';
 	let allocationMode: AllocationMode = 'equal';
 	let notes = '';
-	let titleWasPrefilled = false;
 
 	let errors: Record<string, string> = {};
 	let isSubmitting = false;
@@ -251,50 +227,6 @@
 
 	function findOrganizationByReference(reference: string) {
 		return organizations.find((entry) => getOrganizationReference(entry) === reference) ?? null;
-	}
-
-	function resetWorkspaceState() {
-		events = [];
-		eventsLoading = false;
-		eventsError = '';
-		hasAnyEvents = false;
-		eventsHasMore = false;
-		eventQueryOffset = 0;
-		selectedEventId = '';
-		selectedEvent = null;
-		defaultsLoading = false;
-		defaultsError = '';
-		defaults = null;
-		recipientLoadError = '';
-		currentWorkspaceRole = null;
-		workspaceDefaultPayerCharacterId = '';
-		title = '';
-		grossAmount = '';
-		netAmount = '';
-		feePercent = '';
-		feeAmount = '';
-		feeRuleKey = '';
-		unitAssetId = '';
-		payerType = 'character';
-		payerRef = '';
-		payerCharacterId = '';
-		recipientPickerValue = '';
-		recipientCharacterIds = [];
-		eventParticipantCharacterIds = [];
-		settlementType = 'sale';
-		allocationMode = 'equal';
-		notes = '';
-		titleWasPrefilled = false;
-		errors = {};
-	}
-
-	function openLoginDialog() {
-		dialogOpen = true;
-		dialogState = 'error';
-		dialogTitle = labels.authRequiredTitle;
-		dialogMessage = labels.authRequiredBody;
-		dialogPrimaryAction = { label: labels.loginLabel, href: `/${lang}/login` };
-		dialogSecondaryAction = { label: labels.homeLabel, href: `/${lang}/` };
 	}
 
 	function toLocalDateTimeValue(date: Date) {
@@ -324,19 +256,11 @@
 	}
 
 	function toRangeStartIso(value: string) {
-		if (!value) {
-			return undefined;
-		}
-
-		return new Date(`${value}T00:00:00`).toISOString();
+		return value ? new Date(`${value}T00:00:00`).toISOString() : undefined;
 	}
 
 	function toRangeEndIso(value: string) {
-		if (!value) {
-			return undefined;
-		}
-
-		return new Date(`${value}T23:59:59.999`).toISOString();
+		return value ? new Date(`${value}T23:59:59.999`).toISOString() : undefined;
 	}
 
 	function parsePositiveNumber(value: string | number | null | undefined) {
@@ -351,25 +275,140 @@
 		return typeof value === 'number' ? Number.isFinite(value) : value.trim().length > 0;
 	}
 
-	function mapEventHolderToPayerType(event: LedgerEvent): PayerType {
-		switch (event.holderType) {
-			case 'character':
-				return 'character';
-			case 'org_treasury':
-				return 'org_treasury';
-			case 'custom':
-				return 'custom';
-			default:
-				return 'external';
+	function openLoginDialog() {
+		dialogOpen = true;
+		dialogState = 'error';
+		dialogTitle = labels.authRequiredTitle;
+		dialogMessage = labels.authRequiredBody;
+		dialogPrimaryAction = { label: labels.loginLabel, href: `/${lang}/login` };
+		dialogSecondaryAction = { label: labels.homeLabel, href: `/${lang}/` };
+	}
+
+	function openNoOrganizationsDialog() {
+		dialogOpen = true;
+		dialogState = 'error';
+		dialogTitle = labels.noOrganizationsTitle;
+		dialogMessage = labels.noOrganizationsBody;
+		dialogPrimaryAction = { label: labels.noOrganizationsActionLabel, href: `/${lang}/guilds` };
+		dialogSecondaryAction = { label: labels.homeLabel, href: `/${lang}/` };
+	}
+
+	function openPendingDialog() {
+		dialogOpen = true;
+		dialogState = 'pending';
+		dialogTitle = labels.loadingCreateTitle;
+		dialogMessage = labels.loadingCreateBody;
+		dialogPrimaryAction = null;
+		dialogSecondaryAction = null;
+	}
+
+	function openErrorDialog(message: string) {
+		dialogOpen = true;
+		dialogState = 'error';
+		dialogTitle = labels.errorCreateTitle;
+		dialogMessage = message;
+		dialogPrimaryAction = {
+			label: labels.errorRetryLabel,
+			onClick: () => {
+				dialogOpen = false;
+			},
+		};
+		dialogSecondaryAction = null;
+	}
+
+	function openSuccessDialog() {
+		dialogOpen = true;
+		dialogState = 'success';
+		dialogTitle = labels.successCreateTitle;
+		dialogMessage = labels.successCreateBody;
+		dialogPrimaryAction = {
+			label: labels.successCloseLabel,
+			onClick: () => {
+				dialogOpen = false;
+			},
+		};
+		dialogSecondaryAction = null;
+	}
+
+	function resetFormState() {
+		title = '';
+		grossAmount = '';
+		netAmount = '';
+		feeMode = 'none';
+		feePercent = '';
+		feeAmount = '';
+		feeRuleKey = '';
+		payerType = 'character';
+		payerRef = '';
+		payerCharacterId = '';
+		recipientCharacterIds = [];
+		eventParticipantCharacterIds = [];
+		settlementType = 'sale';
+		allocationMode = 'equal';
+		notes = '';
+		errors = {};
+	}
+
+	function resetSelectedEventState() {
+		selectedEventId = '';
+		selectedEvent = null;
+		selectedEventLoading = false;
+		selectedEventError = '';
+		pendingPickEventId = null;
+		resetFormState();
+	}
+
+	function resetWorkspaceState() {
+		organizationSummary = null;
+		organizationCharacters = [];
+		currentWorkspaceRole = null;
+		allEvents = [];
+		eventDetailsById = {};
+		hydratingEventIds = new Set<number>();
+		eventsLoading = false;
+		eventsError = '';
+		hasAnyEvents = false;
+		pageSize = DEFAULT_EVENT_PAGE_LIMIT;
+		currentPage = 1;
+		selectedGameId = '';
+		settlementDefaultsByGameId = {};
+		defaultsLoadingGameId = '';
+		resetSelectedEventState();
+	}
+
+	function getPrimaryGameId(summary: OrganizationManageSummary | null) {
+		const primaryGame = summary?.games.find((game) => game.primary) ?? summary?.games[0];
+		return primaryGame ? String(primaryGame.gameId) : '';
+	}
+
+	function syncUrl() {
+		if (!organization || typeof window === 'undefined') {
+			return;
 		}
+
+		const url = new URL(window.location.href);
+		url.searchParams.set('orgVanity', organization);
+		if (selectedEventId) {
+			url.searchParams.set('eventId', selectedEventId);
+		} else {
+			url.searchParams.delete('eventId');
+		}
+		window.history.replaceState({}, '', url);
+	}
+
+	function formatDateTime(value: string) {
+		return new Intl.DateTimeFormat(undefined, {
+			dateStyle: 'medium',
+			timeStyle: 'short',
+		}).format(new Date(value));
 	}
 
 	function getCharacterById(characterId: string) {
 		return organizationCharacters.find((character) => String(character.id) === characterId) ?? null;
 	}
 
-	function getCharacterMetaLabel(character: LedgerWorkspaceCharacter) {
-		return character.vanity ? `@${character.vanity}` : labels.formPayerRefUnclaimedMeta;
+	function getCharacterMetaLabel(character: OrganizationManageCharacter) {
+		return character.claimedBy?.displayName ?? labels.formPayerRefUnclaimedMeta;
 	}
 
 	function syncPayerFromCharacterId(characterId: string) {
@@ -377,55 +416,21 @@
 		payerRef = getCharacterById(characterId)?.name ?? '';
 	}
 
-	function setRecipientsFromEventParticipants(characterIds: string[]) {
+	function setRecipients(characterIds: string[]) {
 		eventParticipantCharacterIds = [...characterIds];
 		recipientCharacterIds = [...characterIds];
-		recipientPickerValue = '';
 	}
 
 	function addRecipientCharacterId(characterId: string) {
 		if (!characterId || recipientCharacterIds.includes(characterId)) {
-			recipientPickerValue = '';
 			return;
 		}
 
 		recipientCharacterIds = [...recipientCharacterIds, characterId];
-		recipientPickerValue = '';
 	}
 
 	function removeRecipientCharacterId(characterId: string) {
 		recipientCharacterIds = recipientCharacterIds.filter((value) => value !== characterId);
-	}
-
-	function findCharacterIdByNameForGame(name: string, gameId?: number | null) {
-		const trimmed = name.trim();
-		if (!trimmed) {
-			return '';
-		}
-
-		return String(
-			organizationCharacters.find(
-				(character) =>
-					character.name === trimmed &&
-					(typeof gameId !== 'number' || character.gameId === gameId),
-			)?.id ?? '',
-		);
-	}
-
-	function getDefaultPayerCharacterId(gameId?: number | null) {
-		if (workspaceDefaultPayerCharacterId) {
-			return workspaceDefaultPayerCharacterId;
-		}
-
-		if (typeof gameId !== 'number') {
-			return '';
-		}
-
-		return (
-			String(
-				organizationCharacters.find((character) => character.gameId === gameId)?.id ?? '',
-			) || ''
-		);
 	}
 
 	function haveSameCharacterSelection(left: string[], right: string[]) {
@@ -438,6 +443,19 @@
 		return leftSorted.every((value, index) => value === rightSorted[index]);
 	}
 
+	function mapEventHolderToPayerType(event: LedgerEventDetail): PayerType {
+		switch (event.holder.type) {
+			case 'character':
+				return 'character';
+			case 'org_treasury':
+				return 'org_treasury';
+			case 'custom':
+				return 'custom';
+			default:
+				return 'external';
+		}
+	}
+
 	function parseStructuredApiError(error: unknown) {
 		if (!(error instanceof Error)) {
 			return null;
@@ -448,54 +466,207 @@
 				code?: string;
 				error?: string;
 				message?: string;
-				participantValidation?: {
-					eventParticipantCharacterIds?: number[];
-					recipientCharacterIds?: number[];
-				};
 			};
 		} catch {
 			return null;
 		}
 	}
 
-	function updateSelectedEvent() {
-		selectedEvent = events.find((event) => String(event.id) === selectedEventId) ?? null;
-		if (!selectedEvent) {
-			eventParticipantCharacterIds = [];
-			recipientCharacterIds = [];
-			recipientPickerValue = '';
-			recipientLoadError = '';
+	function getDefaultPayerCharacterId(gameId: number, detail: LedgerEventDetail | null) {
+		if (
+			currentWorkspaceRole === 'member' &&
+			isAuthenticatedSession(session)
+		) {
+			const ownedCharacter = organizationCharacters.find(
+				(character) =>
+					character.gameId === gameId &&
+					character.claimedBy?.userId === session.user.id,
+			);
+			if (ownedCharacter) {
+				return String(ownedCharacter.id);
+			}
+		}
+
+		if (detail?.holder.type === 'character' && detail.holder.character?.id) {
+			return String(detail.holder.character.id);
+		}
+
+		return String(
+			organizationCharacters.find((character) => character.gameId === gameId)?.id ?? '',
+		);
+	}
+
+	async function ensureSettlementDefaultsForGame(gameId: string) {
+		if (!organization || !gameId) {
+			return null;
+		}
+
+		if (settlementDefaultsByGameId[gameId]) {
+			return settlementDefaultsByGameId[gameId];
+		}
+
+		defaultsLoadingGameId = gameId;
+
+		try {
+			if (typeof window !== 'undefined') {
+				const cached = readSettlementDefaultsCache(
+					window.sessionStorage,
+					organization,
+					Number(gameId),
+				);
+				if (cached) {
+					settlementDefaultsByGameId = {
+						...settlementDefaultsByGameId,
+						[gameId]: cached,
+					};
+					return cached;
+				}
+			}
+
+			const response = await getApiAdapter().getOrganizationLedgerSettlementDefaults(organization, {
+				gameId: Number(gameId),
+			});
+			if (typeof window !== 'undefined') {
+				writeSettlementDefaultsCache(window.sessionStorage, organization, response, Number(gameId));
+			}
+			settlementDefaultsByGameId = {
+				...settlementDefaultsByGameId,
+				[gameId]: response,
+			};
+			return response;
+		} catch (error) {
+			devDebugError('settlements.defaults', 'Failed to load settlement defaults', {
+				organization,
+				gameId,
+				error,
+			});
+			return null;
+		} finally {
+			if (defaultsLoadingGameId === gameId) {
+				defaultsLoadingGameId = '';
+			}
+		}
+	}
+
+	function seedFormFromEvent(detail: LedgerEventDetail, defaults: LedgerSettlementDefaultsResponse | null) {
+		title = `${detail.title} settlement`;
+		payerType = mapEventHolderToPayerType(detail);
+		payerRef = detail.holder.ref ?? '';
+		payerCharacterId = '';
+		const participantIds = (detail.recommendedRecipientCharacterIds.length
+			? detail.recommendedRecipientCharacterIds
+			: detail.participantCharacterIds
+		).map((characterId) => String(characterId));
+		setRecipients(participantIds);
+		settlementType = 'sale';
+
+		if (defaults) {
+			feeMode = defaults.defaults.defaultFeeMode;
+			allocationMode = defaults.defaults.defaultAllocationMode;
+		} else {
+			feeMode = 'none';
+			allocationMode = 'equal';
+		}
+
+		feePercent = '';
+		feeAmount = '';
+		feeRuleKey = '';
+		grossAmount = '';
+		netAmount = calculateSettlementNetAmount({
+			grossAmount,
+			feeMode,
+			feePercent,
+			feeAmount,
+		});
+
+		if (payerType === 'character') {
+			syncPayerFromCharacterId(getDefaultPayerCharacterId(detail.game.id, detail));
+		}
+	}
+
+	async function hydrateVisibleEventDetails() {
+		if (!organization || visibleEvents.length === 0) {
 			return;
 		}
 
-		if (!title || titleWasPrefilled) {
-			title = `${selectedEvent.title} settlement`;
-			titleWasPrefilled = true;
-		}
-
-		payerType = mapEventHolderToPayerType(selectedEvent);
-		payerRef = typeof selectedEvent.holderRef === 'string' ? selectedEvent.holderRef : '';
-		payerCharacterId =
-			payerType === 'character'
-				? findCharacterIdByNameForGame(payerRef, selectedEvent.gameId ?? null)
-				: '';
-		void loadSettlementWorkspace(selectedEvent.id);
-	}
-
-	async function syncOrganizationContext() {
-		if (!organization || typeof window === 'undefined') {
+		const targets = visibleEvents.filter(
+			(event) => !eventDetailsById[String(event.id)] && !hydratingEventIds.has(event.id),
+		);
+		if (!targets.length) {
 			return;
 		}
 
-		writePreferredOrganization(window.localStorage, organization);
-		resetWorkspaceState();
-		const url = new URL(window.location.href);
-		url.searchParams.set('orgVanity', organization);
-		window.history.replaceState({}, '', url);
-		await loadEvents();
+		hydratingEventIds = new Set([...hydratingEventIds, ...targets.map((event) => event.id)]);
+
+		const results = await Promise.allSettled(
+			targets.map((event) => getApiAdapter().getOrganizationLedgerEvent(organization as string, event.id)),
+		);
+
+		let nextDetails = eventDetailsById;
+		const nextLoadingIds = new Set(hydratingEventIds);
+
+		results.forEach((result, index) => {
+			const event = targets[index];
+			nextLoadingIds.delete(event.id);
+			if (result.status === 'fulfilled') {
+				nextDetails = {
+					...nextDetails,
+					[String(event.id)]: result.value.event,
+				};
+			}
+		});
+
+		eventDetailsById = nextDetails;
+		hydratingEventIds = nextLoadingIds;
 	}
 
-	async function initializeOrganizations() {
+	async function loadEvents() {
+		if (!organization) {
+			return;
+		}
+
+		eventsLoading = true;
+		eventsError = '';
+
+		try {
+			const [allEventsResponse, filteredResponse] = await Promise.all([
+				getApiAdapter().listOrganizationLedgerEvents(organization, {
+					limit: 1,
+					sortBy: 'occurredAt',
+					sortOrder: 'desc',
+				}),
+				getApiAdapter().listOrganizationLedgerEvents(organization, {
+					statusGroup: 'unsettled',
+					fromOccurredAt: toRangeStartIso(eventQueryFromDate),
+					toOccurredAt: toRangeEndIso(eventQueryToDate),
+					include: 'participants_summary',
+					limit: FETCH_EVENT_BATCH_LIMIT,
+					sortBy: 'occurredAt',
+					sortOrder: 'desc',
+				}),
+			]);
+			hasAnyEvents = allEventsResponse.events.length > 0;
+			allEvents = filteredResponse.events;
+			currentPage = 1;
+			if (selectedEventId && !filteredEvents.some((event) => String(event.id) === selectedEventId)) {
+				resetSelectedEventState();
+			}
+			await hydrateVisibleEventDetails();
+			if (initialEventIdPending && filteredEvents.some((event) => event.id === initialEventIdPending)) {
+				const nextEventId = initialEventIdPending;
+				initialEventIdPending = null;
+				void pickEvent(nextEventId);
+			}
+		} catch (error) {
+			eventsError = getErrorMessage(error, labels.errorCreateTitle);
+			hasAnyEvents = false;
+			allEvents = [];
+		} finally {
+			eventsLoading = false;
+		}
+	}
+
+	async function loadOrganizationContext() {
 		const normalizedOrganization = resolveOrganizationQuery(organization);
 		session = await ensureAuthSession();
 		if (!isAuthenticatedSession(session)) {
@@ -503,10 +674,12 @@
 			openLoginDialog();
 			return;
 		}
+
 		const snapshot = await ensureMyOrganizationsCache();
 		organizations = snapshot.organizations;
 		if (!organizations.length) {
 			organization = normalizedOrganization;
+			openNoOrganizationsDialog();
 			return;
 		}
 
@@ -526,8 +699,33 @@
 				: null) ||
 			getOrganizationReference(organizations[0]);
 
+		await changeOrganization(nextOrganization);
+	}
+
+	async function changeOrganization(nextOrganization: string) {
+		if (!nextOrganization) {
+			return;
+		}
+
 		organization = nextOrganization;
-		await syncOrganizationContext();
+		resetWorkspaceState();
+		if (typeof window !== 'undefined') {
+			writePreferredOrganization(window.localStorage, nextOrganization);
+		}
+
+		const manageSnapshot = await ensureOrganizationManageCache(nextOrganization);
+		organizationSummary = manageSnapshot.organization;
+		organizationCharacters = manageSnapshot.characters;
+		currentWorkspaceRole =
+			findOrganizationByReference(nextOrganization)?.membership.role ?? null;
+		selectedGameId = getPrimaryGameId(manageSnapshot.organization);
+		syncUrl();
+
+		if (selectedGameId) {
+			void ensureSettlementDefaultsForGame(selectedGameId);
+		}
+
+		await loadEvents();
 	}
 
 	function handleOrganizationChange(event: CustomEvent<{ value: string }>) {
@@ -535,225 +733,21 @@
 			return;
 		}
 
-		organization = event.detail.value;
-		void syncOrganizationContext();
+		void changeOrganization(event.detail.value);
 	}
 
-	function handlePayerCharacterChange(event: CustomEvent<{ value: string }>) {
-		syncPayerFromCharacterId(event.detail.value);
-	}
-
-	function handleRecipientCharacterChange(event: CustomEvent<{ value: string }>) {
-		addRecipientCharacterId(event.detail.value);
-	}
-
-	async function loadSettlementWorkspaceFallback(nextEventId: number) {
-		if (!organization) {
+	function handleGameChange(event: CustomEvent<{ value: string }>) {
+		if (event.detail.value === selectedGameId) {
 			return;
 		}
 
-		const eventSummary = events.find((entry) => entry.id === nextEventId) ?? null;
-		const gameId =
-			eventSummary && typeof eventSummary.gameId === 'number' && Number.isFinite(eventSummary.gameId)
-				? eventSummary.gameId
-				: undefined;
-
-		try {
-			const [manageSnapshot, defaultsResponse] = await Promise.all([
-				ensureOrganizationManageCache(organization),
-				(async () => {
-					if (typeof window !== 'undefined') {
-						const cached = readSettlementDefaultsCache(window.sessionStorage, organization, gameId);
-						if (cached) {
-							return cached;
-						}
-					}
-
-					const response = await getApiAdapter().getOrganizationLedgerSettlementDefaults(organization, {
-						gameId,
-					});
-					if (typeof window !== 'undefined') {
-						writeSettlementDefaultsCache(window.sessionStorage, organization, response, gameId);
-					}
-					return response;
-				})(),
-			]);
-
-			if (selectedEventId !== String(nextEventId)) {
-				return;
-			}
-
-			organizationCharacters = manageSnapshot.characters.map((character) => ({
-				id: character.id,
-				name: character.name,
-				slug: character.slug,
-				vanity: character.vanity,
-				gameId: character.gameId,
-				isActive: true,
-			}));
-			currentWorkspaceRole = selectedOrganizationCard?.membership?.role ?? null;
-			defaults = defaultsResponse;
-			defaultsError = '';
-
-			const participantIds = (eventSummary?.participantCharacterIds ?? []).map((characterId) =>
-				String(characterId),
-			);
-			setRecipientsFromEventParticipants(participantIds);
-
-			if (payerType === 'character' && gameId !== undefined) {
-				syncPayerFromCharacterId(getDefaultPayerCharacterId(gameId));
-			}
-
-			allocationMode = defaultsResponse.defaults.defaultAllocationMode;
-			feeMode = defaultsResponse.defaults.defaultFeeMode;
-			unitAssetId = String(defaultsResponse.defaults.defaultSettlementUnit.id);
-			netAmount = calculateSettlementNetAmount({
-				grossAmount,
-				feeMode,
-				feePercent,
-				feeAmount,
-			});
-		} catch (fallbackError) {
-			defaults = null;
-			defaultsError = getErrorMessage(fallbackError, labels.errorCreateTitle);
-			recipientLoadError = getErrorMessage(fallbackError, labels.formRecipientsMismatchError);
-			devDebugError('settlements.workspace', 'Fallback settlement workspace load failed', {
-				organization,
-				eventId: nextEventId,
-				error: fallbackError,
-			});
+		selectedGameId = event.detail.value;
+		currentPage = 1;
+		resetSelectedEventState();
+		if (selectedGameId) {
+			void ensureSettlementDefaultsForGame(selectedGameId);
 		}
-	}
-
-	async function loadSettlementWorkspace(nextEventId: number) {
-		if (!organization) {
-			return;
-		}
-
-		if (loadingWorkspaceEventId === nextEventId) {
-			return;
-		}
-
-		defaultsLoading = true;
-		defaultsError = '';
-		recipientLoadError = '';
-		loadingWorkspaceEventId = nextEventId;
-
-		try {
-			const response = await getApiAdapter().getOrganizationLedgerSettlementWorkspace(
-				organization,
-				nextEventId,
-			);
-			if (selectedEventId !== String(nextEventId)) {
-				return;
-			}
-
-			selectedEvent = response.event;
-			defaults = {
-				defaults: response.defaults,
-				game: response.event.game,
-			};
-			organizationCharacters = response.availableCharacters.filter((character) => character.isActive);
-			currentWorkspaceRole = response.currentUserRole;
-			workspaceDefaultPayerCharacterId = String(response.defaultPayerCharacterId ?? '');
-			setRecipientsFromEventParticipants(
-				response.defaultRecipientCharacterIds.map((characterId) => String(characterId)),
-			);
-			if (payerType === 'character') {
-				syncPayerFromCharacterId(workspaceDefaultPayerCharacterId);
-			}
-			allocationMode = response.defaults.defaultAllocationMode;
-			feeMode = response.defaults.defaultFeeMode;
-			unitAssetId = String(response.defaults.defaultSettlementUnit.id);
-			netAmount = calculateSettlementNetAmount({
-				grossAmount,
-				feeMode,
-				feePercent,
-				feeAmount,
-			});
-		} catch (error) {
-			devDebugError('settlements.workspace', 'Failed to load settlement workspace', {
-				organization,
-				eventId: nextEventId,
-				error,
-			});
-			await loadSettlementWorkspaceFallback(nextEventId);
-		} finally {
-			loadingWorkspaceEventId = null;
-			defaultsLoading = false;
-		}
-	}
-
-	async function loadEvents() {
-		if (!organization) {
-			return;
-		}
-
-		eventsLoading = true;
-		eventsError = '';
-
-		try {
-			const allEventsResponse = await getApiAdapter().listOrganizationLedgerEvents(organization, {
-				limit: 1,
-				sortBy: 'occurredAt',
-				sortOrder: 'desc',
-			});
-			hasAnyEvents = allEventsResponse.events.length > 0;
-
-			const response = await getApiAdapter().listOrganizationLedgerEvents(organization, {
-				statusGroup: 'unsettled',
-				fromOccurredAt: toRangeStartIso(eventQueryFromDate),
-				toOccurredAt: toRangeEndIso(eventQueryToDate),
-				include: 'participants_summary',
-				limit: eventQueryLimit,
-				offset: eventQueryOffset,
-				sortBy: 'occurredAt',
-				sortOrder: 'desc',
-			});
-			let preferredEvent: LedgerEventListItem | null = eventId
-				? response.events.find((entry) => entry.id === eventId) ?? null
-				: null;
-			eventsHasMore = response.pagination.hasMore;
-			events = preferredEvent
-				? [preferredEvent, ...response.events.filter((entry) => entry.id !== preferredEvent?.id)]
-				: response.events;
-			const preferred = preferredEvent ?? (eventId ? response.events.find((entry) => entry.id === eventId) : null);
-			selectedEventId = String(preferred?.id ?? response.events[0]?.id ?? '');
-		} catch (error) {
-			hasAnyEvents = false;
-			eventsHasMore = false;
-			eventsError = getErrorMessage(error, labels.errorCreateTitle);
-		} finally {
-			eventsLoading = false;
-		}
-	}
-
-	function applyEventFilters() {
-		eventQueryOffset = 0;
-		void loadEvents();
-	}
-
-	function loadPreviousEventPage() {
-		if (eventsLoading || eventQueryOffset === 0) {
-			return;
-		}
-
-		eventQueryOffset = Math.max(0, eventQueryOffset - eventQueryLimit);
-		void loadEvents();
-	}
-
-	function loadNextEventPage() {
-		if (eventsLoading || !eventsHasMore) {
-			return;
-		}
-
-		eventQueryOffset += eventQueryLimit;
-		void loadEvents();
-	}
-
-	function getEventPageSummary() {
-		const page = Math.floor(eventQueryOffset / eventQueryLimit) + 1;
-		return labels.eventPageSummaryLabel.replace('{page}', String(page));
+		void hydrateVisibleEventDetails();
 	}
 
 	function handleEventRangeChange(event: CustomEvent<{ start: string; end: string }>) {
@@ -761,8 +755,80 @@
 		eventQueryToDate = event.detail.end;
 	}
 
-	function handleDecidedAtChange(event: CustomEvent<{ value: string }>) {
-		decidedAt = event.detail.value;
+	function applyEventFilters() {
+		resetSelectedEventState();
+		void loadEvents();
+	}
+
+	function handlePageSizeChange(event: CustomEvent<{ value: number }>) {
+		pageSize = event.detail.value;
+		currentPage = 1;
+		void hydrateVisibleEventDetails();
+	}
+
+	function loadPreviousEventPage() {
+		if (currentPage <= 1) {
+			return;
+		}
+
+		currentPage -= 1;
+		void hydrateVisibleEventDetails();
+	}
+
+	function loadNextEventPage() {
+		if (currentPage >= totalPages) {
+			return;
+		}
+
+		currentPage += 1;
+		void hydrateVisibleEventDetails();
+	}
+
+	async function pickEvent(nextEventId: number) {
+		if (!organization || pendingPickEventId !== null) {
+			return;
+		}
+
+		const summary = filteredEvents.find((event) => event.id === nextEventId) ?? allEvents.find((event) => event.id === nextEventId);
+		if (!summary) {
+			return;
+		}
+
+		pendingPickEventId = nextEventId;
+		selectedEventLoading = true;
+		selectedEventError = '';
+		resetFormState();
+
+		try {
+			const gameId =
+				typeof summary.gameId === 'number' && Number.isFinite(summary.gameId)
+					? String(summary.gameId)
+					: selectedGameId;
+			const [eventResponse, defaults] = await Promise.all([
+				getApiAdapter().getOrganizationLedgerEvent(organization, nextEventId),
+				ensureSettlementDefaultsForGame(gameId),
+			]);
+
+			selectedEvent = eventResponse.event;
+			selectedEventId = String(nextEventId);
+			selectedGameId = String(eventResponse.event.game.id);
+			eventDetailsById = {
+				...eventDetailsById,
+				[selectedEventId]: eventResponse.event,
+			};
+			seedFormFromEvent(eventResponse.event, defaults);
+			syncUrl();
+		} catch (error) {
+			selectedEventError = getErrorMessage(error, labels.errorCreateTitle);
+			devDebugError('settlements.pick', 'Failed to load settlement event detail', {
+				organization,
+				eventId: nextEventId,
+				error,
+			});
+		} finally {
+			pendingPickEventId = null;
+			selectedEventLoading = false;
+		}
 	}
 
 	function validate() {
@@ -772,7 +838,7 @@
 			nextErrors.organization = labels.validationRequired;
 		}
 
-		if (!selectedEventId) {
+		if (!selectedEvent) {
 			nextErrors.eventId = labels.validationRequired;
 		}
 
@@ -820,45 +886,8 @@
 			}
 		}
 
-		if (hasNonEmptyValue(unitAssetId)) {
-			const parsed = Number(unitAssetId);
-			if (!Number.isInteger(parsed) || parsed <= 0) {
-				nextErrors.unitAssetId = labels.validationNumber;
-			}
-		}
-
 		errors = nextErrors;
 		return Object.keys(nextErrors).length === 0;
-	}
-
-	function getPreviousSettlementButtonLabel() {
-		const previous = organization
-			? getLatestSettlementCreationForOrganization(recentSettlements, organization)
-			: null;
-		if (!previous) {
-			return labels.reusePreviousAmountEmpty;
-		}
-
-		return `${labels.reusePreviousAmountLabel} ${formatAmountDisplay(previous.payload.grossAmount)}`;
-	}
-
-	function usePreviousAmount() {
-		if (!organization) {
-			return;
-		}
-
-		const previous = getLatestSettlementCreationForOrganization(recentSettlements, organization);
-		if (!previous) {
-			return;
-		}
-
-		grossAmount = String(previous.payload.grossAmount);
-		netAmount = calculateSettlementNetAmount({
-			grossAmount,
-			feeMode,
-			feePercent,
-			feeAmount,
-		});
 	}
 
 	function handleAmountEditorChange(
@@ -879,58 +908,26 @@
 		feeRuleKey = event.detail.feeRuleKey;
 	}
 
-	function openPendingDialog() {
-		dialogOpen = true;
-		dialogState = 'pending';
-		dialogTitle = labels.loadingCreateTitle;
-		dialogMessage = labels.loadingCreateBody;
-		dialogPrimaryAction = null;
-		dialogSecondaryAction = null;
-	}
-
-	function openErrorDialog(message: string) {
-		dialogOpen = true;
-		dialogState = 'error';
-		dialogTitle = labels.errorCreateTitle;
-		dialogMessage = message;
-		dialogPrimaryAction = {
-			label: labels.errorRetryLabel,
-			onClick: () => {
-				dialogOpen = false;
-			},
-		};
-		dialogSecondaryAction = null;
-	}
-
-	function openSuccessDialog() {
-		dialogOpen = true;
-		dialogState = 'success';
-		dialogTitle = labels.successCreateTitle;
-		dialogMessage = labels.successCreateBody;
-		dialogPrimaryAction = {
-			label: labels.successCloseLabel,
-			onClick: () => {
-				dialogOpen = false;
-			},
-		};
-		dialogSecondaryAction = null;
-	}
-
 	async function submit() {
-		if (isSubmitting || !validate() || !organization) {
+		if (isSubmitting || !validate() || !organization || !selectedEvent) {
 			return;
 		}
 
-		const payload: CreateLedgerSettlementRequest = {
+		const recipientIds = recipientCharacterIds
+			.map((characterId) => Number(characterId))
+			.filter((characterId) => Number.isFinite(characterId));
+
+		const payload: SettleLedgerEventRequest = {
 			title: title.trim(),
 			decidedAt: new Date(decidedAt).toISOString(),
-			eventId: Number(selectedEventId),
 			grossAmount: Number(grossAmount),
 			netAmount: Number(netAmount),
 			feeMode,
 			allocationMode,
 			payerType,
 			settlementType,
+			recipientCharacterIds: recipientIds,
+			recipients: recipientIds.map((characterId) => ({ characterId })),
 		};
 
 		if (notes.trim()) {
@@ -938,14 +935,6 @@
 		}
 		if (payerRef.trim()) {
 			payload.payerRef = payerRef.trim();
-		}
-		if (recipientCharacterIds.length > 0) {
-			payload.recipientCharacterIds = recipientCharacterIds
-				.map((characterId) => Number(characterId))
-				.filter((characterId) => Number.isFinite(characterId));
-		}
-		if (hasNonEmptyValue(unitAssetId)) {
-			payload.unitAssetId = Number(unitAssetId);
 		}
 		if (feeMode === 'percent' && hasNonEmptyValue(feePercent)) {
 			payload.feePercent = Number(feePercent);
@@ -967,75 +956,49 @@
 		}, CREATE_TIMEOUT_MS);
 
 		try {
-			if (selectedEvent?.status === 'open') {
-				const settlePayload: SettleLedgerEventRequest = {
-					title: payload.title,
-					decidedAt: payload.decidedAt,
-					grossAmount: payload.grossAmount,
-					netAmount: payload.netAmount,
-					feeMode: payload.feeMode,
-					allocationMode: payload.allocationMode,
-					payerType: payload.payerType,
-					settlementType: payload.settlementType,
-				};
-
-				if (payload.notes) {
-					settlePayload.notes = payload.notes;
-				}
-				if (payload.payerRef) {
-					settlePayload.payerRef = payload.payerRef;
-				}
-				if (payload.recipientCharacterIds) {
-					settlePayload.recipientCharacterIds = payload.recipientCharacterIds;
-				}
-				if (payload.unitAssetId) {
-					settlePayload.unitAssetId = payload.unitAssetId;
-				}
-				if (payload.feePercent !== undefined) {
-					settlePayload.feePercent = payload.feePercent;
-				}
-				if (payload.feeAmount !== undefined) {
-					settlePayload.feeAmount = payload.feeAmount;
-				}
-				if (payload.feeRuleKey) {
-					settlePayload.feeRuleKey = payload.feeRuleKey;
-				}
-
-				devDebugLog('settlements.submit', 'Submitting settle event payload', {
-					organization,
-					eventId: Number(selectedEventId),
-					sourceEventStatus: selectedEvent.status,
-					payload: settlePayload,
-				});
-				const response = await getApiAdapter().settleOrganizationLedgerEvent(
-					organization,
-					Number(selectedEventId),
-					settlePayload,
-				);
-				devDebugLog('settlements.submit', 'Received settle event response', {
-					organization,
-					eventId: Number(selectedEventId),
-					response,
-				});
-			} else {
-				devDebugLog('settlements.submit', 'Submitting settlement payload', {
-					organization,
-					payload,
-				});
-				const response = await getApiAdapter().createOrganizationLedgerSettlement(organization, payload);
-				devDebugLog('settlements.submit', 'Received settlement response', {
-					organization,
-					response,
-				});
-			}
+			devDebugLog('settlements.submit', 'Submitting high-level settle payload', {
+				organization,
+				eventId: selectedEvent.id,
+				payload,
+			});
+			const response = await getApiAdapter().settleOrganizationLedgerEvent(
+				organization,
+				selectedEvent.id,
+				payload,
+			);
+			devDebugLog('settlements.submit', 'Received high-level settle response', {
+				organization,
+				eventId: selectedEvent.id,
+				response,
+			});
 			if (timedOut) {
 				return;
 			}
 
 			window.clearTimeout(timeoutId);
 			if (typeof window !== 'undefined') {
-				recentSettlements = recordRecentSettlementCreation(window.sessionStorage, organization, payload);
+				recordRecentSettlementCreation(window.sessionStorage, organization, {
+					title: payload.title,
+					decidedAt: payload.decidedAt,
+					eventId: selectedEvent.id,
+					grossAmount: payload.grossAmount,
+					netAmount: payload.netAmount,
+					feeMode: payload.feeMode,
+					allocationMode: payload.allocationMode,
+					payerType: payload.payerType,
+					settlementType: payload.settlementType,
+					recipientCharacterIds: payload.recipientCharacterIds,
+					payerRef: payload.payerRef,
+					notes: payload.notes,
+					feePercent: payload.feePercent,
+					feeAmount: payload.feeAmount,
+					feeRuleKey: payload.feeRuleKey,
+				});
 			}
+
+			allEvents = allEvents.filter((event) => event.id !== selectedEvent.id);
+			resetSelectedEventState();
+			syncUrl();
 			openSuccessDialog();
 		} catch (error) {
 			if (timedOut) {
@@ -1045,8 +1008,7 @@
 			window.clearTimeout(timeoutId);
 			devDebugError('settlements.submit', 'Settlement submission failed', {
 				organization,
-				selectedEventId,
-				selectedEventStatus: selectedEvent?.status ?? null,
+				selectedEventId: selectedEvent.id,
 				payload,
 				error,
 			});
@@ -1061,29 +1023,69 @@
 		}
 	}
 
-	$: if (selectedEventId) {
-		updateSelectedEvent();
+	$: selectedOrganizationCard = organization ? findOrganizationByReference(organization) : null;
+	$: currentWorkspaceRole = selectedOrganizationCard?.membership.role ?? currentWorkspaceRole;
+	$: organizationOptions = organizations.map((entry) => ({
+		value: getOrganizationReference(entry),
+		label: entry.name,
+		metaLabel: entry.vanity ? `@${entry.vanity}` : `${entry.stats.memberCount} members`,
+		iconUrl: entry.iconUrl,
+	}));
+	$: games = organizationSummary?.games.map((game) => ({
+		id: game.gameId,
+		name: game.displayName ?? game.name,
+		iconUrl: game.iconUrl,
+		resolvedIconUrl: game.resolvedIconUrl,
+		officialSiteUrl: game.officialSiteUrl,
+		primary: game.primary,
+	})) ?? [];
+	$: gameOptions = games.map((game) => ({
+		value: String(game.id),
+		label: game.name,
+		iconUrl: game.iconUrl,
+		resolvedIconUrl: game.resolvedIconUrl,
+		officialSiteUrl: game.officialSiteUrl,
+	}));
+	$: filteredEvents = allEvents.filter((event) =>
+		selectedGameId ? String(event.gameId ?? '') === selectedGameId : true,
+	);
+	$: totalPages = Math.max(1, Math.ceil(filteredEvents.length / pageSize));
+	$: if (currentPage > totalPages) {
+		currentPage = totalPages;
 	}
-
-	$: isMemberRestrictedPayerSelection = currentWorkspaceRole === 'member';
+	$: visibleEvents = filteredEvents.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+	$: eventRows = visibleEvents.map((event) => {
+		const detail = eventDetailsById[String(event.id)];
+		const holderLabel =
+			detail?.holder.character?.name ??
+			detail?.holder.ref ??
+			(typeof event.holderRef === 'string' ? event.holderRef : event.holderType);
+		const assetLabel =
+			detail?.asset.name ??
+			(typeof event.assetId === 'number' ? `Asset #${event.assetId}` : '—');
+		return {
+			id: event.id,
+			title: event.title,
+			occurredAtLabel: formatDateTime(event.occurredAt),
+			holderLabel,
+			assetLabel,
+			isPicked: String(event.id) === selectedEventId,
+			isPending: pendingPickEventId === event.id,
+		};
+	});
 	$: selectedPayerCharacter = getCharacterById(payerCharacterId);
 	$: selectedRecipientCharacters = recipientCharacterIds
 		.map((characterId) => getCharacterById(characterId))
-		.filter((character): character is LedgerWorkspaceCharacter => Boolean(character));
+		.filter((character): character is OrganizationManageCharacter => Boolean(character));
 	$: payerCharacterOptions = organizationCharacters
-		.filter((character) =>
-			typeof selectedEvent?.gameId === 'number' ? character.gameId === selectedEvent.gameId : true,
-		)
-		.filter((character) => character.isActive)
+		.filter((character) => String(character.gameId ?? '') === selectedGameId)
 		.map((character) => ({
 			value: String(character.id),
 			label: character.name,
 			metaLabel: getCharacterMetaLabel(character),
 		}));
 	$: recipientCharacterOptions = organizationCharacters
-		.filter((character) =>
-			typeof selectedEvent?.gameId === 'number' ? character.gameId === selectedEvent.gameId : true,
-		)
+		.filter((character) => String(character.gameId ?? '') === selectedGameId)
 		.filter((character) => !recipientCharacterIds.includes(String(character.id)))
 		.map((character) => ({
 			value: String(character.id),
@@ -1094,29 +1096,38 @@
 		recipientCharacterIds,
 		eventParticipantCharacterIds,
 	);
-	$: selectedOrganizationCard = organization ? findOrganizationByReference(organization) : null;
-	$: organizationOptions = organizations.map((entry) => ({
-		value: getOrganizationReference(entry),
-		label: entry.name,
-		metaLabel: entry.vanity ? `@${entry.vanity}` : `${entry.stats.memberCount} members`,
-		iconUrl: entry.iconUrl,
-	}));
-	$: if (payerType === 'character' && isMemberRestrictedPayerSelection && selectedEvent?.gameId) {
-		const defaultCharacterId = getDefaultPayerCharacterId(selectedEvent.gameId);
-		if (defaultCharacterId && payerCharacterId !== defaultCharacterId) {
-			syncPayerFromCharacterId(defaultCharacterId);
+	$: isMemberRestrictedPayerSelection = currentWorkspaceRole === 'member';
+	$: selectedGameName =
+		games.find((game) => String(game.id) === selectedGameId)?.name ??
+		selectedEvent?.game.name ??
+		'';
+	$: selectedAssetName = selectedEvent?.asset.name ?? '';
+	$: selectedHolderLabel =
+		selectedEvent?.holder.character?.name ??
+		selectedEvent?.holder.ref ??
+		selectedEvent?.holder.type ??
+		'';
+	$: if (selectedGameId && !settlementDefaultsByGameId[selectedGameId] && !defaultsLoadingGameId) {
+		void ensureSettlementDefaultsForGame(selectedGameId);
+	}
+	$: if (visibleEvents.length > 0) {
+		void hydrateVisibleEventDetails();
+	}
+	$: if (payerType === 'character' && isMemberRestrictedPayerSelection && selectedEvent) {
+		const restrictedCharacterId = getDefaultPayerCharacterId(selectedEvent.game.id, selectedEvent);
+		if (restrictedCharacterId && payerCharacterId !== restrictedCharacterId) {
+			syncPayerFromCharacterId(restrictedCharacterId);
 		}
 	}
 
 	onMount(() => {
+		organization = resolveOrganizationQuery(organization);
+		initialEventIdPending = eventId;
 		decidedAt = toLocalDateTimeValue(new Date());
 		const defaultRange = getDefaultEventRange();
 		eventQueryFromDate = defaultRange.from;
 		eventQueryToDate = defaultRange.to;
-		if (typeof window !== 'undefined') {
-			recentSettlements = loadRecentSettlementCreations(window.sessionStorage);
-		}
-		void initializeOrganizations();
+		void loadOrganizationContext();
 	});
 </script>
 
@@ -1127,704 +1138,254 @@
 		<p class="settlement-intro">{labels.intro}</p>
 	</div>
 
-	<section class="settlement-card settlement-context-card">
-		<div class="settlement-card-head settlement-context-head">
-			<div>
-				<h2>{labels.contextTitle}</h2>
-				<p>
-					{labels.contextBody}
-					{#if selectedOrganizationCard}
-						<strong>{selectedOrganizationCard.name}</strong>
-					{/if}
-				</p>
-			</div>
-		</div>
-
-		{#if organizations.length}
-			<label class="settlement-field">
-				<span>{labels.contextSelectLabel}</span>
-				<GuildOptionPicker
-					value={organization ?? ''}
-					ariaLabel={labels.contextSelectLabel}
-					placeholder={labels.contextSelectPlaceholder}
-					searchPlaceholder={labels.contextSelectPlaceholder}
-					emptyLabel={labels.contextSelectEmpty}
-					items={organizationOptions}
-					on:change={handleOrganizationChange}
-				/>
-			</label>
-		{:else}
-			<p>{labels.orgRequiredBody}</p>
-		{/if}
-	</section>
-
-	{#if !organization}
+	{#if !organization && organizations.length === 0}
 		<section class="settlement-card">
 			<h2>{labels.orgRequiredTitle}</h2>
 			<p>{labels.orgRequiredBody}</p>
 		</section>
 	{:else}
-		<section class="settlement-card">
-			<div class="settlement-card-head">
-				<div>
-					<h2>{labels.eventSectionTitle}</h2>
-					<p>{labels.eventSectionBody}</p>
-				</div>
-				<button type="button" class="secondary-button" on:click={() => void loadEvents()} disabled={eventsLoading}>
-					{labels.eventRefreshLabel}
-				</button>
-			</div>
+		<SettlementEventPickerSection
+			lang={lang}
+			organization={organization ?? ''}
+			organizationName={selectedOrganizationCard?.name ?? ''}
+			organizationOptions={organizationOptions}
+			gameId={selectedGameId}
+			gameOptions={gameOptions}
+			rangeStart={eventQueryFromDate}
+			rangeEnd={eventQueryToDate}
+			eventsLoading={eventsLoading}
+			eventsError={eventsError}
+			hasAnyEvents={hasAnyEvents}
+			eventRows={eventRows}
+			page={currentPage}
+			pageSize={pageSize}
+			hasPreviousPage={currentPage > 1}
+			hasNextPage={currentPage < totalPages}
+			pendingPickEventId={pendingPickEventId}
+			labels={{
+				contextTitle: labels.contextTitle,
+				contextBody: labels.contextBody,
+				contextSelectLabel: labels.contextSelectLabel,
+				contextSelectPlaceholder: labels.contextSelectPlaceholder,
+				contextSelectEmpty: labels.contextSelectEmpty,
+				gameSelectLabel: labels.gameSelectLabel,
+				gameSelectPlaceholder: labels.gameSelectPlaceholder,
+				gameSelectEmpty: labels.gameSelectEmpty,
+				eventSectionTitle: labels.eventSectionTitle,
+				eventSectionBody: labels.eventSectionBody,
+				eventRefreshLabel: labels.eventRefreshLabel,
+				eventFilterFromLabel: labels.eventFilterFromLabel,
+				eventFilterToLabel: labels.eventFilterToLabel,
+				eventFilterApplyLabel: labels.eventFilterApplyLabel,
+				eventLoadingLabel: labels.eventLoadingLabel,
+				eventEmptyTitle: labels.eventEmptyTitle,
+				eventEmptyBody: labels.eventEmptyBody,
+				eventEmptyActionLabel: labels.eventEmptyActionLabel,
+				eventEmptyRefreshHint: labels.eventEmptyRefreshHint,
+				eventPagePreviousLabel: labels.eventPagePreviousLabel,
+				eventPageNextLabel: labels.eventPageNextLabel,
+				eventPageSummaryLabel: labels.eventPageSummaryLabel,
+				eventPageSizeLabel: labels.eventPageSizeLabel,
+				eventTableNameLabel: labels.eventTableNameLabel,
+				eventTableOccurredAtLabel: labels.eventTableOccurredAtLabel,
+				eventTableHolderLabel: labels.eventTableHolderLabel,
+				eventTableAssetLabel: labels.eventTableAssetLabel,
+				eventTableActionLabel: labels.eventTableActionLabel,
+				eventTablePickLabel: labels.eventTablePickLabel,
+				eventTablePickPendingLabel: labels.eventTablePickPendingLabel,
+				eventTablePickedLabel: labels.eventTablePickedLabel,
+				optionalHint: labels.optionalHint,
+			}}
+			on:change={handleOrganizationChange}
+			on:gamechange={handleGameChange}
+			on:rangechange={handleEventRangeChange}
+			on:applyfilters={applyEventFilters}
+			on:refresh={() => void loadEvents()}
+			on:pagesizechange={handlePageSizeChange}
+			on:previouspage={loadPreviousEventPage}
+			on:nextpage={loadNextEventPage}
+			on:pick={(event) => void pickEvent(event.detail.eventId)}
+		/>
 
-			<div class="settlement-form-grid">
-				<label class="settlement-field settlement-field-wide">
-					<span>{labels.eventFilterFromLabel} / {labels.eventFilterToLabel}</span>
-					<TimeSelector
-						mode="range"
-						inputType="date"
-						start={eventQueryFromDate}
-						end={eventQueryToDate}
-						startAriaLabel={labels.eventFilterFromLabel}
-						endAriaLabel={labels.eventFilterToLabel}
-						on:change={handleEventRangeChange}
-					/>
-					<small>{labels.optionalHint}</small>
-				</label>
-
-				<div class="settlement-field settlement-field-actions">
-					<button type="button" class="secondary-button" on:click={applyEventFilters} disabled={eventsLoading}>
-						{labels.eventFilterApplyLabel}
-					</button>
-				</div>
-			</div>
-
-			<label class="settlement-field">
-				<span>{labels.eventSelectLabel}</span>
-				<select bind:value={selectedEventId} disabled={eventsLoading || events.length === 0}>
-					<option value="">{eventsLoading ? labels.eventLoadingLabel : labels.eventSelectLabel}</option>
-					{#each events as event}
-						<option value={String(event.id)}>
-							{event.title} #{event.id}
-						</option>
-					{/each}
-				</select>
-				<small>{labels.requiredHint}</small>
-				{#if errors.eventId}<em>{errors.eventId}</em>{/if}
-				{#if eventsError}<em>{eventsError}</em>{/if}
-			</label>
-
-			<div class="settlement-actions">
-				<button type="button" class="secondary-button" on:click={loadPreviousEventPage} disabled={eventsLoading || eventQueryOffset === 0}>
-					{labels.eventPagePreviousLabel}
-				</button>
-				<p class="muted-text">{getEventPageSummary()}</p>
-				<button type="button" class="secondary-button" on:click={loadNextEventPage} disabled={eventsLoading || !eventsHasMore}>
-					{labels.eventPageNextLabel}
-				</button>
-			</div>
-
-			{#if !eventsLoading && events.length === 0}
-				<div class="settlement-empty">
-					<h3>{labels.eventEmptyTitle}</h3>
-					<p>{labels.eventEmptyBody}</p>
-					{#if hasAnyEvents}
-						<p class="settlement-empty-note">{labels.eventEmptyRefreshHint}</p>
-					{:else}
-						<a
-							class="primary-button workflow-action settlement-empty-action"
-							href={`/${lang}/guilds/events/new?orgVanity=${encodeURIComponent(organization)}`}
-						>
-							{labels.eventEmptyActionLabel}
-						</a>
-					{/if}
-				</div>
-			{/if}
-		</section>
-
-		{#if selectedEvent}
-			<section class="settlement-grid">
-				<article class="settlement-card">
-					<h2>{labels.eventSummaryTitle}</h2>
-					<dl class="summary-grid">
-						<div>
-							<dt>{labels.eventSummaryStatusLabel}</dt>
-							<dd>{selectedEvent.status}</dd>
-						</div>
-						<div>
-							<dt>{labels.eventSummaryOccurredAtLabel}</dt>
-							<dd>{new Date(selectedEvent.occurredAt).toLocaleString()}</dd>
-						</div>
-						<div>
-							<dt>{labels.eventSummaryAssetLabel}</dt>
-							<dd>{selectedEvent.assetId ?? '—'}</dd>
-						</div>
-						<div>
-							<dt>{labels.eventSummaryHolderLabel}</dt>
-							<dd>{selectedEvent.holderRef ?? selectedEvent.holderType}</dd>
-						</div>
-						<div>
-							<dt>{labels.eventSummaryGameLabel}</dt>
-							<dd>{selectedEvent.gameId ?? '—'}</dd>
-						</div>
-					</dl>
-				</article>
-
-				<article class="settlement-card">
-					<h2>{labels.defaultsTitle}</h2>
-					<p>{labels.defaultsBody}</p>
-					{#if defaultsLoading}
-						<p class="muted-text">{labels.defaultsLoadingLabel}</p>
-					{:else if defaults}
-						<dl class="summary-grid">
-							<div>
-								<dt>{labels.defaultsGameLabel}</dt>
-								<dd>{defaults.game.name}</dd>
-							</div>
-							<div>
-								<dt>{labels.defaultsUnitLabel}</dt>
-								<dd>{defaults.defaults.defaultSettlementUnit.name}</dd>
-							</div>
-							<div>
-								<dt>{labels.defaultsFeeModeLabel}</dt>
-								<dd>{labels[feeModeLabels[defaults.defaults.defaultFeeMode]]}</dd>
-							</div>
-							<div>
-								<dt>{labels.defaultsAllocationModeLabel}</dt>
-								<dd>{labels[allocationModeLabels[defaults.defaults.defaultAllocationMode]]}</dd>
-							</div>
-						</dl>
-					{:else if defaultsError}
-						<p class="error-text">{defaultsError}</p>
-					{/if}
-				</article>
+		{#if selectedEventError}
+			<section class="settlement-card">
+				<p class="error-text">{selectedEventError}</p>
 			</section>
-
-			<form
-				class="settlement-card settlement-form"
-				on:submit|preventDefault={() => {
-					void submit();
-				}}
-			>
-				<div class="settlement-form-grid">
-					<label class="settlement-field settlement-field-wide">
-						<span>{labels.formTitleLabel}</span>
-						<input bind:value={title} type="text" maxlength="200" placeholder={labels.formTitlePlaceholder} on:input={() => (titleWasPrefilled = false)} />
-						<small>{labels.requiredHint}</small>
-						{#if errors.title}<em>{errors.title}</em>{/if}
-					</label>
-
-					<label class="settlement-field">
-						<span>{labels.formDecidedAtLabel}</span>
-						<TimeSelector
-							mode="single"
-							inputType="datetime-local"
-							value={decidedAt}
-							ariaLabel={labels.formDecidedAtLabel}
-							error={Boolean(errors.decidedAt)}
-							on:change={handleDecidedAtChange}
-						/>
-						<small>{labels.requiredHint}</small>
-						{#if errors.decidedAt}<em>{errors.decidedAt}</em>{/if}
-					</label>
-
-					<label class="settlement-field">
-						<span>{labels.formSettlementTypeLabel}</span>
-						<select bind:value={settlementType}>
-							{#each settlementTypeOptions as option}
-								<option value={option.value}>{labels[option.labelKey]}</option>
-							{/each}
-						</select>
-						<small>{labels.requiredHint}</small>
-					</label>
-
-					<div class="settlement-field settlement-field-wide">
-						<SettlementAmountEditor
-							grossAmount={grossAmount}
-							netAmount={netAmount}
-							feeMode={feeMode}
-							feePercent={feePercent}
-							feeAmount={feeAmount}
-							feeRuleKey={feeRuleKey}
-							labels={{
-								amountLabel: labels.formAmountLabel,
-								grossAmountLabel: labels.formGrossAmountLabel,
-								netAmountLabel: labels.formNetAmountLabel,
-								ruleSectionLabel: labels.formFeeRuleSectionLabel,
-								ruleToggleLabel: labels.formFeeRuleToggleLabel,
-								ruleHideLabel: labels.formFeeRuleHideLabel,
-								feeModeNone: labels.feeModeNone,
-								feeModePercent: labels.feeModePercent,
-								feeModeFixed: labels.feeModeFixed,
-								feeModeRule: labels.feeModeRule,
-								feePercentLabel: labels.formFeePercentLabel,
-								feeAmountLabel: labels.formFeeAmountLabel,
-								feeRuleKeyLabel: labels.formFeeRuleKeyLabel,
-								feeRuleKeyPlaceholder: labels.formFeeRuleKeyPlaceholder,
-								autoNetHint: labels.formAutoNetHint,
-								requiredHint: labels.requiredHint,
-								optionalHint: labels.optionalHint,
-							}}
-							errors={{
-								grossAmount: errors.grossAmount,
-								netAmount: errors.netAmount,
-								feePercent: errors.feePercent,
-								feeAmount: errors.feeAmount,
-								feeRuleKey: errors.feeRuleKey,
-							}}
-							on:change={handleAmountEditorChange}
-						/>
-					</div>
-
-					<label class="settlement-field">
-						<span>{labels.formAllocationModeLabel}</span>
-						<select bind:value={allocationMode}>
-							<option value="equal">{labels.allocationModeEqual}</option>
-							<option value="weight">{labels.allocationModeWeight}</option>
-							<option value="manual">{labels.allocationModeManual}</option>
-						</select>
-						<small>{labels.requiredHint}</small>
-					</label>
-
-					<label class="settlement-field">
-						<span>{labels.formPayerTypeLabel}</span>
-						<select bind:value={payerType}>
-							{#each payerTypeOptions as option}
-								<option value={option.value}>{labels[option.labelKey]}</option>
-							{/each}
-						</select>
-						<small>{labels.requiredHint}</small>
-					</label>
-
-					<label class="settlement-field">
-						<span>{labels.formPayerRefLabel}</span>
-						{#if payerType === 'character'}
-							{#if selectedPayerCharacter}
-								<div class="settlement-selected-character">
-									<span>{labels.formPayerRefSelectedLabel}</span>
-									<button
-										type="button"
-										class="settlement-selected-character-chip"
-										disabled={isMemberRestrictedPayerSelection}
-										on:click={() => {
-											if (isMemberRestrictedPayerSelection) {
-												return;
-											}
-											payerCharacterId = '';
-											payerRef = '';
-										}}
-									>
-										<strong>{selectedPayerCharacter.name}</strong>
-										<small>{getCharacterMetaLabel(selectedPayerCharacter)}</small>
-										<b aria-hidden="true">×</b>
-									</button>
-								</div>
-							{/if}
-							{#if !isMemberRestrictedPayerSelection}
-								<SearchSelect
-									value={payerCharacterId}
-									ariaLabel={labels.formPayerRefLabel}
-									placeholder={labels.formPayerRefPlaceholder}
-									searchPlaceholder={labels.formPayerRefPlaceholder}
-									emptyLabel={labels.formPayerRefEmpty}
-									disabled={!organization || eventsLoading || !selectedEvent?.gameId}
-									error={Boolean(errors.payerRef)}
-									triggerMode="button"
-									buttonIdleLabel={labels.formPayerRefAddLabel}
-									buttonActiveLabel={labels.formPayerRefChangeLabel}
-									items={payerCharacterOptions}
-									on:change={handlePayerCharacterChange}
-								/>
-							{/if}
-							<small>{labels.formPayerRefHint}</small>
-						{:else}
-							<input bind:value={payerRef} type="text" maxlength="120" placeholder={labels.formPayerRefPlaceholder} />
-							<small>{labels.optionalHint}</small>
-						{/if}
-						{#if errors.payerRef}<em>{errors.payerRef}</em>{/if}
-					</label>
-
-					<label class="settlement-field settlement-field-wide">
-						<span>{labels.formRecipientsLabel}</span>
-						{#if selectedRecipientCharacters.length > 0}
-							<div class="settlement-selected-character">
-								<span>{labels.formRecipientsSelectedLabel}</span>
-								<div class="settlement-selected-character-list">
-									{#each selectedRecipientCharacters as character}
-										<button
-											type="button"
-											class="settlement-selected-character-chip"
-											on:click={() => removeRecipientCharacterId(String(character.id))}
-										>
-											<strong>{character.name}</strong>
-											<small>{getCharacterMetaLabel(character)}</small>
-											<b aria-hidden="true">×</b>
-											<span class="sr-only">{labels.clearSelectionLabel}</span>
-										</button>
-									{/each}
-								</div>
-							</div>
-						{/if}
-						<SearchSelect
-							value={recipientPickerValue}
-							ariaLabel={labels.formRecipientsLabel}
-							placeholder={labels.formRecipientsPlaceholder}
-							searchPlaceholder={labels.formRecipientsPlaceholder}
-							emptyLabel={labels.formRecipientsEmpty}
-							disabled={!organization || eventsLoading || !selectedEvent?.gameId}
-							error={Boolean(errors.recipientCharacterIds)}
-							triggerMode="button"
-							buttonIdleLabel={labels.formRecipientsAddLabel}
-							buttonActiveLabel={labels.formRecipientsAddLabel}
-							items={recipientCharacterOptions}
-							on:change={handleRecipientCharacterChange}
-						/>
-						{#if recipientLoadError}
-							<small class="warning-text">{recipientLoadError}</small>
-						{:else if hasRecipientMismatch}
-							<small class="warning-text">{labels.formRecipientsMismatchWarning}</small>
-						{:else}
-							<small>{labels.formRecipientsHint}</small>
-						{/if}
-						{#if errors.recipientCharacterIds}<em>{errors.recipientCharacterIds}</em>{/if}
-					</label>
-
-					<label class="settlement-field settlement-field-wide">
-						<span>{labels.formNotesLabel}</span>
-						<textarea bind:value={notes} rows="4" maxlength="1000" placeholder={labels.formNotesPlaceholder}></textarea>
-						<small>{labels.optionalHint}</small>
-					</label>
-				</div>
-
-				<div class="settlement-actions">
-					<button class="primary-button" type="submit" disabled={isSubmitting}>
-						{labels.submitLabel}
-					</button>
-				</div>
-			</form>
 		{/if}
-	{/if}
 
-	<RequestStatusDialog
-		open={dialogOpen}
-		state={dialogState}
-		title={dialogTitle}
-		message={dialogMessage}
-		primaryAction={dialogPrimaryAction}
-		secondaryAction={dialogSecondaryAction}
-		onClose={() => {
-			dialogOpen = false;
-		}}
-	/>
+		<SettlementFormSection
+			selectedEvent={selectedEvent}
+			selectedGameName={selectedGameName}
+			selectedAssetName={selectedAssetName}
+			selectedHolderLabel={selectedHolderLabel}
+			loading={selectedEventLoading || defaultsLoadingGameId === selectedGameId}
+			submitting={isSubmitting}
+			title={title}
+			decidedAt={decidedAt}
+			settlementType={settlementType}
+			grossAmount={grossAmount}
+			netAmount={netAmount}
+			feeMode={feeMode}
+			feePercent={feePercent}
+			feeAmount={feeAmount}
+			feeRuleKey={feeRuleKey}
+			payerType={payerType}
+			payerRef={payerRef}
+			payerCharacterId={payerCharacterId}
+			selectedPayerCharacter={selectedPayerCharacter}
+			payerCharacterOptions={payerCharacterOptions}
+			selectedRecipientCharacters={selectedRecipientCharacters}
+			recipientCharacterOptions={recipientCharacterOptions}
+			hasRecipientMismatch={hasRecipientMismatch}
+			allocationMode={allocationMode}
+			notes={notes}
+			errors={errors}
+			isMemberRestrictedPayerSelection={isMemberRestrictedPayerSelection}
+			labels={{
+				formReadyTitle: labels.formReadyTitle,
+				formReadyBody: labels.formReadyBody,
+				formLoadingLabel: labels.formLoadingLabel,
+				formContextEventLabel: labels.formContextEventLabel,
+				formContextGameLabel: labels.formContextGameLabel,
+				formContextAssetLabel: labels.formContextAssetLabel,
+				formContextHolderLabel: labels.formContextHolderLabel,
+				formTitleLabel: labels.formTitleLabel,
+				formTitlePlaceholder: labels.formTitlePlaceholder,
+				formDecidedAtLabel: labels.formDecidedAtLabel,
+				formAmountLabel: labels.formAmountLabel,
+				formGrossAmountLabel: labels.formGrossAmountLabel,
+				formNetAmountLabel: labels.formNetAmountLabel,
+				formFeeRuleSectionLabel: labels.formFeeRuleSectionLabel,
+				formFeeRuleToggleLabel: labels.formFeeRuleToggleLabel,
+				formFeeRuleHideLabel: labels.formFeeRuleHideLabel,
+				formFeePercentLabel: labels.formFeePercentLabel,
+				formFeeAmountLabel: labels.formFeeAmountLabel,
+				formFeeRuleKeyLabel: labels.formFeeRuleKeyLabel,
+				formFeeRuleKeyPlaceholder: labels.formFeeRuleKeyPlaceholder,
+				formPayerTypeLabel: labels.formPayerTypeLabel,
+				formPayerRefLabel: labels.formPayerRefLabel,
+				formPayerRefPlaceholder: labels.formPayerRefPlaceholder,
+				formPayerRefEmpty: labels.formPayerRefEmpty,
+				formPayerRefHint: labels.formPayerRefHint,
+				formPayerRefSelectedLabel: labels.formPayerRefSelectedLabel,
+				formPayerRefAddLabel: labels.formPayerRefAddLabel,
+				formPayerRefChangeLabel: labels.formPayerRefChangeLabel,
+				formRecipientsLabel: labels.formRecipientsLabel,
+				formRecipientsPlaceholder: labels.formRecipientsPlaceholder,
+				formRecipientsEmpty: labels.formRecipientsEmpty,
+				formRecipientsHint: labels.formRecipientsHint,
+				formRecipientsSelectedLabel: labels.formRecipientsSelectedLabel,
+				formRecipientsAddLabel: labels.formRecipientsAddLabel,
+				formRecipientsMismatchWarning: labels.formRecipientsMismatchWarning,
+				clearSelectionLabel: labels.clearSelectionLabel,
+				formSettlementTypeLabel: labels.formSettlementTypeLabel,
+				formAllocationModeLabel: labels.formAllocationModeLabel,
+				formNotesLabel: labels.formNotesLabel,
+				formNotesPlaceholder: labels.formNotesPlaceholder,
+				formAutoNetHint: labels.formAutoNetHint,
+				submitLabel: labels.submitLabel,
+				requiredHint: labels.requiredHint,
+				optionalHint: labels.optionalHint,
+				validationRequired: labels.validationRequired,
+				settlementTypeSale: labels.settlementTypeSale,
+				settlementTypeBonus: labels.settlementTypeBonus,
+				settlementTypeSalary: labels.settlementTypeSalary,
+				settlementTypeReward: labels.settlementTypeReward,
+				settlementTypeSubsidy: labels.settlementTypeSubsidy,
+				settlementTypeAdjustment: labels.settlementTypeAdjustment,
+				payerTypeCharacter: labels.payerTypeCharacter,
+				payerTypeOrgTreasury: labels.payerTypeOrgTreasury,
+				payerTypeExternal: labels.payerTypeExternal,
+				payerTypeCustom: labels.payerTypeCustom,
+				allocationModeEqual: labels.allocationModeEqual,
+				allocationModeWeight: labels.allocationModeWeight,
+				allocationModeManual: labels.allocationModeManual,
+				feeModeNone: labels.feeModeNone,
+				feeModePercent: labels.feeModePercent,
+				feeModeFixed: labels.feeModeFixed,
+				feeModeRule: labels.feeModeRule,
+			}}
+			on:submit={() => void submit()}
+			on:titlechange={(event) => {
+				title = event.detail.value;
+			}}
+			on:decidedatchange={(event) => {
+				decidedAt = event.detail.value;
+			}}
+			on:settlementtypechange={(event) => {
+				settlementType = event.detail.value;
+			}}
+			on:amountchange={handleAmountEditorChange}
+			on:payertypechange={(event) => {
+				payerType = event.detail.value;
+				if (payerType === 'character' && selectedEvent) {
+					syncPayerFromCharacterId(getDefaultPayerCharacterId(selectedEvent.game.id, selectedEvent));
+				}
+			}}
+			on:payercharacterchange={(event) => {
+				syncPayerFromCharacterId(event.detail.value);
+			}}
+			on:payerrefchange={(event) => {
+				payerRef = event.detail.value;
+			}}
+			on:recipientadd={(event) => addRecipientCharacterId(event.detail.value)}
+			on:recipientremove={(event) => removeRecipientCharacterId(event.detail.value)}
+			on:allocationmodechange={(event) => {
+				allocationMode = event.detail.value;
+			}}
+			on:noteschange={(event) => {
+				notes = event.detail.value;
+			}}
+		/>
+	{/if}
 </section>
+
+<RequestStatusDialog
+	open={dialogOpen}
+	state={dialogState}
+	title={dialogTitle}
+	message={dialogMessage}
+	primaryAction={dialogPrimaryAction}
+	secondaryAction={dialogSecondaryAction}
+	on:close={() => {
+		dialogOpen = false;
+	}}
+/>
 
 <style>
 	.settlement-shell {
-		width: min(1080px, 100%);
-		margin: 24px auto 0;
 		display: grid;
 		gap: 24px;
 	}
 
-	.settlement-header h1,
-	.settlement-header p,
-	.settlement-card h2,
-	.settlement-card p,
-	.settlement-empty h3,
-	.settlement-empty p {
-		margin: 0;
-	}
-
-	.settlement-eyebrow {
-		margin: 0 0 10px;
-		font-size: 0.82rem;
-		font-weight: 800;
-		letter-spacing: 0.18em;
-		text-transform: uppercase;
-		color: var(--accent);
-	}
-
-	.settlement-header h1 {
-		font-size: clamp(2rem, 4vw, 3.1rem);
-		line-height: 1.05;
-		letter-spacing: -0.05em;
-	}
-
-	.settlement-intro {
-		margin-top: 14px;
-		max-width: 64ch;
-		color: var(--text-soft);
-		line-height: 1.8;
-	}
-
-	.settlement-card {
-		padding: 26px;
-		border: 1px solid color-mix(in srgb, var(--line) 92%, white);
-		border-radius: 28px;
-		background: var(--surface);
-		box-shadow: var(--shadow);
-		backdrop-filter: blur(16px);
-		display: grid;
-		gap: 18px;
-	}
-
-	.settlement-context-card {
-		background:
-			radial-gradient(circle at top right, color-mix(in srgb, var(--ledger-accent) 12%, transparent), transparent 38%),
-			linear-gradient(180deg, color-mix(in srgb, var(--surface) 94%, white), var(--surface));
-	}
-
-	.settlement-card-head,
-	.settlement-actions,
-	.settlement-field-actions {
-		display: flex;
-		justify-content: space-between;
-		align-items: center;
-		gap: 12px;
-	}
-
-	.settlement-context-head {
-		align-items: end;
-	}
-
-	.settlement-grid {
-		display: grid;
-		grid-template-columns: repeat(2, minmax(0, 1fr));
-		gap: 20px;
-	}
-
-	.summary-grid {
-		display: grid;
-		grid-template-columns: repeat(2, minmax(0, 1fr));
-		gap: 16px;
-		margin: 0;
-	}
-
-	.summary-grid div {
-		padding: 14px;
-		border-radius: 18px;
-		background: color-mix(in srgb, var(--surface-strong) 84%, white);
-		border: 1px solid color-mix(in srgb, var(--accent) 8%, var(--line));
-	}
-
-	.summary-grid dt {
-		font-size: 0.8rem;
-		font-weight: 800;
-		letter-spacing: 0.08em;
-		text-transform: uppercase;
-		color: var(--text-soft);
-	}
-
-	.summary-grid dd {
-		margin: 8px 0 0;
-		font-weight: 700;
-		color: var(--text-main);
-	}
-
-	.settlement-form-grid {
-		display: grid;
-		grid-template-columns: repeat(2, minmax(0, 1fr));
-		gap: 18px;
-	}
-
-	.settlement-field {
+	.settlement-header {
 		display: grid;
 		gap: 8px;
 	}
 
-	.settlement-field-wide {
-		grid-column: 1 / -1;
+	.settlement-header h1,
+	.settlement-card h2 {
+		margin: 0;
 	}
 
-	.settlement-field span {
-		font-size: 0.94rem;
-		font-weight: 700;
-		color: var(--text-main);
-	}
-
-	.settlement-field input,
-	.settlement-field textarea,
-	.settlement-field select {
-		width: 100%;
-		min-height: 48px;
-		padding: 0 16px;
-		border-radius: 16px;
-		border: 1px solid color-mix(in srgb, var(--accent) 8%, var(--line));
-		background: color-mix(in srgb, var(--surface-strong) 80%, white);
-		font: inherit;
-		color: var(--text-main);
-	}
-
-	.settlement-field textarea {
-		min-height: 120px;
-		padding: 14px 16px;
-		resize: vertical;
-	}
-
-	.settlement-field small,
-	.muted-text {
-		color: var(--text-soft);
-		line-height: 1.6;
-	}
-
-	.settlement-field em,
-	.error-text {
-		font-style: normal;
-		font-size: 0.92rem;
-		color: #c24e4e;
-	}
-
-	.settlement-selected-character {
-		display: grid;
-		gap: 10px;
-	}
-
-	.settlement-selected-character-list {
-		display: flex;
-		flex-wrap: wrap;
-		gap: 10px;
-	}
-
-	.settlement-selected-character > span {
-		font-size: 0.84rem;
-		font-weight: 700;
-		color: var(--text-soft);
-	}
-
-	.settlement-selected-character-chip {
-		width: 100%;
-		padding: 12px 14px;
-		border-radius: 18px;
-		border: 1px solid color-mix(in srgb, var(--accent) 12%, var(--line));
-		background: color-mix(in srgb, var(--surface-strong) 82%, white);
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		gap: 12px;
-		text-align: left;
-		cursor: pointer;
-	}
-
-	.settlement-selected-character-chip strong,
-	.settlement-selected-character-chip small,
-	.settlement-selected-character-chip b {
-		display: block;
-	}
-
-	.settlement-selected-character-chip strong {
-		color: var(--text-main);
-	}
-
-	.settlement-selected-character-chip small {
-		color: var(--text-soft);
-	}
-
-	.settlement-selected-character-chip b {
-		font-size: 1rem;
-		color: var(--text-soft);
-	}
-
-	.settlement-selected-character-list .settlement-selected-character-chip {
-		width: auto;
-		min-width: min(260px, 100%);
-		flex: 1 1 240px;
-	}
-
-	.warning-text {
-		color: #b85b14;
-		font-weight: 600;
-	}
-
-	.primary-button,
-	.secondary-button {
-		min-height: 46px;
-		padding: 0 18px;
-		border-radius: 999px;
-		font: inherit;
-		font-weight: 700;
-		cursor: pointer;
-		transition:
-			transform 0.18s ease,
-			background 0.18s ease,
-			border-color 0.18s ease,
-			opacity 0.18s ease;
-	}
-
-	.primary-button {
-		border: 1px solid transparent;
-		background: var(--text-main);
-		color: var(--surface-strong);
-	}
-
-	.primary-button.workflow-action {
-		border-color: color-mix(in srgb, var(--ledger-accent) 45%, var(--line));
-		background: linear-gradient(
-			135deg,
-			color-mix(in srgb, var(--ledger-accent) 88%, white),
-			color-mix(in srgb, var(--ledger-accent) 56%, white)
-		);
-		color: color-mix(in srgb, var(--ledger-accent-deep) 88%, var(--text-main));
-	}
-
-	.secondary-button {
-		border: 1px solid var(--line);
-		background: color-mix(in srgb, var(--surface-strong) 82%, white);
-		color: var(--text-main);
-	}
-
-	.primary-button:hover,
-	.secondary-button:hover {
-		transform: translateY(-1px);
-	}
-
-	.primary-button:disabled,
-	.secondary-button:disabled {
-		opacity: 0.6;
-		cursor: not-allowed;
-		transform: none;
-	}
-
-	.settlement-empty {
-		padding: 18px;
-		border-radius: 20px;
-		background: color-mix(in srgb, var(--surface-strong) 82%, white);
-		border: 1px dashed color-mix(in srgb, var(--accent) 14%, var(--line));
-		display: grid;
-		gap: 10px;
-	}
-
-	.settlement-empty-note {
+	.settlement-eyebrow,
+	.settlement-intro {
 		margin: 0;
 		color: var(--text-soft);
 	}
 
-	.settlement-empty-action {
-		justify-self: start;
-		margin-top: 4px;
+	.settlement-card {
+		padding: 24px;
+		border-radius: var(--radius-lg);
+		border: 1px solid color-mix(in srgb, var(--line) 88%, white);
+		background:
+			radial-gradient(circle at top right, color-mix(in srgb, var(--ledger-accent) 10%, transparent), transparent 42%),
+			var(--surface);
+		box-shadow: var(--shadow);
 	}
 
-	@media (max-width: 820px) {
-		.settlement-grid,
-		.summary-grid,
-		.settlement-form-grid {
-			grid-template-columns: 1fr;
-		}
+	.error-text {
+		margin: 0;
+		color: #b74a4a;
 	}
-
-	@media (max-width: 720px) {
-		.settlement-card {
-			padding: 22px;
-			border-radius: 22px;
-		}
-
-		.settlement-card-head,
-		.settlement-actions,
-		.settlement-field-actions {
-			flex-direction: column;
-			align-items: stretch;
-		}
-
-		.primary-button,
-		.secondary-button {
-			width: 100%;
-		}
-	}
-</style>
+ </style>
