@@ -159,7 +159,9 @@ import type {
 	LedgerSettlementParticipantValidation,
 	LedgerSettlementParticipantConflictResponse,
 	CreateLedgerSettlementRequest,
+	LedgerSettledEventResponse,
 	SettleLedgerEventRequest,
+	LedgerSettlementRecipientRequest,
 	UpdateLedgerSettlementStatusRequest,
 	UpdateLedgerSettlementRequest,
 	LedgerAllocationResponse,
@@ -352,7 +354,7 @@ export type ApiOperations = {
 	getOrganizationsByOrganizationLedgerSettlementDefaults: { pathParams: { "organization": string; }; query: { "gameId"?: number; }; response: LedgerSettlementDefaultsResponse; };
 	postOrganizationsByOrganizationLedgerClaimsBatch: { pathParams: { "organization": string; }; body: CreateLedgerBatchClaimsRequest; response: LedgerBatchClaimsResponse; };
 	postOrganizationsByOrganizationLedgerSettlementsBySettlementIdDisburse: { pathParams: { "organization": string; "settlementId": number; }; body: CreateSettlementDisbursementRequest; response: LedgerSettlementDisbursementResponse; };
-	postOrganizationsByOrganizationLedgerEventsByEventIdSettle: { pathParams: { "eventId": number; "organization": string; }; body: SettleLedgerEventRequest; response: LedgerSettlementResponse; };
+	postOrganizationsByOrganizationLedgerEventsByEventIdSettle: { pathParams: { "eventId": number; "organization": string; }; body: SettleLedgerEventRequest; response: LedgerSettledEventResponse; };
 	patchOrganizationsByOrganizationLedgerSettlementsBySettlementIdStatus: { pathParams: { "organization": string; "settlementId": number; }; body: UpdateLedgerSettlementStatusRequest; response: LedgerSettlementResponse; };
 	patchOrganizationsByOrganizationLedgerSettlementsBySettlementId: { pathParams: { "organization": string; "settlementId": number; }; body: UpdateLedgerSettlementRequest; response: LedgerSettlementResponse; };
 	postOrganizationsByOrganizationLedgerAllocations: { pathParams: { "organization": string; }; body: CreateLedgerAllocationRequest; response: LedgerAllocationResponse; };
