@@ -159,6 +159,7 @@
 				{action.label}
 			</a>
 		{/each}
+		<slot name="footer-actions" />
 	</div>
 </article>
 

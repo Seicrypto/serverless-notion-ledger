@@ -88,6 +88,7 @@ export const app = {
 	orgs_info_missing_title: 'No guild selected yet',
 	orgs_info_missing_body:
 		'Open this page from guild search or your guild list so the app knows which guild to show.',
+	orgs_apply_error_title: 'Unable to apply to guild',
 	orgs_new_title: 'Create New Guild',
 	orgs_new_intro: 'Create your guild, community, team, or static. Start with the core guild details and the first character, then your new guild space is ready to grow.',
 	orgs_new_status: 'Ready to create a guild',
@@ -890,6 +891,9 @@ export const app = {
 	action_search_orgs: 'Search guilds to join',
 	action_open_org_manage: 'Manage guild',
 	action_open_org_dashboard: 'Open dashboard',
+	action_apply_org: 'Apply',
+	action_apply_org_pending: 'Applying',
+	action_applied_org: 'Applied',
 	action_create_org: 'Create New Guild',
 	action_view_official: 'Open official dashboard',
 	action_manage_pending_users: 'Open disabled user management',

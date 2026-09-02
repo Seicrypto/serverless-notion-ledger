@@ -2,11 +2,14 @@
 	import { onMount } from 'svelte';
 
 	import OrganizationCard from './OrganizationCard.svelte';
+	import ApplyOrganizationButton from './ApplyOrganizationButton.svelte';
 	import { getApiAdapter } from '../../../libs/api/adapters/api.adapter.ts';
+	import { ensureMyOrganizationsCache } from '../../../libs/api/organizations/my-organizations-cache.ts';
 	import {
 		createOrganizationCardResponse,
 		type OrganizationCardResponse,
 	} from '../../../libs/api/organizations/organization-card.ts';
+	import { ensureAuthSession, isAuthenticatedSession } from '../../../libs/api/auth/session.ts';
 	import { resolveOrganizationQuery } from '../../../libs/organizations/reference.ts';
 
 	interface Labels {
@@ -21,6 +24,11 @@
 		supportedOrgLabel: string;
 		openOrgDashboardLabel: string;
 		backToGuildsLabel: string;
+		applyOrgLabel: string;
+		applyingOrgLabel: string;
+		appliedOrgLabel: string;
+		applyOrgErrorTitle: string;
+		loginLabel: string;
 	}
 
 	export let lang: string;
@@ -31,9 +39,30 @@
 	let errorMessage = '';
 	let orgCard: OrganizationCardResponse | null = null;
 	let resolvedOrganization: string | null = null;
+	let membershipStatus: 'pending' | 'active' | null = null;
 
 	function toNullableString(value: unknown) {
 		return typeof value === 'string' && value.trim() ? value : null;
+	}
+
+	async function hydrateMembership(targetOrganization: OrganizationCardResponse) {
+		const session = await ensureAuthSession();
+		if (!isAuthenticatedSession(session)) {
+			membershipStatus = null;
+			return;
+		}
+
+		try {
+			const snapshot = await ensureMyOrganizationsCache();
+			const matched = snapshot.organizations.find(
+				(entry) =>
+					entry.id === targetOrganization.id ||
+					(entry.vanity && targetOrganization.vanity && entry.vanity === targetOrganization.vanity),
+			);
+			membershipStatus = matched?.membership?.status ?? 'active';
+		} catch {
+			membershipStatus = null;
+		}
 	}
 
 	async function loadOrganization(reference: string) {
@@ -63,8 +92,10 @@
 					isSupportedOrg: false,
 				},
 			});
+			await hydrateMembership(orgCard);
 		} catch (error) {
 			orgCard = null;
+			membershipStatus = null;
 			errorMessage = error instanceof Error && error.message.trim() ? error.message : labels.errorTitle;
 		} finally {
 			loading = false;
@@ -105,9 +136,9 @@
 			<p>{errorMessage}</p>
 		</section>
 	{:else if orgCard}
-		<div class="org-card-grid">
-			<OrganizationCard
-				organization={orgCard}
+			<div class="org-card-grid">
+				<OrganizationCard
+					organization={orgCard}
 				actions={[
 					{
 						label: labels.openOrgDashboardLabel,
@@ -117,12 +148,29 @@
 				]}
 				labels={{
 					members: labels.memberCountLabel,
-					characters: labels.characterCountLabel,
-					supportedOrg: labels.supportedOrgLabel,
-				}}
-			/>
-		</div>
-	{/if}
+						characters: labels.characterCountLabel,
+						supportedOrg: labels.supportedOrgLabel,
+					}}
+				>
+					<ApplyOrganizationButton
+						slot="footer-actions"
+						lang={lang}
+						organization={resolvedOrganization}
+						membershipStatus={membershipStatus}
+						labels={{
+							applyLabel: labels.applyOrgLabel,
+							applyingLabel: labels.applyingOrgLabel,
+							appliedLabel: labels.appliedOrgLabel,
+							errorTitle: labels.applyOrgErrorTitle,
+							loginLabel: labels.loginLabel,
+						}}
+						onApplied={() => {
+							membershipStatus = 'pending';
+						}}
+					/>
+				</OrganizationCard>
+			</div>
+		{/if}
 </section>
 
 <style>

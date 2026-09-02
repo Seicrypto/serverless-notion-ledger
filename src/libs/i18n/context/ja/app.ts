@@ -88,6 +88,7 @@ export const app = {
 	orgs_info_missing_title: 'ギルドがまだ選択されていません',
 	orgs_info_missing_body:
 		'どのギルドを表示するか判断できるよう、ギルド検索結果または自分のギルド一覧からこのページを開いてください。',
+	orgs_apply_error_title: 'ギルド参加申請に失敗しました',
 	orgs_new_title: '新しいギルドを作成',
 	orgs_new_intro: 'ギルド、community、チーム、固定を新しく作成します。まずは基本情報と最初のキャラクターを入力すれば、新しいギルドスペースを作り始められます。',
 	orgs_new_status: 'ギルド作成の準備中',
@@ -893,6 +894,9 @@ export const app = {
 	action_search_orgs: '参加するチームを探す',
 	action_open_org_manage: 'ギルドを管理',
 	action_open_org_dashboard: 'ダッシュボードを開く',
+	action_apply_org: 'Apply',
+	action_apply_org_pending: '申請中',
+	action_applied_org: '申請済み',
 	action_create_org: '新しいギルドを作成',
 	action_view_official: '公式ダッシュボードへ',
 	action_manage_pending_users: '無効化ユーザー管理へ進む',
