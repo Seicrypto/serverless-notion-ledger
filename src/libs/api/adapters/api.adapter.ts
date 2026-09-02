@@ -93,6 +93,14 @@ export interface ListOrganizationLedgerEventsOptions {
 	toOccurredAt?: string;
 }
 
+export interface ListOrganizationLedgerEventSummariesOptions {
+	fromOccurredAt?: string;
+	gameId: number;
+	limit?: number;
+	offset?: number;
+	toOccurredAt?: string;
+}
+
 export interface ListOrganizationLedgerSettlementsOptions {
 	createdByUserId?: number;
 	eventId?: number;
@@ -625,6 +633,16 @@ export class ApiAdapter {
 		options: ListOrganizationLedgerEventsOptions = {},
 	) {
 		return this.client.getOrganizationsByOrganizationLedgerEvents({
+			pathParams: { organization: normalizeOrganizationReference(organization) },
+			query: options,
+		});
+	}
+
+	listOrganizationLedgerEventSummaries(
+		organization: OrganizationReference,
+		options: ListOrganizationLedgerEventSummariesOptions,
+	) {
+		return this.client.getOrganizationsByOrganizationLedgerEventsSummary({
 			pathParams: { organization: normalizeOrganizationReference(organization) },
 			query: options,
 		});

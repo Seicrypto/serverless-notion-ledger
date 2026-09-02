@@ -127,6 +127,8 @@ import type {
 	LedgerEventListItem,
 	LedgerEvent,
 	LedgerPagination,
+	LedgerEventSummaryLookupResponse,
+	LedgerEventSummaryLookupItem,
 	LedgerEventResponse,
 	LedgerEventDetail,
 	LedgerEventParticipant,
@@ -245,6 +247,7 @@ export const operationPaths = {
 	getOrganizationsByOrganizationLedgerDashboardCharactersByCharacterId: "/organizations/{organization}/ledger/dashboard/characters/{characterId}",
 	getOrganizationsByOrganizationLedgerEvents: "/organizations/{organization}/ledger/events",
 	postOrganizationsByOrganizationLedgerEvents: "/organizations/{organization}/ledger/events",
+	getOrganizationsByOrganizationLedgerEventsSummary: "/organizations/{organization}/ledger/events/summary",
 	getOrganizationsByOrganizationLedgerEventsByEventId: "/organizations/{organization}/ledger/events/{eventId}",
 	patchOrganizationsByOrganizationLedgerEventsByEventId: "/organizations/{organization}/ledger/events/{eventId}",
 	getOrganizationsByOrganizationLedgerSettlementsWorkspace: "/organizations/{organization}/ledger/settlements/workspace",
@@ -342,6 +345,7 @@ export type ApiOperations = {
 	getOrganizationsByOrganizationLedgerDashboardCharactersByCharacterId: { pathParams: { "characterId": number; "organization": string; }; response: CharacterLedgerDashboardDetailResponse; };
 	getOrganizationsByOrganizationLedgerEvents: { pathParams: { "organization": string; }; query: { "assetId"?: number; "createdByUserId"?: number; "eventType"?: "loot" | "raid" | "activity" | "bonus" | "salary" | "guild_event" | "other"; "fromOccurredAt"?: string; "holderRef"?: string; "holderType"?: "character" | "org_treasury" | "market" | "external" | "custom"; "limit"?: number; "offset"?: number | unknown; "include"?: "participants_summary"; "sortBy"?: "occurredAt" | "createdAt" | "title" | "updatedAt"; "sortOrder"?: "asc" | "desc"; "status"?: "open" | "ready_for_settlement" | "partially_settled" | "settled" | "cancelled"; "statusGroup"?: "unsettled" | "settleable" | "settled" | "cancelled"; "toOccurredAt"?: string; }; response: LedgerEventListResponse; };
 	postOrganizationsByOrganizationLedgerEvents: { pathParams: { "organization": string; }; body: CreateLedgerEventRequest; response: LedgerEventResponse; };
+	getOrganizationsByOrganizationLedgerEventsSummary: { pathParams: { "organization": string; }; query: { "fromOccurredAt"?: string; "gameId": number; "limit"?: number; "offset"?: number | unknown; "toOccurredAt"?: string; }; response: LedgerEventSummaryLookupResponse; };
 	getOrganizationsByOrganizationLedgerEventsByEventId: { pathParams: { "eventId": number; "organization": string; }; response: LedgerEventResponse; };
 	patchOrganizationsByOrganizationLedgerEventsByEventId: { pathParams: { "eventId": number; "organization": string; }; body: UpdateLedgerEventRequest; response: LedgerEventResponse; };
 	getOrganizationsByOrganizationLedgerSettlementsWorkspace: { pathParams: { "organization": string; }; query: { "eventId": number; }; response: LedgerSettlementWorkspaceResponse; };
@@ -1688,6 +1692,22 @@ export class OpenApiClient {
 				...options.headers,
 			},
 			body,
+		});
+	}
+
+	/**
+	 * GET /organizations/{organization}/ledger/events/summary
+	 */
+	async getOrganizationsByOrganizationLedgerEventsSummary(options: RequestOptions<ApiOperations['getOrganizationsByOrganizationLedgerEventsSummary']> = {}): Promise<ApiOperations['getOrganizationsByOrganizationLedgerEventsSummary']['response']> {
+		return this.request<ApiOperations['getOrganizationsByOrganizationLedgerEventsSummary']['response']>({
+			method: "GET",
+			path: operationPaths.getOrganizationsByOrganizationLedgerEventsSummary,
+			pathParams: options.pathParams,
+			query: options.query,
+			headers: {
+				...options.headers,
+			},
+			body: undefined,
 		});
 	}
 
