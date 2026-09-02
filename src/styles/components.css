@@ -406,6 +406,84 @@
 	border-color: color-mix(in srgb, #f2c94c 55%, var(--line));
 }
 
+.ledger-quiet-button,
+.ledger-primary-action-button,
+.ledger-selection-chip {
+	font: inherit;
+	color: var(--text-main);
+}
+
+.ledger-quiet-button,
+.ledger-primary-action-button {
+	min-height: 44px;
+	padding: 0 16px;
+	border-radius: 16px;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	font-weight: 700;
+	cursor: pointer;
+	transition:
+		transform 0.18s ease,
+		background 0.18s ease,
+		border-color 0.18s ease,
+		box-shadow 0.18s ease;
+}
+
+.ledger-quiet-button {
+	border: 1px solid var(--ui-control-border);
+	background: var(--ui-control-bg);
+	color: var(--text-main);
+	box-shadow:
+		0 1px 0 rgba(255, 255, 255, 0.22) inset,
+		0 8px 18px rgba(18, 26, 44, 0.08);
+}
+
+.ledger-quiet-button:hover:not(:disabled) {
+	transform: translateY(-1px);
+	border-color: var(--ui-control-border-strong);
+	background: var(--ui-control-hover-bg);
+}
+
+.ledger-primary-action-button {
+	border: 1px solid var(--ui-ledger-action-border);
+	background: var(--ui-ledger-action-bg);
+	color: var(--ui-ledger-action-color);
+	box-shadow:
+		inset 0 1px 0 rgba(255, 255, 255, 0.42),
+		0 16px 30px -24px color-mix(in srgb, var(--ledger-accent-deep) 34%, transparent);
+}
+
+.ledger-primary-action-button:hover:not(:disabled) {
+	transform: translateY(-1px);
+	background: var(--ui-ledger-action-bg-hover);
+	border-color: color-mix(in srgb, var(--ledger-accent) 60%, var(--line));
+}
+
+.ledger-selection-chip {
+	display: inline-flex;
+	align-items: center;
+	gap: 10px;
+	padding: 10px 14px;
+	border-radius: 999px;
+	border: 1px solid var(--ui-selection-border);
+	background: var(--ui-selection-bg);
+	color: var(--ui-selection-color);
+}
+
+.ledger-selection-chip button {
+	border: 0;
+	background: transparent;
+	color: inherit;
+	font: inherit;
+	font-size: 1rem;
+	cursor: pointer;
+}
+
+.ledger-selected-row {
+	background: var(--ui-selected-row-bg);
+}
+
 :root[data-theme='dark'] .sidebar-link-staff {
 	border-color: color-mix(in srgb, #c6a231 44%, var(--line));
 	background: color-mix(in srgb, #8b6b16 26%, var(--surface-soft));
@@ -437,6 +515,18 @@
 		color-mix(in srgb, var(--ledger-accent) 60%, var(--surface-soft)) 100%
 	);
 	border-color: color-mix(in srgb, var(--ledger-accent) 60%, var(--line));
+}
+
+:root[data-theme='dark'] .ledger-quiet-button {
+	box-shadow:
+		0 1px 0 rgba(255, 255, 255, 0.04) inset,
+		0 10px 22px rgba(0, 0, 0, 0.28);
+}
+
+:root[data-theme='dark'] .ledger-primary-action-button {
+	box-shadow:
+		inset 0 1px 0 rgba(255, 255, 255, 0.2),
+		0 18px 34px -26px rgba(22, 101, 52, 0.42);
 }
 
 .lang-switcher {

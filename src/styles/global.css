@@ -15,6 +15,27 @@
 	--ledger-accent: #88d8a8;
 	--ledger-accent-soft: #e6f8ec;
 	--ledger-accent-deep: #20634b;
+	--ui-control-bg: color-mix(in srgb, var(--surface-strong) 80%, white);
+	--ui-control-bg-strong: color-mix(in srgb, var(--surface-strong) 78%, white);
+	--ui-control-border: color-mix(in srgb, var(--accent) 18%, var(--line));
+	--ui-control-border-strong: color-mix(in srgb, var(--accent) 24%, var(--line));
+	--ui-control-hover-bg: color-mix(in srgb, var(--accent) 10%, var(--surface));
+	--ui-selection-bg: color-mix(in srgb, var(--ledger-accent) 14%, var(--surface-soft));
+	--ui-selection-border: color-mix(in srgb, var(--ledger-accent) 24%, var(--line));
+	--ui-selection-color: color-mix(in srgb, var(--ledger-accent-deep) 88%, var(--text-main));
+	--ui-selected-row-bg: color-mix(in srgb, var(--accent) 9%, white);
+	--ui-ledger-action-bg: linear-gradient(
+		135deg,
+		color-mix(in srgb, var(--ledger-accent) 88%, white) 0%,
+		color-mix(in srgb, var(--ledger-accent) 56%, white) 100%
+	);
+	--ui-ledger-action-bg-hover: linear-gradient(
+		135deg,
+		color-mix(in srgb, var(--ledger-accent) 94%, white) 0%,
+		color-mix(in srgb, var(--ledger-accent) 64%, white) 100%
+	);
+	--ui-ledger-action-border: color-mix(in srgb, var(--ledger-accent) 45%, var(--line));
+	--ui-ledger-action-color: color-mix(in srgb, var(--ledger-accent-deep) 88%, var(--text-main));
 	--shadow: 0 18px 48px rgba(43, 73, 132, 0.08);
 	--radius-lg: 28px;
 	--radius-md: 18px;

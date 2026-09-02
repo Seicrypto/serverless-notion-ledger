@@ -312,7 +312,7 @@
 				{#if payerType === 'character'}
 					{#if selectedPayerCharacter}
 						<div class="selection-chip-row">
-							<span class="selection-chip">
+							<span class="selection-chip ledger-selection-chip">
 								<strong>{selectedPayerCharacter.name}</strong>
 								{#if !isMemberRestrictedPayerSelection}
 									<button
@@ -363,7 +363,7 @@
 				{#if selectedRecipientCharacters.length > 0}
 					<div class="selection-chip-row">
 						{#each selectedRecipientCharacters as character}
-							<span class="selection-chip">
+							<span class="selection-chip ledger-selection-chip">
 								<strong>{character.name}</strong>
 								<button
 									type="button"
@@ -415,7 +415,7 @@
 		</div>
 
 		<div class="settlement-submit-row">
-			<button type="submit" class="primary-button" disabled={submitting}>
+			<button type="submit" class="primary-button ledger-primary-action-button" disabled={submitting}>
 				{labels.submitLabel}
 			</button>
 		</div>
@@ -479,8 +479,8 @@
 		min-height: 48px;
 		padding: 0 16px;
 		border-radius: 16px;
-		border: 1px solid color-mix(in srgb, var(--accent) 8%, var(--line));
-		background: color-mix(in srgb, var(--surface-strong) 80%, white);
+		border: 1px solid var(--ui-control-border);
+		background: var(--ui-control-bg);
 		color: var(--text-main);
 		font: inherit;
 	}
@@ -510,16 +510,11 @@
 		gap: 10px;
 		padding: 10px 14px;
 		border-radius: 999px;
-		background: color-mix(in srgb, var(--accent) 14%, white);
-		border: 1px solid color-mix(in srgb, var(--accent) 22%, var(--line));
 	}
 
 	.selection-chip button {
-		border: 0;
-		background: transparent;
 		font: inherit;
 		font-size: 1rem;
-		cursor: pointer;
 	}
 
 	.settlement-submit-row {

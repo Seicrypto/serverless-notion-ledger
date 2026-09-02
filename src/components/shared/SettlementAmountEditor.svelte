@@ -339,8 +339,8 @@
 		min-height: 52px;
 		padding: 12px 16px;
 		border-radius: 16px;
-		border: 1px solid color-mix(in srgb, var(--accent) 8%, var(--line));
-		background: color-mix(in srgb, var(--surface-strong) 80%, white);
+		border: 1px solid var(--ui-control-border);
+		background: var(--ui-control-bg);
 		color: var(--text-main);
 		font: inherit;
 	}
@@ -369,7 +369,7 @@
 		gap: 12px;
 		padding: 16px;
 		border-radius: 18px;
-		background: color-mix(in srgb, var(--surface-strong) 78%, white);
+		background: var(--ui-control-bg-strong);
 		border: 1px solid color-mix(in srgb, var(--accent) 10%, var(--line));
 	}
 
@@ -394,12 +394,12 @@
 		font: inherit;
 		font-weight: 700;
 		cursor: pointer;
+		color: var(--text-main);
 	}
 
 	.settlement-amount-rule-toggle {
-		border: 1px solid color-mix(in srgb, var(--accent) 18%, var(--line));
-		background: white;
-		color: var(--text-main);
+		border: 1px solid var(--ui-control-border);
+		background: var(--ui-control-bg);
 	}
 
 	.settlement-amount-rule-options {
@@ -409,15 +409,14 @@
 	}
 
 	.settlement-amount-rule-chip {
-		border: 1px solid color-mix(in srgb, var(--accent) 14%, var(--line));
-		background: color-mix(in srgb, var(--surface-strong) 86%, white);
-		color: var(--text-main);
+		border: 1px solid var(--ui-control-border);
+		background: var(--ui-control-bg);
 	}
 
 	.settlement-amount-rule-chip.active {
-		border-color: color-mix(in srgb, #2563eb 72%, white);
-		background: color-mix(in srgb, #2563eb 14%, white);
-		color: #123c94;
+		border-color: var(--ui-selection-border);
+		background: var(--ui-selection-bg);
+		color: var(--ui-selection-color);
 	}
 
 	.settlement-amount-net-card strong {
