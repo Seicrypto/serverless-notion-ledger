@@ -7,7 +7,7 @@ export function devDebugLog(scope: string, message: string, payload?: DebugPaylo
 		return;
 	}
 
-	console.debug(`[raid-ledger][${APP_MODE}][${scope}] ${message}`, payload ?? {});
+	console.log(`[raid-ledger][${APP_MODE}][${scope}] ${message}`, payload ?? {});
 }
 
 export function devDebugError(scope: string, message: string, payload?: DebugPayload) {
