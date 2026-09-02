@@ -13,6 +13,8 @@ import type {
 	CreateLedgerEventRequest,
 	CreateLedgerSettlementRequest,
 	CreateOrganizationGameRequest,
+	LedgerClaimableRecipientDisbursementRequest,
+	LedgerSettlementClaimsRequest,
 	OfficialUpdateGameMetadataRequest,
 	QueryCharacterLedgerDashboardSummariesRequest,
 	CreateOrganizationRequest,
@@ -118,6 +120,24 @@ export interface ListOrganizationLedgerSettlementsOptions {
 
 export interface GetOrganizationClaimableRecipientDetailOptions {
 	includeSiblingCharacters?: boolean;
+}
+
+export interface ListOrganizationClaimableRecipientSummariesOptions {
+	gameId?: number;
+	limit?: number;
+	offset?: number;
+	q?: string;
+	sortBy?: 'pendingAmount' | 'updatedAt' | 'name';
+	sortOrder?: 'asc' | 'desc';
+}
+
+export interface ListOrganizationDisburseableEventSummariesOptions {
+	fromDecidedAt?: string;
+	gameId?: number;
+	limit?: number;
+	offset?: number;
+	q?: string;
+	toDecidedAt?: string;
 }
 
 export interface SearchOrganizationCharactersOptions {
@@ -769,6 +789,38 @@ export class ApiAdapter {
 		});
 	}
 
+	listOrganizationClaimableRecipientSummaries(
+		organization: OrganizationReference,
+		options: ListOrganizationClaimableRecipientSummariesOptions = {},
+	) {
+		return this.client.getOrganizationsByOrganizationLedgerClaimableRecipientsSummary({
+			pathParams: { organization: normalizeOrganizationReference(organization) },
+			query: options,
+		});
+	}
+
+	listOrganizationDisburseableEventSummaries(
+		organization: OrganizationReference,
+		options: ListOrganizationDisburseableEventSummariesOptions = {},
+	) {
+		return this.client.getOrganizationsByOrganizationLedgerDisburseableEventsSummary({
+			pathParams: { organization: normalizeOrganizationReference(organization) },
+			query: options,
+		});
+	}
+
+	getOrganizationClaimableRecipientWorkspace(
+		organization: OrganizationReference,
+		characterId: number,
+	) {
+		return this.client.getOrganizationsByOrganizationLedgerClaimableRecipientsByCharacterIdWorkspace({
+			pathParams: {
+				organization: normalizeOrganizationReference(organization),
+				characterId,
+			},
+		});
+	}
+
 	getOrganizationClaimableRecipientDetail(
 		organization: OrganizationReference,
 		characterId: number,
@@ -780,6 +832,18 @@ export class ApiAdapter {
 				characterId,
 			},
 			query: options,
+		});
+	}
+
+	getOrganizationLedgerSettlementDisbursementWorkspace(
+		organization: OrganizationReference,
+		settlementId: number,
+	) {
+		return this.client.getOrganizationsByOrganizationLedgerSettlementsBySettlementIdDisbursementWorkspace({
+			pathParams: {
+				organization: normalizeOrganizationReference(organization),
+				settlementId,
+			},
 		});
 	}
 
@@ -817,6 +881,34 @@ export class ApiAdapter {
 	) {
 		return this.client.postOrganizationsByOrganizationLedgerClaimsBatch({
 			pathParams: { organization: normalizeOrganizationReference(organization) },
+			body: payload,
+		});
+	}
+
+	disburseOrganizationClaimableRecipient(
+		organization: OrganizationReference,
+		characterId: number,
+		payload: LedgerClaimableRecipientDisbursementRequest,
+	) {
+		return this.client.postOrganizationsByOrganizationLedgerClaimableRecipientsByCharacterIdDisburse({
+			pathParams: {
+				organization: normalizeOrganizationReference(organization),
+				characterId,
+			},
+			body: payload,
+		});
+	}
+
+	createOrganizationLedgerSettlementClaims(
+		organization: OrganizationReference,
+		settlementId: number,
+		payload: LedgerSettlementClaimsRequest,
+	) {
+		return this.client.postOrganizationsByOrganizationLedgerSettlementsBySettlementIdClaims({
+			pathParams: {
+				organization: normalizeOrganizationReference(organization),
+				settlementId,
+			},
 			body: payload,
 		});
 	}
