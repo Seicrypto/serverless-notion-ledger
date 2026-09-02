@@ -79,6 +79,15 @@ export const app = {
 	orgs_character_count_label: 'キャラ',
 	orgs_supported_org_label: 'サポート対象',
 	orgs_open_org_label: 'ギルドを見る',
+	orgs_view_info_label: 'View info',
+	orgs_info_title: 'ギルド情報',
+	orgs_info_intro:
+		'このページは参加前の公開ギルド紹介ページです。今後 Discord、Linktree、Notion 由来の紹介コンテンツを追加できます。',
+	orgs_info_loading_label: 'ギルド情報を読み込み中',
+	orgs_info_error_title: 'ギルド情報の読み込みに失敗しました',
+	orgs_info_missing_title: 'ギルドがまだ選択されていません',
+	orgs_info_missing_body:
+		'どのギルドを表示するか判断できるよう、ギルド検索結果または自分のギルド一覧からこのページを開いてください。',
 	orgs_new_title: '新しいギルドを作成',
 	orgs_new_intro: 'ギルド、community、チーム、固定を新しく作成します。まずは基本情報と最初のキャラクターを入力すれば、新しいギルドスペースを作り始められます。',
 	orgs_new_status: 'ギルド作成の準備中',

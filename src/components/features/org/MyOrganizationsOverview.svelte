@@ -19,6 +19,7 @@
 		viewOrgsLabel: string;
 		createOrgLabel: string;
 		openOrgManageLabel: string;
+		openOrgInfoLabel: string;
 		openOrgDashboardLabel: string;
 		memberCountLabel: string;
 		characterCountLabel: string;
@@ -130,6 +131,11 @@
 					<OrganizationCard
 						organization={organization}
 						actions={[
+							{
+								label: labels.openOrgInfoLabel,
+								href: `/${lang}/guilds/info?orgVanity=${encodeURIComponent(getOrganizationReference(organization))}`,
+								tone: 'secondary',
+							},
 							{
 								label: labels.openOrgDashboardLabel,
 								href: `/${lang}/guilds/dashboard?orgVanity=${encodeURIComponent(getOrganizationReference(organization))}`,

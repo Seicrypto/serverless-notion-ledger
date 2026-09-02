@@ -1,0 +1,40 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+import PublicOrganizationInfoWorkspace from '../../../components/features/org/PublicOrganizationInfoWorkspace.svelte';
+import '../../../styles/app-pages.css';
+import { getI18n, getLangFromUrl } from '../../../libs/i18n';
+import { buildLayoutLabels } from '../../../libs/i18n/layoutLabels';
+export { getStaticPaths } from '../../../libs/static/staticPaths';
+
+const lang = getLangFromUrl(Astro.url);
+const t = getI18n(lang);
+const orgVanity = Astro.url.searchParams.get('orgVanity') ?? Astro.url.searchParams.get('org');
+---
+
+<Layout
+	title={`${t.app.orgs_info_title} | ${t.common.product_name}`}
+	description={t.app.orgs_info_intro}
+	productName={t.common.product_name}
+	lang={lang}
+	currentPath={`${Astro.url.pathname}${Astro.url.search}`}
+	labels={buildLayoutLabels(t)}
+>
+	<PublicOrganizationInfoWorkspace
+		client:load
+		lang={lang}
+		organization={orgVanity}
+		labels={{
+			title: t.app.orgs_info_title,
+			intro: t.app.orgs_info_intro,
+			loadingLabel: t.app.orgs_info_loading_label,
+			errorTitle: t.app.orgs_info_error_title,
+			missingOrgTitle: t.app.orgs_info_missing_title,
+			missingOrgBody: t.app.orgs_info_missing_body,
+			memberCountLabel: t.app.orgs_member_count_label,
+			characterCountLabel: t.app.orgs_character_count_label,
+			supportedOrgLabel: t.app.orgs_supported_org_label,
+			openOrgDashboardLabel: t.app.action_open_org_dashboard,
+			backToGuildsLabel: t.app.action_search_orgs,
+		}}
+	/>
+</Layout>

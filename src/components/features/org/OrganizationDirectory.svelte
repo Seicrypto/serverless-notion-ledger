@@ -247,7 +247,7 @@
 			{#each organizations as organization}
 				<OrganizationCard
 					organization={organization}
-					href={`/${lang}/members?org=${encodeURIComponent(getOrganizationReference(organization))}`}
+					href={`/${lang}/guilds/info?org=${encodeURIComponent(getOrganizationReference(organization))}`}
 					actionLabel={labels.openOrgLabel}
 					labels={{
 						members: labels.memberCountLabel,

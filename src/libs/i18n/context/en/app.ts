@@ -79,6 +79,15 @@ export const app = {
 	orgs_character_count_label: 'Characters',
 	orgs_supported_org_label: 'Featured guild',
 	orgs_open_org_label: 'Open guild',
+	orgs_view_info_label: 'View info',
+	orgs_info_title: 'Guild Info',
+	orgs_info_intro:
+		'This public page introduces the guild before someone joins. It can later expand with Discord, Linktree, and richer Notion-based info content.',
+	orgs_info_loading_label: 'Loading guild info',
+	orgs_info_error_title: 'Failed to load guild info',
+	orgs_info_missing_title: 'No guild selected yet',
+	orgs_info_missing_body:
+		'Open this page from guild search or your guild list so the app knows which guild to show.',
 	orgs_new_title: 'Create New Guild',
 	orgs_new_intro: 'Create your guild, community, team, or static. Start with the core guild details and the first character, then your new guild space is ready to grow.',
 	orgs_new_status: 'Ready to create a guild',
