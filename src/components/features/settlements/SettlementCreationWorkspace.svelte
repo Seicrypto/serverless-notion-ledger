@@ -32,8 +32,9 @@
 	import type {
 		CreateLedgerSettlementRequest,
 		LedgerEventDetail,
-		LedgerEventListItem,
+		LedgerEventSummaryLookupItem,
 		LedgerSettlementDefaultsResponse,
+		LedgerSettlementWorkspaceResponse,
 		SettleLedgerEventRequest,
 	} from '../../../libs/api/openapi/generated/schema';
 
@@ -177,9 +178,9 @@
 	let organizationCharacters: OrganizationManageCharacter[] = [];
 	let currentWorkspaceRole: WorkspaceRole | null = null;
 
-	let allEvents: LedgerEventListItem[] = [];
+	let allEvents: LedgerEventSummaryLookupItem[] = [];
 	let eventDetailsById: Record<string, LedgerEventDetail> = {};
-	let hydratingEventIds = new Set<number>();
+	let settlementWorkspacesByEventId: Record<string, LedgerSettlementWorkspaceResponse> = {};
 	let eventsLoading = false;
 	let eventsError = '';
 	let hasAnyEvents = false;
@@ -364,7 +365,7 @@
 		currentWorkspaceRole = null;
 		allEvents = [];
 		eventDetailsById = {};
-		hydratingEventIds = new Set<number>();
+		settlementWorkspacesByEventId = {};
 		eventsLoading = false;
 		eventsError = '';
 		hasAnyEvents = false;
@@ -584,44 +585,29 @@
 		}
 	}
 
-	async function hydrateVisibleEventDetails() {
-		if (!organization || visibleEvents.length === 0) {
-			return;
-		}
+	function rememberSettlementWorkspace(workspace: LedgerSettlementWorkspaceResponse) {
+		const eventId = String(workspace.event.id);
+		const gameId = String(workspace.event.game.id);
 
-		const targets = visibleEvents.filter(
-			(event) => !eventDetailsById[String(event.id)] && !hydratingEventIds.has(event.id),
-		);
-		if (!targets.length) {
-			return;
-		}
-
-		hydratingEventIds = new Set([...hydratingEventIds, ...targets.map((event) => event.id)]);
-
-		const results = await Promise.allSettled(
-			targets.map((event) => getApiAdapter().getOrganizationLedgerEvent(organization as string, event.id)),
-		);
-
-		let nextDetails = eventDetailsById;
-		const nextLoadingIds = new Set(hydratingEventIds);
-
-		results.forEach((result, index) => {
-			const event = targets[index];
-			nextLoadingIds.delete(event.id);
-			if (result.status === 'fulfilled') {
-				nextDetails = {
-					...nextDetails,
-					[String(event.id)]: result.value.event,
-				};
-			}
-		});
-
-		eventDetailsById = nextDetails;
-		hydratingEventIds = nextLoadingIds;
+		settlementWorkspacesByEventId = {
+			...settlementWorkspacesByEventId,
+			[eventId]: workspace,
+		};
+		eventDetailsById = {
+			...eventDetailsById,
+			[eventId]: workspace.event,
+		};
+		settlementDefaultsByGameId = {
+			...settlementDefaultsByGameId,
+			[gameId]: {
+				defaults: workspace.defaults,
+				game: workspace.event.game,
+			},
+		};
 	}
 
 	async function loadEvents(trigger: 'initial' | 'refresh' | 'apply-range' | 'organization-change' = 'initial') {
-		if (!organization) {
+		if (!organization || !selectedGameId) {
 			return;
 		}
 
@@ -635,13 +621,10 @@
 				sortOrder: 'desc' as const,
 			};
 			const filteredEventQuery = {
-				statusGroup: 'unsettled' as const,
 				fromOccurredAt: toRangeStartIso(eventQueryFromDate),
+				gameId: Number(selectedGameId),
 				toOccurredAt: toRangeEndIso(eventQueryToDate),
-				include: 'participants_summary' as const,
 				limit: FETCH_EVENT_BATCH_LIMIT,
-				sortBy: 'occurredAt' as const,
-				sortOrder: 'desc' as const,
 			};
 
 			devDebugLog('settlements.events', 'Loading settlement event candidates', {
@@ -654,7 +637,7 @@
 
 			const [allEventsResponse, filteredResponse] = await Promise.all([
 				getApiAdapter().listOrganizationLedgerEvents(organization, latestEventQuery),
-				getApiAdapter().listOrganizationLedgerEvents(organization, filteredEventQuery),
+				getApiAdapter().listOrganizationLedgerEventSummaries(organization, filteredEventQuery),
 			]);
 
 			devDebugLog('settlements.events', 'Received settlement event candidate response', {
@@ -663,11 +646,11 @@
 				selectedGameId,
 				latestEventCount: allEventsResponse.events.length,
 				filteredEventCount: filteredResponse.events.length,
-				filteredEventIds: filteredResponse.events.map((event) => ({
-					id: event.id,
-					gameId: event.gameId,
-					title: event.title,
-					status: event.status,
+				filteredEventIds: filteredResponse.events.map((entry) => ({
+					id: entry.event.id,
+					title: entry.event.title,
+					holder: entry.holder.label,
+					asset: entry.asset.name,
 				})),
 				filteredPagination: filteredResponse.pagination,
 			});
@@ -678,15 +661,12 @@
 				trigger,
 				organization,
 				selectedGameId,
-				localFilteredCount: filteredResponse.events.filter((event) =>
-					selectedGameId ? String(event.gameId ?? '') === selectedGameId : true,
-				).length,
+				localFilteredCount: filteredResponse.events.length,
 			});
-			if (selectedEventId && !filteredEvents.some((event) => String(event.id) === selectedEventId)) {
+			if (selectedEventId && !filteredEvents.some((event) => String(event.event.id) === selectedEventId)) {
 				resetSelectedEventState();
 			}
-			await hydrateVisibleEventDetails();
-			if (initialEventIdPending && filteredEvents.some((event) => event.id === initialEventIdPending)) {
+			if (initialEventIdPending && filteredEvents.some((event) => event.event.id === initialEventIdPending)) {
 				const nextEventId = initialEventIdPending;
 				initialEventIdPending = null;
 				void pickEvent(nextEventId);
@@ -787,7 +767,7 @@
 		if (selectedGameId) {
 			void ensureSettlementDefaultsForGame(selectedGameId);
 		}
-		void hydrateVisibleEventDetails();
+		void loadEvents('refresh');
 	}
 
 	function handleEventRangeChange(event: CustomEvent<{ start: string; end: string }>) {
@@ -803,7 +783,6 @@
 	function handlePageSizeChange(event: CustomEvent<{ value: number }>) {
 		pageSize = event.detail.value;
 		currentPage = 1;
-		void hydrateVisibleEventDetails();
 	}
 
 	function loadPreviousEventPage() {
@@ -812,7 +791,6 @@
 		}
 
 		currentPage -= 1;
-		void hydrateVisibleEventDetails();
 	}
 
 	function loadNextEventPage() {
@@ -821,7 +799,6 @@
 		}
 
 		currentPage += 1;
-		void hydrateVisibleEventDetails();
 	}
 
 	async function pickEvent(nextEventId: number) {
@@ -829,7 +806,9 @@
 			return;
 		}
 
-		const summary = filteredEvents.find((event) => event.id === nextEventId) ?? allEvents.find((event) => event.id === nextEventId);
+		const summary =
+			filteredEvents.find((event) => event.event.id === nextEventId) ??
+			allEvents.find((event) => event.event.id === nextEventId);
 		if (!summary) {
 			return;
 		}
@@ -840,23 +819,29 @@
 		resetFormState();
 
 		try {
-			const gameId =
-				typeof summary.gameId === 'number' && Number.isFinite(summary.gameId)
-					? String(summary.gameId)
-					: selectedGameId;
-			const [eventResponse, defaults] = await Promise.all([
-				getApiAdapter().getOrganizationLedgerEvent(organization, nextEventId),
-				ensureSettlementDefaultsForGame(gameId),
-			]);
+			const cachedWorkspace = settlementWorkspacesByEventId[String(nextEventId)] ?? null;
+			const workspace =
+				cachedWorkspace ??
+				(await getApiAdapter().getOrganizationLedgerSettlementWorkspace(organization, nextEventId));
+			rememberSettlementWorkspace(workspace);
 
-			selectedEvent = eventResponse.event;
+			selectedEvent = workspace.event;
 			selectedEventId = String(nextEventId);
-			selectedGameId = String(eventResponse.event.game.id);
-			eventDetailsById = {
-				...eventDetailsById,
-				[selectedEventId]: eventResponse.event,
-			};
-			seedFormFromEvent(eventResponse.event, defaults);
+			selectedGameId = String(workspace.event.game.id);
+			currentWorkspaceRole = workspace.currentUserRole;
+			seedFormFromEvent(workspace.event, {
+				defaults: workspace.defaults,
+				game: workspace.event.game,
+			});
+			if (workspace.defaultPayerCharacterId && payerType === 'character') {
+				syncPayerFromCharacterId(String(workspace.defaultPayerCharacterId));
+			}
+			const workspaceRecipientIds = (
+				workspace.defaultRecipientCharacterIds.length
+					? workspace.defaultRecipientCharacterIds
+					: workspace.participantCharacterIds
+			).map((characterId) => String(characterId));
+			setRecipients(workspaceRecipientIds);
 			syncUrl();
 		} catch (error) {
 			selectedEventError = getErrorMessage(error, labels.errorCreateTitle);
@@ -1036,7 +1021,7 @@
 				});
 			}
 
-			allEvents = allEvents.filter((event) => event.id !== selectedEvent.id);
+			allEvents = allEvents.filter((event) => event.event.id !== selectedEvent.id);
 			resetSelectedEventState();
 			syncUrl();
 			openSuccessDialog();
@@ -1086,31 +1071,24 @@
 		resolvedIconUrl: game.resolvedIconUrl,
 		officialSiteUrl: game.officialSiteUrl,
 	}));
-	$: filteredEvents = allEvents.filter((event) =>
-		selectedGameId ? String(event.gameId ?? '') === selectedGameId : true,
-	);
+	$: filteredEvents = allEvents;
 	$: totalPages = Math.max(1, Math.ceil(filteredEvents.length / pageSize));
 	$: if (currentPage > totalPages) {
 		currentPage = totalPages;
 	}
 	$: visibleEvents = filteredEvents.slice((currentPage - 1) * pageSize, currentPage * pageSize);
 	$: eventRows = visibleEvents.map((event) => {
-		const detail = eventDetailsById[String(event.id)];
-		const holderLabel =
-			detail?.holder.character?.name ??
-			detail?.holder.ref ??
-			(typeof event.holderRef === 'string' ? event.holderRef : event.holderType);
-		const assetLabel =
-			detail?.asset.name ??
-			(typeof event.assetId === 'number' ? `Asset #${event.assetId}` : '—');
+		const detail = eventDetailsById[String(event.event.id)];
+		const holderLabel = detail?.holder.character?.name ?? detail?.holder.ref ?? event.holder.label ?? '—';
+		const assetLabel = detail?.asset.name ?? event.asset.name ?? '—';
 		return {
-			id: event.id,
-			title: event.title,
+			id: event.event.id,
+			title: event.event.title,
 			occurredAtLabel: formatDateTime(event.occurredAt),
 			holderLabel,
 			assetLabel,
-			isPicked: String(event.id) === selectedEventId,
-			isPending: pendingPickEventId === event.id,
+			isPicked: String(event.event.id) === selectedEventId,
+			isPending: pendingPickEventId === event.event.id,
 		};
 	});
 	$: selectedPayerCharacter = getCharacterById(payerCharacterId);
@@ -1149,9 +1127,6 @@
 		'';
 	$: if (selectedGameId && !settlementDefaultsByGameId[selectedGameId] && !defaultsLoadingGameId) {
 		void ensureSettlementDefaultsForGame(selectedGameId);
-	}
-	$: if (visibleEvents.length > 0) {
-		void hydrateVisibleEventDetails();
 	}
 	$: if (payerType === 'character' && isMemberRestrictedPayerSelection && selectedEvent) {
 		const restrictedCharacterId = getDefaultPayerCharacterId(selectedEvent.game.id, selectedEvent);
