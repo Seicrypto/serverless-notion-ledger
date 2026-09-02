@@ -620,7 +620,7 @@
 		hydratingEventIds = nextLoadingIds;
 	}
 
-	async function loadEvents() {
+	async function loadEvents(trigger: 'initial' | 'refresh' | 'apply-range' | 'organization-change' = 'initial') {
 		if (!organization) {
 			return;
 		}
@@ -629,25 +629,59 @@
 		eventsError = '';
 
 		try {
+			const latestEventQuery = {
+				limit: 1,
+				sortBy: 'occurredAt' as const,
+				sortOrder: 'desc' as const,
+			};
+			const filteredEventQuery = {
+				statusGroup: 'unsettled' as const,
+				fromOccurredAt: toRangeStartIso(eventQueryFromDate),
+				toOccurredAt: toRangeEndIso(eventQueryToDate),
+				include: 'participants_summary' as const,
+				limit: FETCH_EVENT_BATCH_LIMIT,
+				sortBy: 'occurredAt' as const,
+				sortOrder: 'desc' as const,
+			};
+
+			devDebugLog('settlements.events', 'Loading settlement event candidates', {
+				trigger,
+				organization,
+				selectedGameId,
+				latestEventQuery,
+				filteredEventQuery,
+			});
+
 			const [allEventsResponse, filteredResponse] = await Promise.all([
-				getApiAdapter().listOrganizationLedgerEvents(organization, {
-					limit: 1,
-					sortBy: 'occurredAt',
-					sortOrder: 'desc',
-				}),
-				getApiAdapter().listOrganizationLedgerEvents(organization, {
-					statusGroup: 'unsettled',
-					fromOccurredAt: toRangeStartIso(eventQueryFromDate),
-					toOccurredAt: toRangeEndIso(eventQueryToDate),
-					include: 'participants_summary',
-					limit: FETCH_EVENT_BATCH_LIMIT,
-					sortBy: 'occurredAt',
-					sortOrder: 'desc',
-				}),
+				getApiAdapter().listOrganizationLedgerEvents(organization, latestEventQuery),
+				getApiAdapter().listOrganizationLedgerEvents(organization, filteredEventQuery),
 			]);
+
+			devDebugLog('settlements.events', 'Received settlement event candidate response', {
+				trigger,
+				organization,
+				selectedGameId,
+				latestEventCount: allEventsResponse.events.length,
+				filteredEventCount: filteredResponse.events.length,
+				filteredEventIds: filteredResponse.events.map((event) => ({
+					id: event.id,
+					gameId: event.gameId,
+					title: event.title,
+					status: event.status,
+				})),
+				filteredPagination: filteredResponse.pagination,
+			});
 			hasAnyEvents = allEventsResponse.events.length > 0;
 			allEvents = filteredResponse.events;
 			currentPage = 1;
+			devDebugLog('settlements.events', 'Applied local game filter to settlement event candidates', {
+				trigger,
+				organization,
+				selectedGameId,
+				localFilteredCount: filteredResponse.events.filter((event) =>
+					selectedGameId ? String(event.gameId ?? '') === selectedGameId : true,
+				).length,
+			});
 			if (selectedEventId && !filteredEvents.some((event) => String(event.id) === selectedEventId)) {
 				resetSelectedEventState();
 			}
@@ -661,6 +695,12 @@
 			eventsError = getErrorMessage(error, labels.errorCreateTitle);
 			hasAnyEvents = false;
 			allEvents = [];
+			devDebugError('settlements.events', 'Failed to load settlement event candidates', {
+				trigger,
+				organization,
+				selectedGameId,
+				error,
+			});
 		} finally {
 			eventsLoading = false;
 		}
@@ -725,7 +765,7 @@
 			void ensureSettlementDefaultsForGame(selectedGameId);
 		}
 
-		await loadEvents();
+		await loadEvents('organization-change');
 	}
 
 	function handleOrganizationChange(event: CustomEvent<{ value: string }>) {
@@ -757,7 +797,7 @@
 
 	function applyEventFilters() {
 		resetSelectedEventState();
-		void loadEvents();
+		void loadEvents('apply-range');
 	}
 
 	function handlePageSizeChange(event: CustomEvent<{ value: number }>) {
@@ -1200,7 +1240,7 @@
 			on:gamechange={handleGameChange}
 			on:rangechange={handleEventRangeChange}
 			on:applyfilters={applyEventFilters}
-			on:refresh={() => void loadEvents()}
+			on:refresh={() => void loadEvents('refresh')}
 			on:pagesizechange={handlePageSizeChange}
 			on:previouspage={loadPreviousEventPage}
 			on:nextpage={loadNextEventPage}
