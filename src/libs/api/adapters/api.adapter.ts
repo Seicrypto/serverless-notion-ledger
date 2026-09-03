@@ -100,6 +100,8 @@ export interface ListOrganizationLedgerEventSummariesOptions {
 	gameId: number;
 	limit?: number;
 	offset?: number;
+	status?: 'open' | 'ready_for_settlement' | 'partially_settled' | 'settled' | 'cancelled';
+	statusGroup?: 'unsettled' | 'settleable' | 'settled' | 'cancelled';
 	toOccurredAt?: string;
 }
 

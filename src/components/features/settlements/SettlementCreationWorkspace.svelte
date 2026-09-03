@@ -623,6 +623,7 @@
 			const filteredEventQuery = {
 				fromOccurredAt: toRangeStartIso(eventQueryFromDate),
 				gameId: Number(selectedGameId),
+				statusGroup: 'settleable' as const,
 				toOccurredAt: toRangeEndIso(eventQueryToDate),
 				limit: FETCH_EVENT_BATCH_LIMIT,
 			};
