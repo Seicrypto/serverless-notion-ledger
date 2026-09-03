@@ -5,6 +5,7 @@
 	import GamePicker from '../../shared/GamePicker.svelte';
 	import SearchSelect from '../../shared/SearchSelect.svelte';
 	import RequestStatusDialog from './RequestStatusDialog.svelte';
+	import SensitiveActionConfirmModal from './SensitiveActionConfirmModal.svelte';
 	import { getApiAdapter } from '../../../libs/api/adapters/api.adapter.ts';
 	import { ensureAuthSession, getErrorMessage, isAuthenticatedSession, subscribeAuthSession, type AuthSession } from '../../../libs/api/auth/session.ts';
 	import {
@@ -143,6 +144,27 @@
 		createMissingGameBody: string;
 		confirmLabel: string;
 		closeLabel: string;
+		sensitiveZoneTitle: string;
+		sensitiveZoneBody: string;
+		leaveGuildLabel: string;
+		deleteGuildLabel: string;
+		sensitiveConfirmBodyLeave: string;
+		sensitiveConfirmBodyDeleteGuild: string;
+		sensitiveConfirmBodyDeleteCharacter: string;
+		sensitiveConfirmHintPrefix: string;
+		sensitiveConfirmValidation: string;
+		sensitiveCopyLabel: string;
+		sensitiveWorkingLabel: string;
+		leavePendingTitle: string;
+		leavePendingBody: string;
+		leaveSuccessTitle: string;
+		leaveSuccessBody: string;
+		leaveErrorTitle: string;
+		deleteGuildPendingTitle: string;
+		deleteGuildPendingBody: string;
+		deleteGuildSuccessTitle: string;
+		deleteGuildSuccessBody: string;
+		deleteGuildErrorTitle: string;
 		validationRequired: string;
 		validationUrl: string;
 		validationNameLength: string;
@@ -215,6 +237,14 @@
 	let statusTitle = '';
 	let statusMessage = '';
 	let statusPrimaryAction: { label: string; onClick?: () => void; href?: string } | null = null;
+	let sensitiveActionOpen = false;
+	let sensitiveActionSubmitting = false;
+	let sensitiveAction:
+		| {
+				kind: 'delete-character' | 'leave-guild' | 'delete-guild';
+				targetName: string;
+		  }
+		| null = null;
 
 	let selectedCharacterGameId = '';
 	let recentClaimRequests: RecentCharacterClaimRequestEntry[] = [];
@@ -259,6 +289,15 @@
 		statusPrimaryAction = primaryAction;
 	};
 
+	const closeSensitiveAction = () => {
+		if (sensitiveActionSubmitting) {
+			return;
+		}
+
+		sensitiveActionOpen = false;
+		sensitiveAction = null;
+	};
+
 	const fillEditForm = () => {
 		if (!organization) {
 			return;
@@ -280,6 +319,14 @@
 		}
 
 		return member.vanity ? `@${member.vanity}` : `User #${member.userId}`;
+	};
+
+	const getCurrentMember = () => {
+		if (!isAuthenticatedSession(session)) {
+			return null;
+		}
+
+		return members.find((member) => member.userId === session.user.id) ?? null;
 	};
 
 	const getClaimStateLabel = (character: OrganizationManageCharacter) => {
@@ -395,6 +442,30 @@
 		label: getMemberDisplayName(member),
 		metaLabel: member.role,
 	}));
+
+	$: currentMember = getCurrentMember();
+	$: isCurrentMemberOwner = currentMember?.role === 'owner';
+	$: sensitiveActionTitle =
+		sensitiveAction?.kind === 'delete-character'
+			? labels.deleteLabel
+			: sensitiveAction?.kind === 'delete-guild'
+				? labels.deleteGuildLabel
+				: labels.leaveGuildLabel;
+	$: sensitiveActionBody =
+		sensitiveAction?.kind === 'delete-character'
+			? labels.sensitiveConfirmBodyDeleteCharacter
+			: sensitiveAction?.kind === 'delete-guild'
+				? labels.sensitiveConfirmBodyDeleteGuild
+				: labels.sensitiveConfirmBodyLeave;
+	$: sensitiveActionConfirmLabel =
+		sensitiveAction?.kind === 'delete-character'
+			? labels.deleteLabel
+			: sensitiveAction?.kind === 'delete-guild'
+				? labels.deleteGuildLabel
+				: labels.leaveGuildLabel;
+	$: sensitiveActionHelperLabel = sensitiveAction
+		? `${labels.sensitiveConfirmHintPrefix} ${sensitiveAction.targetName}`
+		: labels.sensitiveConfirmHintPrefix;
 
 	const openAddGameComingSoon = () => {
 		openStatus('success', labels.addGameComingSoonTitle, labels.addGameComingSoonBody, {
@@ -761,11 +832,54 @@
 		await loadWorkspace();
 	};
 
-	const submitDeleteCharacter = async (character: OrganizationManageCharacter) => {
+	const openDeleteCharacterConfirmation = (character: OrganizationManageCharacter) => {
+		sensitiveAction = {
+			kind: 'delete-character',
+			targetName: character.name,
+		};
+		sensitiveActionOpen = true;
+	};
+
+	const openLeaveGuildConfirmation = () => {
+		if (!organization) {
+			return;
+		}
+
+		sensitiveAction = {
+			kind: 'leave-guild',
+			targetName: organization.name,
+		};
+		sensitiveActionOpen = true;
+	};
+
+	const openDeleteGuildConfirmation = () => {
+		if (!organization) {
+			return;
+		}
+
+		sensitiveAction = {
+			kind: 'delete-guild',
+			targetName: organization.name,
+		};
+		sensitiveActionOpen = true;
+	};
+
+	const submitDeleteCharacter = async (characterName: string) => {
 		if (!orgVanity) {
 			return;
 		}
 
+		const character = characters.find((entry) => entry.name === characterName);
+		if (!character) {
+			closeSensitiveAction();
+			openStatus('error', labels.deleteErrorTitle, labels.sensitiveConfirmValidation, {
+				label: labels.closeLabel,
+				onClick: resetStatusDialog,
+			});
+			return;
+		}
+
+		closeSensitiveAction();
 		openStatus('pending', labels.deletePendingTitle, labels.deletePendingBody);
 
 		try {
@@ -782,6 +896,80 @@
 				label: labels.closeLabel,
 				onClick: resetStatusDialog,
 			});
+		}
+	};
+
+	const submitLeaveGuild = async () => {
+		if (!orgVanity || !currentMember) {
+			closeSensitiveAction();
+			openStatus('error', labels.leaveErrorTitle, labels.sensitiveConfirmValidation, {
+				label: labels.closeLabel,
+				onClick: resetStatusDialog,
+			});
+			return;
+		}
+
+		closeSensitiveAction();
+		openStatus('pending', labels.leavePendingTitle, labels.leavePendingBody);
+
+		try {
+			await getApiAdapter().leaveOrganization(orgVanity, currentMember.memberId);
+			clearOrganizationManageCache(orgVanity);
+			await refreshMyOrganizationsCache();
+			openStatus('success', labels.leaveSuccessTitle, labels.leaveSuccessBody, {
+				label: labels.confirmLabel,
+				href: `/${lang}/me/guilds`,
+			});
+		} catch (error) {
+			openStatus('error', labels.leaveErrorTitle, getErrorMessage(error, labels.leaveErrorTitle), {
+				label: labels.closeLabel,
+				onClick: resetStatusDialog,
+			});
+		}
+	};
+
+	const submitDeleteGuild = async () => {
+		if (!orgVanity) {
+			closeSensitiveAction();
+			return;
+		}
+
+		closeSensitiveAction();
+		openStatus('pending', labels.deleteGuildPendingTitle, labels.deleteGuildPendingBody);
+
+		try {
+			await getApiAdapter().deleteOrganization(orgVanity);
+			clearOrganizationManageCache(orgVanity);
+			await refreshMyOrganizationsCache();
+			openStatus('success', labels.deleteGuildSuccessTitle, labels.deleteGuildSuccessBody, {
+				label: labels.confirmLabel,
+				href: `/${lang}/me/guilds`,
+			});
+		} catch (error) {
+			openStatus('error', labels.deleteGuildErrorTitle, getErrorMessage(error, labels.deleteGuildErrorTitle), {
+				label: labels.closeLabel,
+				onClick: resetStatusDialog,
+			});
+		}
+	};
+
+	const submitSensitiveAction = async () => {
+		if (!sensitiveAction || sensitiveActionSubmitting) {
+			return;
+		}
+
+		sensitiveActionSubmitting = true;
+
+		try {
+			if (sensitiveAction.kind === 'delete-character') {
+				await submitDeleteCharacter(sensitiveAction.targetName);
+			} else if (sensitiveAction.kind === 'delete-guild') {
+				await submitDeleteGuild();
+			} else {
+				await submitLeaveGuild();
+			}
+		} finally {
+			sensitiveActionSubmitting = false;
 		}
 	};
 
@@ -1169,7 +1357,7 @@
 												<button type="button" class="table-chip-button" on:click={() => openClaimCharacter(character)}>
 													{labels.manageClaimLabel}
 												</button>
-												<button type="button" class="table-chip-button danger" on:click={() => void submitDeleteCharacter(character)}>
+												<button type="button" class="table-chip-button danger" on:click={() => openDeleteCharacterConfirmation(character)}>
 													{labels.deleteLabel}
 												</button>
 											</td>
@@ -1216,6 +1404,29 @@
 					</div>
 				</div>
 			</section>
+
+			{#if currentMember}
+				<section class="org-manage-danger-zone">
+					<div class="org-manage-danger-copy">
+						<h3>{labels.sensitiveZoneTitle}</h3>
+						<p>{labels.sensitiveZoneBody}</p>
+					</div>
+					<button
+						type="button"
+						class="org-manage-danger-button"
+						on:click={() => {
+							if (isCurrentMemberOwner) {
+								openDeleteGuildConfirmation();
+								return;
+							}
+
+							openLeaveGuildConfirmation();
+						}}
+					>
+						{isCurrentMemberOwner ? labels.deleteGuildLabel : labels.leaveGuildLabel}
+					</button>
+				</section>
+			{/if}
 		{/if}
 
 		{#if editOrgOpen}
@@ -1482,6 +1693,21 @@
 			primaryAction={statusPrimaryAction}
 			onClose={resetStatusDialog}
 		/>
+		<SensitiveActionConfirmModal
+			open={sensitiveActionOpen && Boolean(sensitiveAction)}
+			title={sensitiveActionTitle}
+			body={sensitiveActionBody}
+			helperLabel={sensitiveActionHelperLabel}
+			matchText={sensitiveAction?.targetName ?? ''}
+			cancelLabel={labels.editOrgCancelLabel}
+			confirmLabel={sensitiveActionConfirmLabel}
+			workingLabel={labels.sensitiveWorkingLabel}
+			copyLabel={labels.sensitiveCopyLabel}
+			validationMessage={labels.sensitiveConfirmValidation}
+			submitting={sensitiveActionSubmitting}
+			on:close={closeSensitiveAction}
+			on:confirm={() => void submitSensitiveAction()}
+		/>
 	</section>
 {/if}
 
@@ -1495,7 +1721,8 @@
 
 	.org-manage-head,
 	.org-manage-card,
-	.org-manage-panels {
+	.org-manage-panels,
+	.org-manage-danger-zone {
 		padding: 28px;
 		border: 1px solid color-mix(in srgb, var(--line) 92%, white);
 		border-radius: 28px;
@@ -1516,7 +1743,8 @@
 	.org-manage-card-description,
 	.org-manage-empty,
 	.org-manage-toolbar-note,
-	.org-manage-card-vanity {
+	.org-manage-card-vanity,
+	.org-manage-danger-copy p {
 		margin-top: 12px;
 		line-height: 1.7;
 		color: var(--text-soft);
@@ -1924,6 +2152,43 @@
 		font-weight: 700;
 	}
 
+	.org-manage-danger-zone {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 18px;
+		border-color: color-mix(in srgb, #dc2626 28%, var(--line));
+		background:
+			linear-gradient(135deg, color-mix(in srgb, #fee2e2 72%, white), transparent 58%),
+			var(--surface);
+	}
+
+	.org-manage-danger-copy h3,
+	.org-manage-danger-copy p {
+		margin: 0;
+	}
+
+	.org-manage-danger-button {
+		min-height: 44px;
+		padding: 0 18px;
+		border-radius: 999px;
+		border: 1px solid color-mix(in srgb, #dc2626 42%, var(--line));
+		background: color-mix(in srgb, #fee2e2 78%, white);
+		color: #991b1b;
+		font: inherit;
+		font-weight: 700;
+		cursor: pointer;
+		white-space: nowrap;
+		transition:
+			transform 0.18s ease,
+			background 0.18s ease,
+			border-color 0.18s ease;
+	}
+
+	.org-manage-danger-button:hover {
+		transform: translateY(-1px);
+	}
+
 	.manage-modal-backdrop {
 		position: fixed;
 		inset: 0;
@@ -1951,6 +2216,12 @@
 
 	.manage-modal-card h2 {
 		margin: 0;
+	}
+
+	.manage-modal-actions {
+		margin-top: 10px;
+		gap: 12px;
+		justify-content: flex-end;
 	}
 
 	.manage-field {
@@ -2010,6 +2281,29 @@
 		color: var(--text-soft);
 	}
 
+	.modal-primary,
+	.modal-secondary {
+		min-height: 46px;
+		padding: 0 18px;
+		border-radius: 999px;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		font-size: 0.95rem;
+		font-weight: 700;
+		white-space: nowrap;
+		transition:
+			transform 0.18s ease,
+			background 0.18s ease,
+			border-color 0.18s ease,
+			box-shadow 0.18s ease,
+			opacity 0.18s ease;
+	}
+
+	.modal-secondary:hover {
+		transform: translateY(-1px);
+	}
+
 	.sr-only {
 		position: absolute;
 		width: 1px;
@@ -2026,6 +2320,7 @@
 		.org-manage-head,
 		.org-manage-card,
 		.org-manage-panels,
+		.org-manage-danger-zone,
 		.manage-modal-card {
 			padding: 22px;
 			border-radius: 22px;
@@ -2053,6 +2348,21 @@
 
 		.manage-modal-actions {
 			flex-direction: column-reverse;
+		}
+
+		.modal-primary,
+		.modal-secondary {
+			width: 100%;
+			min-height: 48px;
+		}
+
+		.org-manage-danger-zone {
+			flex-direction: column;
+			align-items: stretch;
+		}
+
+		.org-manage-danger-button {
+			width: 100%;
 		}
 	}
 </style>

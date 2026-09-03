@@ -5,7 +5,17 @@
 	import OrganizationCard from './OrganizationCard.svelte';
 	import GamePicker from '../../shared/GamePicker.svelte';
 	import { getApiAdapter } from '../../../libs/api/adapters/api.adapter.ts';
+	import {
+		refreshMyOrganizationsCache,
+		subscribeMyOrganizationsCache,
+	} from '../../../libs/api/organizations/my-organizations-cache.ts';
 	import { mapApiOrganizationCardToOrganizationCardResponse } from '../../../libs/api/organizations/organization-card.ts';
+	import {
+		ensureAuthSession,
+		isAuthenticatedSession,
+		subscribeAuthSession,
+		type AuthSession,
+	} from '../../../libs/api/auth/session.ts';
 	import { getOrganizationReference } from '../../../libs/organizations/reference.ts';
 
 	interface GameOption {
@@ -39,6 +49,25 @@
 		appliedOrgLabel: string;
 		applyOrgErrorTitle: string;
 		loginLabel: string;
+		applyOrgDialogTitle: string;
+		applyOrgDialogIntro: string;
+		applyOrgDialogChooseTabLabel: string;
+		applyOrgDialogCreateTabLabel: string;
+		applyOrgDialogCancelLabel: string;
+		applyOrgDialogSubmitLabel: string;
+		applyOrgDialogLoadingLabel: string;
+		applyOrgDialogRoleFieldLabel: string;
+		applyOrgDialogRolePlaceholder: string;
+		applyOrgDialogRoleEmptyLabel: string;
+		applyOrgDialogRoleHint: string;
+		applyOrgDialogRoleRequiredError: string;
+		applyOrgDialogNewRoleFieldLabel: string;
+		applyOrgDialogNewRolePlaceholder: string;
+		applyOrgDialogNewRoleHint: string;
+		applyOrgDialogNewRoleRequiredError: string;
+		applyOrgDialogNoRolesBody: string;
+		applyOrgDialogGameHintPrefix: string;
+		applyOrgDialogMissingGameBody: string;
 	}
 
 	export let lang: string;
@@ -59,6 +88,66 @@
 	let gamesLoading = false;
 	let hasLoadedOnce = false;
 	let errorMessage = '';
+	let session: AuthSession | null = null;
+	let membershipStatuses = new Map<string, 'pending' | 'active' | null>();
+
+	function applyMembershipStatuses(
+		items: ReturnType<typeof mapApiOrganizationCardToOrganizationCardResponse>[],
+	) {
+		return items.map((organization) => {
+			const membershipStatus = membershipStatuses.get(getOrganizationReference(organization));
+			if (!membershipStatus) {
+				return organization;
+			}
+
+			return {
+				...organization,
+				membership: {
+					role: organization.membership?.role ?? null,
+					status: membershipStatus,
+				},
+			};
+		});
+	}
+
+	function writeMembershipStatuses(
+		items: Array<{
+			id: number;
+			vanity: string | null;
+			membership: { status: 'pending' | 'active' | null } | null;
+		}>,
+	) {
+		const nextStatuses = new Map<string, 'pending' | 'active' | null>();
+		for (const item of items) {
+			const membershipStatus = item.membership?.status ?? null;
+			if (!membershipStatus) {
+				continue;
+			}
+
+			nextStatuses.set(String(item.id), membershipStatus);
+			if (item.vanity) {
+				nextStatuses.set(item.vanity, membershipStatus);
+			}
+		}
+
+		membershipStatuses = nextStatuses;
+		organizations = applyMembershipStatuses(organizations);
+	}
+
+	async function refreshMembershipSnapshot() {
+		if (!isAuthenticatedSession(session)) {
+			membershipStatuses = new Map();
+			organizations = applyMembershipStatuses(organizations);
+			return;
+		}
+
+		try {
+			const snapshot = await refreshMyOrganizationsCache();
+			writeMembershipStatuses(snapshot.organizations);
+		} catch {
+			// The search page can still function without the personalized membership overlay.
+		}
+	}
 
 	const loadGameOptions = async () => {
 		gamesLoading = true;
@@ -124,7 +213,9 @@
 				gameSlug: selectedGameSlug || undefined,
 			});
 
-			organizations = response.organizations.map(mapApiOrganizationCardToOrganizationCardResponse);
+			organizations = applyMembershipStatuses(
+				response.organizations.map(mapApiOrganizationCardToOrganizationCardResponse),
+			);
 			offset = response.pagination.offset;
 			hasMore = response.pagination.hasMore;
 			hasLoadedOnce = true;
@@ -167,6 +258,8 @@
 
 	onMount(() => {
 		void (async () => {
+			session = await ensureAuthSession();
+			void refreshMembershipSnapshot();
 			await loadGameOptions();
 			if (!selectedGameSlug && gameOptions[0]) {
 				selectedGameSlug = gameOptions[0].value;
@@ -174,6 +267,20 @@
 
 			await loadOrganizations(offset);
 		})();
+
+		const unsubscribeSession = subscribeAuthSession((nextSession) => {
+			session = nextSession;
+			void refreshMembershipSnapshot();
+		});
+
+		const unsubscribeMemberships = subscribeMyOrganizationsCache((snapshot) => {
+			writeMembershipStatuses(snapshot.organizations);
+		});
+
+		return () => {
+			unsubscribeSession();
+			unsubscribeMemberships();
+		};
 	});
 </script>
 
@@ -272,6 +379,25 @@
 								appliedLabel: labels.appliedOrgLabel,
 								errorTitle: labels.applyOrgErrorTitle,
 								loginLabel: labels.loginLabel,
+								dialogTitle: labels.applyOrgDialogTitle,
+								dialogIntro: labels.applyOrgDialogIntro,
+								dialogChooseTabLabel: labels.applyOrgDialogChooseTabLabel,
+								dialogCreateTabLabel: labels.applyOrgDialogCreateTabLabel,
+								dialogCancelLabel: labels.applyOrgDialogCancelLabel,
+								dialogSubmitLabel: labels.applyOrgDialogSubmitLabel,
+								dialogLoadingLabel: labels.applyOrgDialogLoadingLabel,
+								dialogRoleFieldLabel: labels.applyOrgDialogRoleFieldLabel,
+								dialogRolePlaceholder: labels.applyOrgDialogRolePlaceholder,
+								dialogRoleEmptyLabel: labels.applyOrgDialogRoleEmptyLabel,
+								dialogRoleHint: labels.applyOrgDialogRoleHint,
+								dialogRoleRequiredError: labels.applyOrgDialogRoleRequiredError,
+								dialogNewRoleFieldLabel: labels.applyOrgDialogNewRoleFieldLabel,
+								dialogNewRolePlaceholder: labels.applyOrgDialogNewRolePlaceholder,
+								dialogNewRoleHint: labels.applyOrgDialogNewRoleHint,
+								dialogNewRoleRequiredError: labels.applyOrgDialogNewRoleRequiredError,
+								dialogNoRolesBody: labels.applyOrgDialogNoRolesBody,
+								dialogGameHintPrefix: labels.applyOrgDialogGameHintPrefix,
+								dialogMissingGameBody: labels.applyOrgDialogMissingGameBody,
 							}}
 							onApplied={() => {
 								organizations = organizations.map((entry) =>

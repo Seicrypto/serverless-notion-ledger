@@ -3,7 +3,6 @@
 
 	import OrganizationCard from './OrganizationCard.svelte';
 	import ApplyOrganizationButton from './ApplyOrganizationButton.svelte';
-	import SelfOrganizationMembershipAction from './SelfOrganizationMembershipAction.svelte';
 	import { getApiAdapter } from '../../../libs/api/adapters/api.adapter.ts';
 	import { ensureMyOrganizationsCache } from '../../../libs/api/organizations/my-organizations-cache.ts';
 	import {
@@ -30,11 +29,25 @@
 		appliedOrgLabel: string;
 		applyOrgErrorTitle: string;
 		loginLabel: string;
-		leaveOrgLabel: string;
-		cancelOrgLabel: string;
-		orgActionProcessingLabel: string;
-		orgActionErrorTitle: string;
-		orgActionResolveError: string;
+		applyOrgDialogTitle: string;
+		applyOrgDialogIntro: string;
+		applyOrgDialogChooseTabLabel: string;
+		applyOrgDialogCreateTabLabel: string;
+		applyOrgDialogCancelLabel: string;
+		applyOrgDialogSubmitLabel: string;
+		applyOrgDialogLoadingLabel: string;
+		applyOrgDialogRoleFieldLabel: string;
+		applyOrgDialogRolePlaceholder: string;
+		applyOrgDialogRoleEmptyLabel: string;
+		applyOrgDialogRoleHint: string;
+		applyOrgDialogRoleRequiredError: string;
+		applyOrgDialogNewRoleFieldLabel: string;
+		applyOrgDialogNewRolePlaceholder: string;
+		applyOrgDialogNewRoleHint: string;
+		applyOrgDialogNewRoleRequiredError: string;
+		applyOrgDialogNoRolesBody: string;
+		applyOrgDialogGameHintPrefix: string;
+		applyOrgDialogMissingGameBody: string;
 	}
 
 	export let lang: string;
@@ -169,24 +182,28 @@
 							appliedLabel: labels.appliedOrgLabel,
 							errorTitle: labels.applyOrgErrorTitle,
 							loginLabel: labels.loginLabel,
+							dialogTitle: labels.applyOrgDialogTitle,
+							dialogIntro: labels.applyOrgDialogIntro,
+							dialogChooseTabLabel: labels.applyOrgDialogChooseTabLabel,
+							dialogCreateTabLabel: labels.applyOrgDialogCreateTabLabel,
+							dialogCancelLabel: labels.applyOrgDialogCancelLabel,
+							dialogSubmitLabel: labels.applyOrgDialogSubmitLabel,
+							dialogLoadingLabel: labels.applyOrgDialogLoadingLabel,
+							dialogRoleFieldLabel: labels.applyOrgDialogRoleFieldLabel,
+							dialogRolePlaceholder: labels.applyOrgDialogRolePlaceholder,
+							dialogRoleEmptyLabel: labels.applyOrgDialogRoleEmptyLabel,
+							dialogRoleHint: labels.applyOrgDialogRoleHint,
+							dialogRoleRequiredError: labels.applyOrgDialogRoleRequiredError,
+							dialogNewRoleFieldLabel: labels.applyOrgDialogNewRoleFieldLabel,
+							dialogNewRolePlaceholder: labels.applyOrgDialogNewRolePlaceholder,
+							dialogNewRoleHint: labels.applyOrgDialogNewRoleHint,
+							dialogNewRoleRequiredError: labels.applyOrgDialogNewRoleRequiredError,
+							dialogNoRolesBody: labels.applyOrgDialogNoRolesBody,
+							dialogGameHintPrefix: labels.applyOrgDialogGameHintPrefix,
+							dialogMissingGameBody: labels.applyOrgDialogMissingGameBody,
 						}}
 						onApplied={() => {
 							membershipStatus = 'pending';
-						}}
-					/>
-					<SelfOrganizationMembershipAction
-						lang={lang}
-						organization={resolvedOrganization}
-						membershipStatus={membershipStatus}
-						labels={{
-							leaveLabel: labels.leaveOrgLabel,
-							cancelLabel: labels.cancelOrgLabel,
-							processingLabel: labels.orgActionProcessingLabel,
-							errorTitle: labels.orgActionErrorTitle,
-							resolveError: labels.orgActionResolveError,
-						}}
-						onCompleted={() => {
-							membershipStatus = null;
 						}}
 					/>
 				</div>
