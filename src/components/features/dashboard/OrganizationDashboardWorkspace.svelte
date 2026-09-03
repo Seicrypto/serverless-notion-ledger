@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { onMount, tick } from 'svelte';
 
 	import CharacterLedgerDetailDialog from './CharacterLedgerDetailDialog.svelte';
 	import DashboardPagination from './DashboardPagination.svelte';
@@ -314,6 +314,10 @@
 		syncUrlOrganization();
 		loading = false;
 		pageLoading = false;
+
+		if (charactersResult.status === 'fulfilled') {
+			await tick();
+		}
 
 		if (charactersResult.status === 'fulfilled' && pagedCharacters.length > 0) {
 			void loadSummaries(force).catch(() => {
