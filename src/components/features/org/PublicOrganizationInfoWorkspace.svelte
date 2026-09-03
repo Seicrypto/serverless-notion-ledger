@@ -3,7 +3,6 @@
 
 	import OrganizationCard from './OrganizationCard.svelte';
 	import ApplyOrganizationButton from './ApplyOrganizationButton.svelte';
-	import SelfOrganizationMembershipAction from './SelfOrganizationMembershipAction.svelte';
 	import { getApiAdapter } from '../../../libs/api/adapters/api.adapter.ts';
 	import { ensureMyOrganizationsCache } from '../../../libs/api/organizations/my-organizations-cache.ts';
 	import {
@@ -49,11 +48,6 @@
 		applyOrgDialogNoRolesBody: string;
 		applyOrgDialogGameHintPrefix: string;
 		applyOrgDialogMissingGameBody: string;
-		leaveOrgLabel: string;
-		cancelOrgLabel: string;
-		orgActionProcessingLabel: string;
-		orgActionErrorTitle: string;
-		orgActionResolveError: string;
 	}
 
 	export let lang: string;
@@ -210,21 +204,6 @@
 						}}
 						onApplied={() => {
 							membershipStatus = 'pending';
-						}}
-					/>
-					<SelfOrganizationMembershipAction
-						lang={lang}
-						organization={resolvedOrganization}
-						membershipStatus={membershipStatus}
-						labels={{
-							leaveLabel: labels.leaveOrgLabel,
-							cancelLabel: labels.cancelOrgLabel,
-							processingLabel: labels.orgActionProcessingLabel,
-							errorTitle: labels.orgActionErrorTitle,
-							resolveError: labels.orgActionResolveError,
-						}}
-						onCompleted={() => {
-							membershipStatus = null;
 						}}
 					/>
 				</div>
