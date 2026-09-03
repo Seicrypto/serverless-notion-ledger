@@ -433,14 +433,6 @@
 			<h2>{labels.loadingLabel}</h2>
 		</article>
 	</section>
-{:else if !isAuthenticatedSession(session)}
-	<section class="app-section">
-		<article class="state-card">
-			<h2>{labels.authRequiredTitle}</h2>
-			<p>{labels.authRequiredBody}</p>
-			<a class="state-action" href={`/${lang}/login`}>{labels.loginLabel}</a>
-		</article>
-	</section>
 {:else if !organization}
 	<section class="app-section">
 		<article class="state-card">

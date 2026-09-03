@@ -414,7 +414,7 @@
 
 	function syncPayerFromCharacterId(characterId: string) {
 		payerCharacterId = characterId;
-		payerRef = getCharacterById(characterId)?.name ?? '';
+		payerRef = characterId.trim();
 	}
 
 	function setRecipients(characterIds: string[]) {

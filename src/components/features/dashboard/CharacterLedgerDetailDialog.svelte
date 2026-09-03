@@ -44,6 +44,40 @@
 	function groupTotal(group: LedgerDashboardDetailGroup) {
 		return group.unitBreakdown.reduce((total, item) => total + item.amountTotal, 0);
 	}
+
+	function filterPendingGroups(groups: LedgerDashboardDetailGroup[]) {
+		return groups
+			.map((group) => {
+				const settlements = group.settlements.filter((settlement) => settlement.claimStatus === 'none');
+				if (!settlements.length) {
+					return null;
+				}
+
+				const unitBreakdownMap = new Map<string, { amountTotal: number; settlementCount: number; unitAssetId: number | null; unitAssetName: string | null }>();
+				for (const settlement of settlements) {
+					const key = `${settlement.unitAssetId ?? 'null'}:${settlement.unitAssetName ?? ''}`;
+					const current = unitBreakdownMap.get(key) ?? {
+						amountTotal: 0,
+						settlementCount: 0,
+						unitAssetId: settlement.unitAssetId ?? null,
+						unitAssetName: settlement.unitAssetName ?? null,
+					};
+					current.amountTotal += settlement.amount;
+					current.settlementCount += 1;
+					unitBreakdownMap.set(key, current);
+				}
+
+				return {
+					...group,
+					settlements,
+					unitBreakdown: [...unitBreakdownMap.values()],
+				};
+			})
+			.filter((group): group is LedgerDashboardDetailGroup => group !== null);
+	}
+
+	$: pendingReceivableGroups = detail ? filterPendingGroups(detail.receivableGroups) : [];
+	$: pendingPayableGroups = detail ? filterPendingGroups(detail.payableGroups) : [];
 </script>
 
 {#if open && detail}
@@ -58,10 +92,10 @@
 				<div class="detail-sections">
 					<section class="detail-section">
 						<h3>{labels.receivableLabel}</h3>
-						{#if detail.receivableGroups.length === 0}
+						{#if pendingReceivableGroups.length === 0}
 							<p>{labels.noDataLabel}</p>
 						{:else}
-							{#each detail.receivableGroups as group}
+							{#each pendingReceivableGroups as group}
 								<details class="detail-group">
 									<summary>
 										<span>{group.counterpartyLabel}</span>
@@ -88,10 +122,10 @@
 
 					<section class="detail-section">
 						<h3>{labels.payableLabel}</h3>
-						{#if detail.payableGroups.length === 0}
+						{#if pendingPayableGroups.length === 0}
 							<p>{labels.noDataLabel}</p>
 						{:else}
-							{#each detail.payableGroups as group}
+							{#each pendingPayableGroups as group}
 								<details class="detail-group">
 									<summary>
 										<span>{group.counterpartyLabel}</span>
