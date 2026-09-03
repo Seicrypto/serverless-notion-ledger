@@ -89,6 +89,29 @@ export const app = {
 	orgs_info_missing_body:
 		'どのギルドを表示するか判断できるよう、ギルド検索結果または自分のギルド一覧からこのページを開いてください。',
 	orgs_apply_error_title: 'ギルド参加申請に失敗しました',
+	orgs_apply_dialog_title: 'ギルド参加申請',
+	orgs_apply_dialog_intro:
+		'利用可能な役割を選ぶか、新しい役割名を入力してから参加申請を送信できます。',
+	orgs_apply_dialog_choose_tab: '既存の役割を選ぶ',
+	orgs_apply_dialog_create_tab: '新しい役割を作る',
+	orgs_apply_dialog_cancel: 'キャンセル',
+	orgs_apply_dialog_submit: '申請を送信',
+	orgs_apply_dialog_loading: '申請可能な役割を読み込み中',
+	orgs_apply_dialog_role_field_label: '役割を選ぶ',
+	orgs_apply_dialog_role_placeholder: '役割を選択してください',
+	orgs_apply_dialog_role_empty_label: '現在選べる役割はありません',
+	orgs_apply_dialog_role_hint: 'ここにはまだ claim されていない役割だけを表示します。',
+	orgs_apply_dialog_role_required_error: '申請前に役割を選択してください。',
+	orgs_apply_dialog_new_role_field_label: 'あなたの役割名',
+	orgs_apply_dialog_new_role_placeholder: '役割名を入力',
+	orgs_apply_dialog_new_role_hint:
+		'まだ該当する役割がない場合は、新しい役割名を入力して申請できます。',
+	orgs_apply_dialog_new_role_required_error: '申請前に役割名を入力してください。',
+	orgs_apply_dialog_no_roles_body:
+		'このギルドには現在そのまま選べる役割がないため、新しい役割を作成して申請してください。',
+	orgs_apply_dialog_game_hint_prefix: '新しい役割の対象ゲーム',
+	orgs_apply_dialog_missing_game_body:
+		'このギルドのメインゲームをまだ判定できないため、今は新しい役割を作成できません。',
 	orgs_membership_action_pending_title: 'メンバー状態を更新中',
 	orgs_membership_action_pending_body: '最新のメンバー操作リクエストを送信しています。少しお待ちください。',
 	orgs_membership_action_success_title: 'メンバー状態を更新しました',

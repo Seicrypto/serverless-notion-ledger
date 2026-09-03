@@ -39,6 +39,25 @@
 		appliedOrgLabel: string;
 		applyOrgErrorTitle: string;
 		loginLabel: string;
+		applyOrgDialogTitle: string;
+		applyOrgDialogIntro: string;
+		applyOrgDialogChooseTabLabel: string;
+		applyOrgDialogCreateTabLabel: string;
+		applyOrgDialogCancelLabel: string;
+		applyOrgDialogSubmitLabel: string;
+		applyOrgDialogLoadingLabel: string;
+		applyOrgDialogRoleFieldLabel: string;
+		applyOrgDialogRolePlaceholder: string;
+		applyOrgDialogRoleEmptyLabel: string;
+		applyOrgDialogRoleHint: string;
+		applyOrgDialogRoleRequiredError: string;
+		applyOrgDialogNewRoleFieldLabel: string;
+		applyOrgDialogNewRolePlaceholder: string;
+		applyOrgDialogNewRoleHint: string;
+		applyOrgDialogNewRoleRequiredError: string;
+		applyOrgDialogNoRolesBody: string;
+		applyOrgDialogGameHintPrefix: string;
+		applyOrgDialogMissingGameBody: string;
 	}
 
 	export let lang: string;
@@ -272,6 +291,25 @@
 								appliedLabel: labels.appliedOrgLabel,
 								errorTitle: labels.applyOrgErrorTitle,
 								loginLabel: labels.loginLabel,
+								dialogTitle: labels.applyOrgDialogTitle,
+								dialogIntro: labels.applyOrgDialogIntro,
+								dialogChooseTabLabel: labels.applyOrgDialogChooseTabLabel,
+								dialogCreateTabLabel: labels.applyOrgDialogCreateTabLabel,
+								dialogCancelLabel: labels.applyOrgDialogCancelLabel,
+								dialogSubmitLabel: labels.applyOrgDialogSubmitLabel,
+								dialogLoadingLabel: labels.applyOrgDialogLoadingLabel,
+								dialogRoleFieldLabel: labels.applyOrgDialogRoleFieldLabel,
+								dialogRolePlaceholder: labels.applyOrgDialogRolePlaceholder,
+								dialogRoleEmptyLabel: labels.applyOrgDialogRoleEmptyLabel,
+								dialogRoleHint: labels.applyOrgDialogRoleHint,
+								dialogRoleRequiredError: labels.applyOrgDialogRoleRequiredError,
+								dialogNewRoleFieldLabel: labels.applyOrgDialogNewRoleFieldLabel,
+								dialogNewRolePlaceholder: labels.applyOrgDialogNewRolePlaceholder,
+								dialogNewRoleHint: labels.applyOrgDialogNewRoleHint,
+								dialogNewRoleRequiredError: labels.applyOrgDialogNewRoleRequiredError,
+								dialogNoRolesBody: labels.applyOrgDialogNoRolesBody,
+								dialogGameHintPrefix: labels.applyOrgDialogGameHintPrefix,
+								dialogMissingGameBody: labels.applyOrgDialogMissingGameBody,
 							}}
 							onApplied={() => {
 								organizations = organizations.map((entry) =>

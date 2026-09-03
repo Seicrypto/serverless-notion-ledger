@@ -89,6 +89,29 @@ export const app = {
 	orgs_info_missing_body:
 		'Open this page from guild search or your guild list so the app knows which guild to show.',
 	orgs_apply_error_title: 'Unable to apply to guild',
+	orgs_apply_dialog_title: 'Apply to this guild',
+	orgs_apply_dialog_intro:
+		'Choose an available role first, or enter the name of a new role to include with your application.',
+	orgs_apply_dialog_choose_tab: 'Choose existing role',
+	orgs_apply_dialog_create_tab: 'Create new role',
+	orgs_apply_dialog_cancel: 'Cancel',
+	orgs_apply_dialog_submit: 'Submit application',
+	orgs_apply_dialog_loading: 'Loading available role options',
+	orgs_apply_dialog_role_field_label: 'Choose a role',
+	orgs_apply_dialog_role_placeholder: 'Please choose a role',
+	orgs_apply_dialog_role_empty_label: 'No available roles right now',
+	orgs_apply_dialog_role_hint: 'Only currently unclaimed roles are shown here.',
+	orgs_apply_dialog_role_required_error: 'Choose a role before submitting your application.',
+	orgs_apply_dialog_new_role_field_label: 'Your role name',
+	orgs_apply_dialog_new_role_placeholder: 'Enter your role name',
+	orgs_apply_dialog_new_role_hint:
+		'If there is no matching role yet, enter a new role name and submit it with your application.',
+	orgs_apply_dialog_new_role_required_error: 'Enter a role name before submitting your application.',
+	orgs_apply_dialog_no_roles_body:
+		'This guild does not currently have an available role to pick, so create a new one instead.',
+	orgs_apply_dialog_game_hint_prefix: 'New role game',
+	orgs_apply_dialog_missing_game_body:
+		'We could not determine this guild’s primary game yet, so creating a new role is unavailable for now.',
 	orgs_membership_action_pending_title: 'Updating membership',
 	orgs_membership_action_pending_body: 'Please wait a moment while the membership request is being submitted.',
 	orgs_membership_action_success_title: 'Membership updated',
