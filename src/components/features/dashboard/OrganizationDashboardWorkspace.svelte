@@ -130,6 +130,19 @@
 		return summaries.find((summaryItem) => summaryItem.characterId === characterId) ?? null;
 	}
 
+	function createEmptyCharacterSummary(character: OrganizationCharacter): CharacterLedgerDashboardSummaryItem {
+		return {
+			characterId: character.id,
+			characterName: character.name,
+			lastActivityAt: null,
+			payableSettlementCount: 0,
+			payableUnitBreakdown: [],
+			pendingClaimCount: 0,
+			receivableSettlementCount: 0,
+			receivableUnitBreakdown: [],
+		};
+	}
+
 	function getOrganizationDisplayName() {
 		return summary?.organization.name ?? organization ?? labels.overviewTitle;
 	}
@@ -149,10 +162,14 @@
 	$: totalPages = Math.max(1, Math.ceil(filteredCharacters.length / PAGE_SIZE));
 	$: visiblePage = Math.min(page, totalPages);
 	$: pagedCharacters = filteredCharacters.slice((visiblePage - 1) * PAGE_SIZE, visiblePage * PAGE_SIZE);
-	$: pagedCharacterCards = pagedCharacters.map((character) => ({
-		character,
-		summary: findCharacterSummary(character.id),
-	}));
+	$: pagedCharacterCards = pagedCharacters.map((character) => {
+		const matchedSummary = findCharacterSummary(character.id);
+		return {
+			character,
+			summary: matchedSummary ?? createEmptyCharacterSummary(character),
+			isResolved: Boolean(matchedSummary) || !summariesLoading,
+		};
+	});
 	$: currentSummaryKey = organization
 		? `${organization}:${pagedCharacters.map((character) => character.id).join(',')}`
 		: '';
@@ -523,7 +540,7 @@
 			{:else}
 				<div class="character-card-grid">
 					{#each pagedCharacterCards as entry}
-						{#if entry.summary}
+						{#if entry.isResolved}
 							<CharacterLedgerSummaryCard
 								summary={entry.summary}
 								lang={lang}
