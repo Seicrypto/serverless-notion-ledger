@@ -171,11 +171,11 @@
 			</div>
 			<div>
 				<span>{labels.formContextGameLabel}</span>
-				<strong>{selectedGameName || selectedEvent.game.name}</strong>
+				<strong>{selectedGameName || selectedEvent.game?.name || '—'}</strong>
 			</div>
 			<div>
 				<span>{labels.formContextAssetLabel}</span>
-				<strong>{selectedAssetName || selectedEvent.asset.name}</strong>
+				<strong>{selectedAssetName || selectedEvent.asset?.name || '—'}</strong>
 			</div>
 			<div>
 				<span>{labels.formContextHolderLabel}</span>

@@ -649,8 +649,8 @@
 				filteredEventIds: filteredResponse.events.map((entry) => ({
 					id: entry.event.id,
 					title: entry.event.title,
-					holder: entry.holder.label,
-					asset: entry.asset.name,
+					holder: entry.holder?.label ?? null,
+					asset: entry.asset?.name ?? null,
 				})),
 				filteredPagination: filteredResponse.pagination,
 			});
@@ -1079,8 +1079,9 @@
 	$: visibleEvents = filteredEvents.slice((currentPage - 1) * pageSize, currentPage * pageSize);
 	$: eventRows = visibleEvents.map((event) => {
 		const detail = eventDetailsById[String(event.event.id)];
-		const holderLabel = detail?.holder.character?.name ?? detail?.holder.ref ?? event.holder.label ?? '—';
-		const assetLabel = detail?.asset.name ?? event.asset.name ?? '—';
+		const holderLabel =
+			detail?.holder.character?.name ?? detail?.holder.ref ?? event.holder?.label ?? '—';
+		const assetLabel = detail?.asset?.name ?? event.asset?.name ?? '—';
 		return {
 			id: event.event.id,
 			title: event.event.title,
@@ -1117,9 +1118,9 @@
 	$: isMemberRestrictedPayerSelection = currentWorkspaceRole === 'member';
 	$: selectedGameName =
 		games.find((game) => String(game.id) === selectedGameId)?.name ??
-		selectedEvent?.game.name ??
+		selectedEvent?.game?.name ??
 		'';
-	$: selectedAssetName = selectedEvent?.asset.name ?? '';
+	$: selectedAssetName = selectedEvent?.asset?.name ?? '';
 	$: selectedHolderLabel =
 		selectedEvent?.holder.character?.name ??
 		selectedEvent?.holder.ref ??

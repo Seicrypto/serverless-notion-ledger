@@ -72,6 +72,16 @@
 		query = target.value;
 	}
 
+	function handleSearchKeydown(event: KeyboardEvent) {
+		if (event.key !== 'Enter') {
+			return;
+		}
+
+		event.preventDefault();
+		event.stopPropagation();
+		requestSearch();
+	}
+
 	function selectItem(nextValue: string) {
 		if (!items.some((item) => item.value === nextValue)) {
 			return;
@@ -190,6 +200,7 @@
 					placeholder={searchPlaceholder || placeholder}
 					aria-label={ariaLabel}
 					on:input={handleInput}
+					on:keydown={handleSearchKeydown}
 				/>
 				<button
 					type="button"

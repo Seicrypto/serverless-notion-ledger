@@ -508,6 +508,11 @@ export const app = {
 	events_assets_resolve_review_body: 'A similar item already exists. Review the existing options first, or press create again if you still want a new one.',
 	events_assets_create_anyway_label: 'Create new item anyway',
 	events_assets_use_existing_label: 'Use existing item',
+	events_assets_no_asset_confirm_title: 'Create event without a reward item?',
+	events_assets_no_asset_confirm_body:
+		'No reward item is selected right now. Continue only if this event should be recorded without a dropped item.',
+	events_assets_no_asset_confirm_proceed_label: 'Create without item',
+	events_assets_no_asset_confirm_cancel_label: 'Keep editing',
 	events_form_submit_label: 'Create event',
 	events_required_hint: 'Required',
 	events_optional_hint: 'Optional',

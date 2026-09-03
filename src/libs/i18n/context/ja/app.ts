@@ -509,6 +509,11 @@ export const app = {
 	events_assets_resolve_review_body: '近い item が見つかりました。まず既存 item を確認し、それでも新規作成したい場合はもう一度作成してください。',
 	events_assets_create_anyway_label: 'それでも新しい item を作成',
 	events_assets_use_existing_label: '既存 item を使う',
+	events_assets_no_asset_confirm_title: '報酬 item なしで event を作成しますか？',
+	events_assets_no_asset_confirm_body:
+		'現在 reward item が未選択です。ドロップ item を記録しない event の場合のみ、そのまま作成してください。',
+	events_assets_no_asset_confirm_proceed_label: 'item なしで作成',
+	events_assets_no_asset_confirm_cancel_label: '編集に戻る',
 	events_form_submit_label: 'イベントを作成',
 	events_required_hint: '必須',
 	events_optional_hint: '任意',
