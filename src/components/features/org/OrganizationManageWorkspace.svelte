@@ -2218,6 +2218,12 @@
 		margin: 0;
 	}
 
+	.manage-modal-actions {
+		margin-top: 10px;
+		gap: 12px;
+		justify-content: flex-end;
+	}
+
 	.manage-field {
 		display: grid;
 		gap: 8px;
@@ -2275,6 +2281,29 @@
 		color: var(--text-soft);
 	}
 
+	.modal-primary,
+	.modal-secondary {
+		min-height: 46px;
+		padding: 0 18px;
+		border-radius: 999px;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		font-size: 0.95rem;
+		font-weight: 700;
+		white-space: nowrap;
+		transition:
+			transform 0.18s ease,
+			background 0.18s ease,
+			border-color 0.18s ease,
+			box-shadow 0.18s ease,
+			opacity 0.18s ease;
+	}
+
+	.modal-secondary:hover {
+		transform: translateY(-1px);
+	}
+
 	.sr-only {
 		position: absolute;
 		width: 1px;
@@ -2319,6 +2348,12 @@
 
 		.manage-modal-actions {
 			flex-direction: column-reverse;
+		}
+
+		.modal-primary,
+		.modal-secondary {
+			width: 100%;
+			min-height: 48px;
 		}
 
 		.org-manage-danger-zone {
