@@ -17,6 +17,7 @@
 
 	export let summary: OrganizationLedgerDashboardSummaryResponse | null = null;
 	export let organizationName: string | null = null;
+	export let organizationIconUrl: string | null = null;
 	export let organizationReference: string | null = null;
 	export let labels: Labels;
 	export let lang = 'en';
@@ -55,6 +56,13 @@
 	}
 
 	$: headingName = summary?.organization.name ?? organizationName ?? labels.title;
+	$: headingInitials = headingName
+		.split(/\s+/)
+		.filter(Boolean)
+		.slice(0, 2)
+		.map((part) => part[0]?.toUpperCase() ?? '')
+		.join('')
+		.slice(0, 2);
 	$: revenueItems = summary?.summary.revenueUnitBreakdown ?? [];
 </script>
 
@@ -70,7 +78,14 @@
 				</svg>
 				{labels.title}
 			</p>
-			<h1>{headingName} {labels.dashboardSuffix}</h1>
+			<div class="overview-title-row">
+				{#if organizationIconUrl}
+					<img class="overview-org-icon-image" src={organizationIconUrl} alt="" loading="lazy" />
+				{:else}
+					<div class="overview-org-icon-fallback" aria-hidden="true">{headingInitials || 'OG'}</div>
+				{/if}
+				<h1>{headingName} {labels.dashboardSuffix}</h1>
+			</div>
 		</div>
 		{#if summary}
 			<div class="overview-meta">
@@ -187,6 +202,13 @@
 		gap: 8px;
 	}
 
+	.overview-title-row {
+		display: flex;
+		align-items: center;
+		gap: 14px;
+		min-width: 0;
+	}
+
 	.overview-meta {
 		display: grid;
 		gap: 10px;
@@ -215,6 +237,29 @@
 		letter-spacing: -0.03em;
 		font-size: clamp(1.9rem, 3vw, 2.8rem);
 		line-height: 1.05;
+	}
+
+	.overview-org-icon-image,
+	.overview-org-icon-fallback {
+		width: 52px;
+		height: 52px;
+		border-radius: 16px;
+		flex: 0 0 auto;
+	}
+
+	.overview-org-icon-image {
+		object-fit: cover;
+	}
+
+	.overview-org-icon-fallback {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		background: linear-gradient(135deg, var(--accent) 0%, color-mix(in srgb, var(--accent) 54%, white) 100%);
+		color: white;
+		font-size: 0.98rem;
+		font-weight: 800;
+		letter-spacing: 0.08em;
 	}
 
 	.overview-info-link {
@@ -367,6 +412,10 @@
 		.overview-row {
 			display: flex;
 			flex-direction: column;
+		}
+
+		.overview-title-row {
+			align-items: flex-start;
 		}
 
 		.overview-meta {

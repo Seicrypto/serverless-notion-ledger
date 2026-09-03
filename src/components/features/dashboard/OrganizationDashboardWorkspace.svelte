@@ -111,6 +111,7 @@
 	let loading = true;
 	let pageLoading = false;
 	let errorMessage = '';
+	let organizationIconUrl: string | null = null;
 	let refreshLockedUntil = 0;
 	let refreshClock = Date.now();
 	let summaryRequestKey = '';
@@ -236,6 +237,23 @@
 		writeDashboardCharactersCache(window.sessionStorage, organization, characters);
 	}
 
+	async function loadOrganizationMeta() {
+		if (!organization) {
+			organizationIconUrl = null;
+			return;
+		}
+
+		try {
+			const response = await getApiAdapter().getOrganization(organization);
+			organizationIconUrl =
+				typeof response.organization.iconUrl === 'string' && response.organization.iconUrl.trim()
+					? response.organization.iconUrl
+					: null;
+		} catch {
+			organizationIconUrl = null;
+		}
+	}
+
 	async function loadSummaries(force = false) {
 		if (!organization || typeof window === 'undefined') {
 			summaries = [];
@@ -283,6 +301,7 @@
 		const [summaryResult, charactersResult] = await Promise.allSettled([
 			loadSummary(force),
 			loadCharacters(force),
+			loadOrganizationMeta(),
 		]);
 
 		if (summaryResult.status === 'rejected' && charactersResult.status === 'rejected') {
@@ -440,6 +459,7 @@
 			<OrganizationLedgerOverviewCard
 				summary={summary}
 				organizationName={getOrganizationDisplayName()}
+				organizationIconUrl={organizationIconUrl}
 				organizationReference={organization}
 				lang={lang}
 				labels={{

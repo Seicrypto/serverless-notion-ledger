@@ -16,7 +16,10 @@
 		type OrganizationManageMember,
 		type OrganizationManageSummary,
 	} from '../../../libs/api/organizations/manage-workspace-cache.ts';
-	import { refreshMyOrganizationsCache } from '../../../libs/api/organizations/my-organizations-cache.ts';
+	import {
+		ensureMyOrganizationsCache,
+		refreshMyOrganizationsCache,
+	} from '../../../libs/api/organizations/my-organizations-cache.ts';
 	import {
 		clearRecentCharacterClaimRequest,
 		getRecentCharacterClaimRequestsByOrganization,
@@ -24,7 +27,10 @@
 		recordRecentCharacterClaimRequest,
 		type RecentCharacterClaimRequestEntry,
 	} from '../../../libs/organizations/recent-character-claim-requests.ts';
-	import { resolveOrganizationQuery } from '../../../libs/organizations/reference.ts';
+	import {
+		getOrganizationReference,
+		resolveOrganizationQuery,
+	} from '../../../libs/organizations/reference.ts';
 
 	interface Labels {
 		title: string;
@@ -239,6 +245,8 @@
 	let statusPrimaryAction: { label: string; onClick?: () => void; href?: string } | null = null;
 	let sensitiveActionOpen = false;
 	let sensitiveActionSubmitting = false;
+	let currentMembershipRole: 'owner' | 'admin' | 'member' | null = null;
+	let currentMembershipStatus: 'pending' | 'active' | null = null;
 	let sensitiveAction:
 		| {
 				kind: 'delete-character' | 'leave-guild' | 'delete-guild';
@@ -327,6 +335,30 @@
 		}
 
 		return members.find((member) => member.userId === session.user.id) ?? null;
+	};
+
+	const getCurrentMembershipRoleFromSnapshot = async () => {
+		if (!isAuthenticatedSession(session) || !organization) {
+			currentMembershipRole = null;
+			currentMembershipStatus = null;
+			return;
+		}
+
+		try {
+			const snapshot = await ensureMyOrganizationsCache();
+			const matched = snapshot.organizations.find(
+				(entry) =>
+					entry.id === organization.id ||
+					getOrganizationReference(entry) ===
+						(organization.vanity?.trim() || String(organization.id)),
+			);
+
+			currentMembershipRole = matched?.membership?.role ?? null;
+			currentMembershipStatus = matched?.membership?.status ?? null;
+		} catch {
+			currentMembershipRole = null;
+			currentMembershipStatus = null;
+		}
 	};
 
 	const getClaimStateLabel = (character: OrganizationManageCharacter) => {
@@ -444,7 +476,8 @@
 	}));
 
 	$: currentMember = getCurrentMember();
-	$: isCurrentMemberOwner = currentMember?.role === 'owner';
+	$: effectiveCurrentMembershipRole = currentMember?.role ?? currentMembershipRole;
+	$: isCurrentMemberOwner = effectiveCurrentMembershipRole === 'owner';
 	$: sensitiveActionTitle =
 		sensitiveAction?.kind === 'delete-character'
 			? labels.deleteLabel
@@ -517,6 +550,7 @@
 			organization = snapshot.organization;
 			characters = snapshot.characters;
 			members = snapshot.members;
+			await getCurrentMembershipRoleFromSnapshot();
 			selectedCharacterGameId = getPrimaryManageGameId();
 			createCharacterGameId = selectedCharacterGameId;
 			fillEditForm();
@@ -900,7 +934,7 @@
 	};
 
 	const submitLeaveGuild = async () => {
-		if (!orgVanity || !currentMember) {
+		if (!orgVanity || !isAuthenticatedSession(session)) {
 			closeSensitiveAction();
 			openStatus('error', labels.leaveErrorTitle, labels.sensitiveConfirmValidation, {
 				label: labels.closeLabel,
@@ -913,7 +947,19 @@
 		openStatus('pending', labels.leavePendingTitle, labels.leavePendingBody);
 
 		try {
-			await getApiAdapter().leaveOrganization(orgVanity, currentMember.memberId);
+			const directMemberId = currentMember?.memberId;
+			const fallbackMember =
+				directMemberId
+					? null
+					: (await getApiAdapter().listOrganizationMembers(orgVanity)).members.find(
+							(member) => member.userId === session.user.id && member.status === 'active',
+						) ?? null;
+			const memberId = directMemberId ?? fallbackMember?.id;
+			if (!memberId) {
+				throw new Error(labels.leaveErrorTitle);
+			}
+
+			await getApiAdapter().leaveOrganization(orgVanity, memberId);
 			clearOrganizationManageCache(orgVanity);
 			await refreshMyOrganizationsCache();
 			openStatus('success', labels.leaveSuccessTitle, labels.leaveSuccessBody, {
@@ -1405,7 +1451,7 @@
 				</div>
 			</section>
 
-			{#if currentMember}
+			{#if currentMember || effectiveCurrentMembershipRole}
 				<section class="org-manage-danger-zone">
 					<div class="org-manage-danger-copy">
 						<h3>{labels.sensitiveZoneTitle}</h3>

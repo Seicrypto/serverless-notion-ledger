@@ -495,6 +495,11 @@ export const app = {
 	events_assets_resolve_review_body: '已找到相似 item，請先確認是否直接使用既有資料；若仍要新建，再按一次建立。',
 	events_assets_create_anyway_label: '仍然建立新 item',
 	events_assets_use_existing_label: '改用既有 item',
+	events_assets_no_asset_confirm_title: '要建立沒有掉落道具的事件嗎？',
+	events_assets_no_asset_confirm_body:
+		'目前尚未選擇任何 reward item。只有在這筆事件本來就不需要記錄掉落道具時，才建議直接建立。',
+	events_assets_no_asset_confirm_proceed_label: '直接建立無道具事件',
+	events_assets_no_asset_confirm_cancel_label: '回去繼續編輯',
 	events_form_submit_label: '建立事件',
 	events_required_hint: '必填',
 	events_optional_hint: '選填',

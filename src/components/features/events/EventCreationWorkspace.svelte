@@ -148,6 +148,10 @@
 		createItemResolveReviewBody: string;
 		createItemCreateAnywayLabel: string;
 		useExistingItemLabel: string;
+		noAssetConfirmTitle: string;
+		noAssetConfirmBody: string;
+		noAssetConfirmProceedLabel: string;
+		noAssetConfirmCancelLabel: string;
 		submitLabel: string;
 		requiredHint: string;
 		optionalHint: string;
@@ -389,6 +393,26 @@
 			},
 		};
 		dialogSecondaryAction = null;
+	}
+
+	function openNoAssetConfirmDialog() {
+		dialogOpen = true;
+		dialogState = 'error';
+		dialogTitle = labels.noAssetConfirmTitle;
+		dialogMessage = labels.noAssetConfirmBody;
+		dialogPrimaryAction = {
+			label: labels.noAssetConfirmProceedLabel,
+			onClick: () => {
+				dialogOpen = false;
+				void submit(true);
+			},
+		};
+		dialogSecondaryAction = {
+			label: labels.noAssetConfirmCancelLabel,
+			onClick: () => {
+				dialogOpen = false;
+			},
+		};
 	}
 
 	function addAssetRow() {
@@ -1004,12 +1028,16 @@ async function submitCreateItem() {
 		}
 	}
 
-	async function submit() {
+	async function submit(skipNoAssetConfirm = false) {
 		if (isSubmitting || !validate() || !organizationReference || contextLoading) {
 			return;
 		}
 
 		const assetIds = getNormalizedAssetIds() ?? [];
+		if (!skipNoAssetConfirm && assetIds.length === 0) {
+			openNoAssetConfirmDialog();
+			return;
+		}
 		const basePayload = buildBasePayload();
 		const payloads: CreateLedgerEventRequest[] =
 			assetIds.length > 0

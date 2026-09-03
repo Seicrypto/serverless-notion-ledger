@@ -60,6 +60,55 @@
 	let primaryGameId: number | null = null;
 	let primaryGameName = '';
 
+	function setPrimaryGame(
+		game:
+			| {
+					gameId?: unknown;
+					gameName?: unknown;
+					displayName?: unknown;
+			  }
+			| null
+			| undefined,
+	) {
+		if (!game || typeof game.gameId !== 'number') {
+			return false;
+		}
+
+		primaryGameId = game.gameId;
+		primaryGameName =
+			(typeof game.displayName === 'string' && game.displayName.trim()) ||
+			(typeof game.gameName === 'string' && game.gameName.trim()) ||
+			'';
+		return true;
+	}
+
+	function buildFallbackRoleItems(
+		characters: Array<{
+			id: number;
+			name: string;
+			claimedByUserId?: unknown;
+			gameId?: unknown;
+			game?: { gameId?: unknown; gameName?: unknown; displayName?: unknown } | null;
+			isActive?: boolean;
+		}>,
+	) {
+		return characters
+			.filter(
+				(character) =>
+					character.isActive !== false &&
+					(character.claimedByUserId === null || typeof character.claimedByUserId === 'undefined') &&
+					typeof character.id === 'number',
+			)
+			.map((character) => ({
+				value: String(character.id),
+				label: character.name,
+				metaLabel:
+					(typeof character.game?.displayName === 'string' && character.game.displayName.trim()) ||
+					(typeof character.game?.gameName === 'string' && character.game.gameName.trim()) ||
+					null,
+			}));
+	}
+
 	$: localMembershipStatus = membershipStatus ?? localMembershipStatus;
 	$: isHidden = localMembershipStatus === 'pending' || localMembershipStatus === 'active';
 
@@ -89,33 +138,57 @@
 	async function loadApplyContext() {
 		loadingContext = true;
 		dialogError = '';
+		roleItems = [];
+		primaryGameId = null;
+		primaryGameName = '';
 
 		try {
-			const [availableCharactersResponse, organizationResponse] = await Promise.all([
+			const [availableCharactersResult, organizationResult, charactersResult] = await Promise.allSettled([
 				getApiAdapter().listOrganizationAvailableCharacters(organization),
 				getApiAdapter().getOrganization(organization),
+				getApiAdapter().listOrganizationCharacters(organization),
 			]);
 
-			roleItems = availableCharactersResponse.characters
-				.filter((character) => typeof character.characterId === 'number')
-				.map((character) => ({
-					value: String(character.characterId),
-					label: character.name,
-					metaLabel: character.game.gameName,
-				}));
+			if (availableCharactersResult.status === 'fulfilled') {
+				roleItems = availableCharactersResult.value.characters
+					.filter((character) => typeof character.characterId === 'number')
+					.map((character) => ({
+						value: String(character.characterId),
+						label: character.name,
+						metaLabel:
+							(typeof character.game.displayName === 'string' && character.game.displayName.trim()) ||
+							character.game.gameName,
+					}));
 
-			const primaryGame =
-				organizationResponse.organization.games.find((game) => game.isPrimary) ??
-				organizationResponse.organization.games[0] ??
-				null;
+				const firstAvailableGame = availableCharactersResult.value.characters.find(
+					(character) => typeof character.game?.gameId === 'number',
+				)?.game;
+				setPrimaryGame(firstAvailableGame);
+			}
 
-			primaryGameId = primaryGame?.gameId ?? null;
-			primaryGameName = primaryGame?.gameName ?? '';
-		} catch (error) {
-			dialogError = getErrorMessage(error, labels.errorTitle);
-			roleItems = [];
-			primaryGameId = null;
-			primaryGameName = '';
+			if (organizationResult.status === 'fulfilled') {
+				const primaryGame =
+					organizationResult.value.organization.games.find((game) => game.isPrimary) ??
+					organizationResult.value.organization.games[0] ??
+					null;
+				setPrimaryGame(primaryGame);
+			}
+
+			if (charactersResult.status === 'fulfilled') {
+				if (roleItems.length === 0) {
+					roleItems = buildFallbackRoleItems(charactersResult.value.characters);
+				}
+
+				const fallbackGame =
+					charactersResult.value.characters.find((character) => typeof character.gameId === 'number')?.game ??
+					charactersResult.value.characters.find((character) => typeof character.game?.gameId === 'number')?.game ??
+					null;
+				setPrimaryGame(fallbackGame);
+			}
+
+			if (roleItems.length === 0 && availableCharactersResult.status === 'rejected' && charactersResult.status === 'rejected') {
+				dialogError = getErrorMessage(availableCharactersResult.reason, labels.errorTitle);
+			}
 		} finally {
 			loadingContext = false;
 		}
@@ -158,7 +231,8 @@
 		dialogError = '';
 
 		if (mode === 'select') {
-			if (!selectedCharacterId) {
+			const parsedCharacterId = Number(selectedCharacterId);
+			if (!selectedCharacterId || !Number.isFinite(parsedCharacterId) || parsedCharacterId <= 0) {
 				fieldError = labels.dialogRoleRequiredError;
 				return;
 			}
@@ -427,6 +501,17 @@
 		border-color: color-mix(in srgb, var(--ledger-accent) 45%, var(--line));
 		background: color-mix(in srgb, var(--ledger-accent) 18%, white);
 		color: color-mix(in srgb, var(--ledger-accent-deep) 88%, var(--text-main));
+	}
+
+	:root[data-theme='dark'] .apply-mode-button.active {
+		border-color: color-mix(in srgb, var(--ledger-accent) 42%, var(--line));
+		background: linear-gradient(
+			180deg,
+			color-mix(in srgb, var(--ledger-accent) 30%, rgba(255, 255, 255, 0.08)) 0%,
+			color-mix(in srgb, var(--surface-strong) 94%, rgba(44, 120, 79, 0.18)) 100%
+		);
+		color: color-mix(in srgb, white 92%, var(--ledger-accent));
+		box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
 	}
 
 	.apply-field {
