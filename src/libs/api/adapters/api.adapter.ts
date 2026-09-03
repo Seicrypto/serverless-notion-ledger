@@ -571,6 +571,24 @@ export class ApiAdapter {
 		});
 	}
 
+	cancelOrganizationMember(organization: OrganizationReference, memberId: number) {
+		return this.client.postOrganizationsByOrganizationMembersByMemberIdCancel({
+			pathParams: { organization: normalizeOrganizationReference(organization), memberId },
+		});
+	}
+
+	leaveOrganization(organization: OrganizationReference, memberId: number) {
+		return this.client.postOrganizationsByOrganizationMembersByMemberIdLeave({
+			pathParams: { organization: normalizeOrganizationReference(organization), memberId },
+		});
+	}
+
+	removeOrganizationMember(organization: OrganizationReference, memberId: number) {
+		return this.client.postOrganizationsByOrganizationMembersByMemberIdRemove({
+			pathParams: { organization: normalizeOrganizationReference(organization), memberId },
+		});
+	}
+
 	appointOrganizationMemberAdmin(organization: OrganizationReference, memberId: number) {
 		return this.client.postOrganizationsByOrganizationMembersByMemberIdAppointAdmin({
 			pathParams: { organization: normalizeOrganizationReference(organization), memberId },

@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 
+	import ApplyOrganizationButton from './ApplyOrganizationButton.svelte';
 	import OrganizationCard from './OrganizationCard.svelte';
 	import GamePicker from '../../shared/GamePicker.svelte';
 	import { getApiAdapter } from '../../../libs/api/adapters/api.adapter.ts';
@@ -33,6 +34,11 @@
 		characterCountLabel: string;
 		supportedOrgLabel: string;
 		openOrgLabel: string;
+		applyOrgLabel: string;
+		applyingOrgLabel: string;
+		appliedOrgLabel: string;
+		applyOrgErrorTitle: string;
+		loginLabel: string;
 	}
 
 	export let lang: string;
@@ -242,21 +248,48 @@
 			<h2>{labels.emptyTitle}</h2>
 			<p>{labels.emptyBody}</p>
 		</section>
-	{:else}
-		<div class="org-card-grid">
-			{#each organizations as organization}
-				<OrganizationCard
-					organization={organization}
-					href={`/${lang}/members?org=${encodeURIComponent(getOrganizationReference(organization))}`}
-					actionLabel={labels.openOrgLabel}
-					labels={{
-						members: labels.memberCountLabel,
-						characters: labels.characterCountLabel,
-						supportedOrg: labels.supportedOrgLabel,
-					}}
-				/>
-			{/each}
-		</div>
+		{:else}
+			<div class="org-card-grid">
+				{#each organizations as organization}
+					<OrganizationCard
+						organization={organization}
+						href={`/${lang}/guilds/info?org=${encodeURIComponent(getOrganizationReference(organization))}`}
+						actionLabel={labels.openOrgLabel}
+						labels={{
+							members: labels.memberCountLabel,
+							characters: labels.characterCountLabel,
+							supportedOrg: labels.supportedOrgLabel,
+						}}
+					>
+						<ApplyOrganizationButton
+							slot="footer-actions"
+							lang={lang}
+							organization={getOrganizationReference(organization)}
+							membershipStatus={organization.membership?.status ?? null}
+							labels={{
+								applyLabel: labels.applyOrgLabel,
+								applyingLabel: labels.applyingOrgLabel,
+								appliedLabel: labels.appliedOrgLabel,
+								errorTitle: labels.applyOrgErrorTitle,
+								loginLabel: labels.loginLabel,
+							}}
+							onApplied={() => {
+								organizations = organizations.map((entry) =>
+									entry.id === organization.id
+										? {
+												...entry,
+												membership: {
+													role: entry.membership?.role ?? null,
+													status: 'pending',
+												},
+											}
+										: entry,
+								);
+							}}
+						/>
+					</OrganizationCard>
+				{/each}
+			</div>
 	{/if}
 
 	<div class="org-pagination">

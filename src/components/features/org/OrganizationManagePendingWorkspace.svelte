@@ -2,6 +2,7 @@
 	import { onMount } from 'svelte';
 
 	import AccessNoticeCard from '../shared/AccessNoticeCard.svelte';
+	import RequestStatusDialog from './RequestStatusDialog.svelte';
 	import {
 		ensureAuthSession,
 		getErrorMessage,
@@ -10,6 +11,7 @@
 		type AuthSession,
 	} from '../../../libs/api/auth/session.ts';
 	import { getApiAdapter } from '../../../libs/api/adapters/api.adapter.ts';
+	import { refreshMyOrganizationsCache } from '../../../libs/api/organizations/my-organizations-cache.ts';
 	import { ensureOrganizationManageCache, type OrganizationManageSummary } from '../../../libs/api/organizations/manage-workspace-cache.ts';
 	import {
 		getRecentCharacterClaimRequestsByOrganization,
@@ -46,6 +48,17 @@
 		characterLabel: string;
 		gameLabel: string;
 		errorTitle: string;
+		approveLabel: string;
+		rejectLabel: string;
+		cancelLabel: string;
+		acceptInviteLabel: string;
+		declineInviteLabel: string;
+		actionPendingTitle: string;
+		actionPendingBody: string;
+		actionSuccessTitle: string;
+		actionErrorTitle: string;
+		confirmLabel: string;
+		closeLabel: string;
 	}
 
 	type PendingMemberRecord = Awaited<ReturnType<ReturnType<typeof getApiAdapter>['listOrganizationPendingMembers']>>['members'][number];
@@ -60,11 +73,18 @@
 	let organization: OrganizationManageSummary | null = null;
 	let pendingMembers: PendingMemberRecord[] = [];
 	let recentClaimRequests: RecentCharacterClaimRequestEntry[] = [];
+	let currentUserRole: 'owner' | 'admin' | 'member' | null = null;
+	let dialogOpen = false;
+	let dialogState: 'pending' | 'success' | 'error' = 'pending';
+	let dialogTitle = '';
+	let dialogMessage = '';
+	let dialogPrimaryAction: { label: string; onClick?: () => void } | null = null;
 
 	const getGameLabel = (name: string | null | undefined, fallback: string) => name?.trim() || fallback;
 
 	const isRelatedToCurrentUser = (userId: number | null | undefined) =>
 		Boolean(isAuthenticatedSession(session) && typeof userId === 'number' && session.user.id === userId);
+	const isManager = () => currentUserRole === 'owner' || currentUserRole === 'admin';
 
 	const getUserDisplayName = (userId: number | null | undefined, vanity: string | null | undefined, displayName: string | null | undefined) => {
 		if (displayName?.trim()) {
@@ -115,11 +135,107 @@
 				getApiAdapter().listOrganizationPendingMembers(orgVanity),
 			]);
 			organization = organizationSnapshot.organization;
+			currentUserRole =
+				organizationSnapshot.members.find(
+					(member) => isAuthenticatedSession(session) && member.userId === session.user.id,
+				)?.role ?? null;
 			pendingMembers = pendingResponse.members;
 		} catch (error) {
 			errorMessage = getErrorMessage(error, labels.errorTitle);
 		} finally {
 			loading = false;
+		}
+	};
+
+	const resetDialog = () => {
+		dialogOpen = false;
+		dialogPrimaryAction = null;
+	};
+
+	const openDialog = (
+		state: 'pending' | 'success' | 'error',
+		title: string,
+		message: string,
+		primaryAction: { label: string; onClick?: () => void } | null = null,
+	) => {
+		dialogOpen = true;
+		dialogState = state;
+		dialogTitle = title;
+		dialogMessage = message;
+		dialogPrimaryAction = primaryAction;
+	};
+
+	const getPendingMemberActionItems = (member: PendingMemberRecord) => {
+		const actions: Array<{
+			key: 'approve' | 'reject' | 'cancel' | 'accept' | 'decline';
+			label: string;
+			tone: 'primary' | 'secondary' | 'danger';
+		}> = [];
+		const relatedToTarget = isRelatedToCurrentUser(member.userId);
+		const relatedToInviter = isRelatedToCurrentUser(member.invitedByUserId as number | undefined);
+
+		if (member.pendingKind === 'apply') {
+			if (isManager()) {
+				actions.push({ key: 'approve', label: labels.approveLabel, tone: 'primary' });
+				actions.push({ key: 'reject', label: labels.rejectLabel, tone: 'danger' });
+			}
+
+			if (relatedToTarget || relatedToInviter) {
+				actions.push({ key: 'cancel', label: labels.cancelLabel, tone: 'secondary' });
+			}
+		}
+
+		if (member.pendingKind === 'invite') {
+			if (relatedToTarget) {
+				actions.push({ key: 'accept', label: labels.acceptInviteLabel, tone: 'primary' });
+				actions.push({ key: 'decline', label: labels.declineInviteLabel, tone: 'danger' });
+			}
+
+			if (isManager() || relatedToInviter) {
+				actions.push({ key: 'cancel', label: labels.cancelLabel, tone: 'secondary' });
+			}
+		}
+
+		return actions;
+	};
+
+	const submitPendingMemberAction = async (
+		member: PendingMemberRecord,
+		action: 'approve' | 'reject' | 'cancel' | 'accept' | 'decline',
+	) => {
+		if (!orgVanity) {
+			return;
+		}
+
+		openDialog('pending', labels.actionPendingTitle, labels.actionPendingBody);
+
+		try {
+			let response;
+			if (action === 'approve') {
+				response = await getApiAdapter().approveOrganizationMember(orgVanity, member.memberId);
+			} else if (action === 'reject') {
+				response = await getApiAdapter().rejectOrganizationMember(orgVanity, member.memberId);
+			} else if (action === 'cancel') {
+				response = await getApiAdapter().cancelOrganizationMember(orgVanity, member.memberId);
+			} else if (action === 'accept') {
+				response = await getApiAdapter().acceptOrganizationInvite(orgVanity, member.memberId);
+			} else {
+				response = await getApiAdapter().declineOrganizationInvite(orgVanity, member.memberId);
+			}
+
+			pendingMembers = pendingMembers.filter((entry) => entry.memberId !== member.memberId);
+			if (isRelatedToCurrentUser(member.userId)) {
+				await refreshMyOrganizationsCache();
+			}
+			openDialog('success', labels.actionSuccessTitle, response.message, {
+				label: labels.confirmLabel,
+				onClick: resetDialog,
+			});
+		} catch (error) {
+			openDialog('error', labels.actionErrorTitle, getErrorMessage(error, labels.actionErrorTitle), {
+				label: labels.closeLabel,
+				onClick: resetDialog,
+			});
 		}
 	};
 
@@ -253,6 +369,20 @@
 											<dd>{getUserDisplayName(member.invitedByUserId as number | undefined, null, null)}</dd>
 										</div>
 									</dl>
+									{#if getPendingMemberActionItems(member).length > 0}
+										<div class="pending-item-actions">
+											{#each getPendingMemberActionItems(member) as action}
+												<button
+													type="button"
+													class="pending-action-button"
+													data-tone={action.tone}
+													on:click={() => void submitPendingMemberAction(member, action.key)}
+												>
+													{action.label}
+												</button>
+											{/each}
+										</div>
+									{/if}
 								</div>
 							{/each}
 						</div>
@@ -262,6 +392,15 @@
 		{/if}
 	</section>
 {/if}
+
+<RequestStatusDialog
+	open={dialogOpen}
+	state={dialogState}
+	title={dialogTitle}
+	message={dialogMessage}
+	primaryAction={dialogPrimaryAction}
+	onClose={resetDialog}
+/>
 
 <style>
 	.pending-shell {
@@ -373,6 +512,53 @@
 		margin: 14px 0 0;
 		display: grid;
 		gap: 10px;
+	}
+
+	.pending-item-actions {
+		margin-top: 14px;
+		display: flex;
+		flex-wrap: wrap;
+		justify-content: flex-end;
+		gap: 10px;
+	}
+
+	.pending-action-button {
+		min-height: 38px;
+		padding: 0 14px;
+		border-radius: 999px;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		font-weight: 700;
+		transition:
+			transform 0.18s ease,
+			background 0.18s ease,
+			border-color 0.18s ease;
+	}
+
+	.pending-action-button[data-tone='primary'] {
+		border: 1px solid color-mix(in srgb, var(--ledger-accent) 45%, var(--line));
+		background: linear-gradient(
+			135deg,
+			color-mix(in srgb, var(--ledger-accent) 88%, white),
+			color-mix(in srgb, var(--ledger-accent) 56%, white)
+		);
+		color: color-mix(in srgb, var(--ledger-accent-deep) 88%, var(--text-main));
+	}
+
+	.pending-action-button[data-tone='secondary'] {
+		border: 1px solid var(--line);
+		background: color-mix(in srgb, var(--surface-strong) 82%, white);
+	}
+
+	.pending-action-button[data-tone='danger'] {
+		border: 1px solid color-mix(in srgb, #dc2626 42%, var(--line));
+		background: color-mix(in srgb, #fee2e2 74%, white);
+		color: #991b1b;
+	}
+
+	.pending-action-button:hover {
+		transform: translateY(-1px);
 	}
 
 	.pending-item dl div {

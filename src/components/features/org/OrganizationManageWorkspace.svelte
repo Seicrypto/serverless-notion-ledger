@@ -103,6 +103,10 @@
 		editLabel: string;
 		deleteLabel: string;
 		removeMemberLabel: string;
+		removeMemberPendingTitle: string;
+		removeMemberPendingBody: string;
+		removeMemberSuccessTitle: string;
+		removeMemberErrorTitle: string;
 		charactersGameScopeLabel: string;
 		charactersGameScopeHint: string;
 		charactersManageGameLabel: string;
@@ -837,11 +841,28 @@
 		}
 	};
 
-	const triggerPlaceholderAction = () => {
-		openStatus('success', labels.placeholderActionTitle, labels.placeholderActionBody, {
-			label: labels.confirmLabel,
-			onClick: resetStatusDialog,
-		});
+	const submitRemoveMember = async (member: OrganizationManageMember) => {
+		if (!orgVanity) {
+			return;
+		}
+
+		openStatus('pending', labels.removeMemberPendingTitle, labels.removeMemberPendingBody);
+
+		try {
+			await getApiAdapter().removeOrganizationMember(orgVanity, member.memberId);
+			clearOrganizationManageCache(orgVanity);
+			await refreshMyOrganizationsCache();
+			await loadWorkspace(true);
+			openStatus('success', labels.removeMemberSuccessTitle, getMemberDisplayName(member), {
+				label: labels.confirmLabel,
+				onClick: resetStatusDialog,
+			});
+		} catch (error) {
+			openStatus('error', labels.removeMemberErrorTitle, getErrorMessage(error, labels.removeMemberErrorTitle), {
+				label: labels.closeLabel,
+				onClick: resetStatusDialog,
+			});
+		}
 	};
 
 	const submitInviteSearch = () => {
@@ -857,7 +878,10 @@
 		}
 
 		inviteMemberOpen = false;
-		triggerPlaceholderAction();
+		openStatus('success', labels.placeholderActionTitle, labels.placeholderActionBody, {
+			label: labels.confirmLabel,
+			onClick: resetStatusDialog,
+		});
 	};
 
 	const refreshWorkspace = async () => {
@@ -1177,9 +1201,11 @@
 												</div>
 											</td>
 											<td class="org-manage-actions-cell">
-												<button type="button" class="table-chip-button danger" on:click={triggerPlaceholderAction}>
-													{labels.removeMemberLabel}
-												</button>
+												{#if !isAuthenticatedSession(session) || session.user.id !== member.userId}
+													<button type="button" class="table-chip-button danger" on:click={() => void submitRemoveMember(member)}>
+														{labels.removeMemberLabel}
+													</button>
+												{/if}
 											</td>
 										</tr>
 									{/each}

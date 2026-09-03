@@ -64,7 +64,12 @@ const initialOffset = Number(Astro.url.searchParams.get('offset') ?? '0');
 				memberCountLabel: t.app.orgs_member_count_label,
 				characterCountLabel: t.app.orgs_character_count_label,
 				supportedOrgLabel: t.app.orgs_supported_org_label,
-				openOrgLabel: t.app.orgs_open_org_label,
+				openOrgLabel: t.app.orgs_view_info_label,
+				applyOrgLabel: t.app.action_apply_org,
+				applyingOrgLabel: t.app.action_apply_org_pending,
+				appliedOrgLabel: t.app.action_applied_org,
+				applyOrgErrorTitle: t.app.orgs_apply_error_title,
+				loginLabel: t.app.action_login,
 			}}
 			gameOptions={[{ label: 'SpiritVale', value: 'spiritvale' }]}
 			initialQuery={initialQuery}
