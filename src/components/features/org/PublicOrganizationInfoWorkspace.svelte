@@ -3,6 +3,7 @@
 
 	import OrganizationCard from './OrganizationCard.svelte';
 	import ApplyOrganizationButton from './ApplyOrganizationButton.svelte';
+	import SelfOrganizationMembershipAction from './SelfOrganizationMembershipAction.svelte';
 	import { getApiAdapter } from '../../../libs/api/adapters/api.adapter.ts';
 	import { ensureMyOrganizationsCache } from '../../../libs/api/organizations/my-organizations-cache.ts';
 	import {
@@ -29,6 +30,11 @@
 		appliedOrgLabel: string;
 		applyOrgErrorTitle: string;
 		loginLabel: string;
+		leaveOrgLabel: string;
+		cancelOrgLabel: string;
+		orgActionProcessingLabel: string;
+		orgActionErrorTitle: string;
+		orgActionResolveError: string;
 	}
 
 	export let lang: string;
@@ -136,9 +142,9 @@
 			<p>{errorMessage}</p>
 		</section>
 	{:else if orgCard}
-			<div class="org-card-grid">
-				<OrganizationCard
-					organization={orgCard}
+		<div class="org-card-grid">
+			<OrganizationCard
+				organization={orgCard}
 				actions={[
 					{
 						label: labels.openOrgDashboardLabel,
@@ -150,10 +156,10 @@
 					members: labels.memberCountLabel,
 						characters: labels.characterCountLabel,
 						supportedOrg: labels.supportedOrgLabel,
-					}}
-				>
+				}}
+			>
+				<div slot="footer-actions" class="org-info-footer-actions">
 					<ApplyOrganizationButton
-						slot="footer-actions"
 						lang={lang}
 						organization={resolvedOrganization}
 						membershipStatus={membershipStatus}
@@ -168,9 +174,25 @@
 							membershipStatus = 'pending';
 						}}
 					/>
-				</OrganizationCard>
-			</div>
-		{/if}
+					<SelfOrganizationMembershipAction
+						lang={lang}
+						organization={resolvedOrganization}
+						membershipStatus={membershipStatus}
+						labels={{
+							leaveLabel: labels.leaveOrgLabel,
+							cancelLabel: labels.cancelOrgLabel,
+							processingLabel: labels.orgActionProcessingLabel,
+							errorTitle: labels.orgActionErrorTitle,
+							resolveError: labels.orgActionResolveError,
+						}}
+						onCompleted={() => {
+							membershipStatus = null;
+						}}
+					/>
+				</div>
+			</OrganizationCard>
+		</div>
+	{/if}
 </section>
 
 <style>
@@ -215,6 +237,10 @@
 		align-items: center;
 		justify-content: center;
 		font-weight: 700;
+	}
+
+	.org-info-footer-actions {
+		display: contents;
 	}
 
 	@media (max-width: 720px) {

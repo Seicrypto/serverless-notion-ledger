@@ -7,6 +7,7 @@
 		type AuthSession,
 	} from '../../../libs/api/auth/session.ts';
 	import { refreshMyOrganizationsCache } from '../../../libs/api/organizations/my-organizations-cache.ts';
+	import { writeCachedOrganizationMembershipRecord } from '../../../libs/organizations/membership-record-cache.ts';
 
 	interface Labels {
 		applyLabel: string;
@@ -45,8 +46,16 @@
 		errorMessage = '';
 
 		try {
-			await getApiAdapter().applyToOrganization(organization, {});
+			const response = await getApiAdapter().applyToOrganization(organization, {});
 			localMembershipStatus = 'pending';
+			if (typeof window !== 'undefined' && isAuthenticatedSession(session)) {
+				writeCachedOrganizationMembershipRecord(window.localStorage, {
+					organization,
+					userId: session.user.id,
+					memberId: response.member.id,
+					status: response.member.status,
+				});
+			}
 			await refreshMyOrganizationsCache();
 			onApplied?.();
 		} catch (error) {

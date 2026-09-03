@@ -3,6 +3,7 @@
 
 	import AccessNoticeCard from '../shared/AccessNoticeCard.svelte';
 	import OrganizationCard from './OrganizationCard.svelte';
+	import SelfOrganizationMembershipAction from './SelfOrganizationMembershipAction.svelte';
 	import { ensureMyOrganizationsCache, refreshMyOrganizationsCache, subscribeMyOrganizationsCache } from '../../../libs/api/organizations/my-organizations-cache.ts';
 	import { ensureAuthSession, isAuthenticatedSession, subscribeAuthSession, type AuthSession } from '../../../libs/api/auth/session.ts';
 	import type { OrganizationCardResponse } from '../../../libs/api/organizations/organization-card.ts';
@@ -21,6 +22,11 @@
 		openOrgManageLabel: string;
 		openOrgInfoLabel: string;
 		openOrgDashboardLabel: string;
+		leaveOrgLabel: string;
+		cancelOrgLabel: string;
+		orgActionProcessingLabel: string;
+		orgActionErrorTitle: string;
+		orgActionResolveError: string;
 		memberCountLabel: string;
 		characterCountLabel: string;
 		supportedOrgLabel: string;
@@ -152,7 +158,21 @@
 							characters: labels.characterCountLabel,
 							supportedOrg: labels.supportedOrgLabel,
 						}}
-					/>
+					>
+						<SelfOrganizationMembershipAction
+							slot="footer-actions"
+							lang={lang}
+							organization={getOrganizationReference(organization)}
+							membershipStatus={organization.membership?.status ?? null}
+							labels={{
+								leaveLabel: labels.leaveOrgLabel,
+								cancelLabel: labels.cancelOrgLabel,
+								processingLabel: labels.orgActionProcessingLabel,
+								errorTitle: labels.orgActionErrorTitle,
+								resolveError: labels.orgActionResolveError,
+							}}
+						/>
+					</OrganizationCard>
 				{/each}
 			</div>
 		{/if}
