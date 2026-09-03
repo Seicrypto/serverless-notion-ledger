@@ -12,10 +12,12 @@
 		disbursementInProgressLabel: string;
 		disbursementNotStartedLabel: string;
 		lastUpdatedLabel: string;
+		viewInfoLabel: string;
 	}
 
 	export let summary: OrganizationLedgerDashboardSummaryResponse | null = null;
 	export let organizationName: string | null = null;
+	export let organizationReference: string | null = null;
 	export let labels: Labels;
 	export let lang = 'en';
 
@@ -71,7 +73,17 @@
 			<h1>{headingName} {labels.dashboardSuffix}</h1>
 		</div>
 		{#if summary}
-			<p class="overview-updated">{labels.lastUpdatedLabel}: {formatDateTime(summary.generatedAt)}</p>
+			<div class="overview-meta">
+				<p class="overview-updated">{labels.lastUpdatedLabel}: {formatDateTime(summary.generatedAt)}</p>
+				{#if organizationReference}
+					<a
+						class="overview-info-link"
+						href={`/${lang}/guilds/info?orgVanity=${encodeURIComponent(organizationReference)}`}
+					>
+						{labels.viewInfoLabel}
+					</a>
+				{/if}
+			</div>
 		{/if}
 	</div>
 
@@ -175,6 +187,12 @@
 		gap: 8px;
 	}
 
+	.overview-meta {
+		display: grid;
+		gap: 10px;
+		justify-items: end;
+	}
+
 	.overview-kicker,
 	.overview-updated,
 	.overview-label,
@@ -197,6 +215,31 @@
 		letter-spacing: -0.03em;
 		font-size: clamp(1.9rem, 3vw, 2.8rem);
 		line-height: 1.05;
+	}
+
+	.overview-info-link {
+		min-height: 38px;
+		padding: 0 16px;
+		border-radius: 999px;
+		border: 1px solid transparent;
+		background: linear-gradient(135deg, #2563eb 0%, #3b82f6 100%);
+		color: white;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		font-size: 0.9rem;
+		font-weight: 700;
+		box-shadow: 0 16px 30px -22px rgba(37, 99, 235, 0.95);
+		transition:
+			transform 0.18s ease,
+			background 0.18s ease,
+			box-shadow 0.18s ease;
+	}
+
+	.overview-info-link:hover {
+		transform: translateY(-1px);
+		background: linear-gradient(135deg, #1d4ed8 0%, #2563eb 100%);
+		box-shadow: 0 20px 32px -22px rgba(29, 78, 216, 1);
 	}
 
 	.overview-list {
@@ -324,6 +367,10 @@
 		.overview-row {
 			display: flex;
 			flex-direction: column;
+		}
+
+		.overview-meta {
+			justify-items: start;
 		}
 
 		.overview-value,

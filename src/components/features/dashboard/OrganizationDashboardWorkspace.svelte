@@ -72,6 +72,7 @@
 		disbursementNotStartedLabel: string;
 		disbursementStatusHelperLabel: string;
 		lastUpdatedLabel: string;
+		viewInfoLabel: string;
 		receivableLabel: string;
 		payableLabel: string;
 		pendingClaimCountLabel: string;
@@ -439,6 +440,7 @@
 			<OrganizationLedgerOverviewCard
 				summary={summary}
 				organizationName={getOrganizationDisplayName()}
+				organizationReference={organization}
 				lang={lang}
 				labels={{
 					title: labels.overviewTitle,
@@ -451,6 +453,7 @@
 					disbursementInProgressLabel: labels.disbursementInProgressLabel,
 					disbursementNotStartedLabel: labels.disbursementNotStartedLabel,
 					lastUpdatedLabel: labels.lastUpdatedLabel,
+					viewInfoLabel: labels.viewInfoLabel,
 				}}
 			/>
 		{/if}
